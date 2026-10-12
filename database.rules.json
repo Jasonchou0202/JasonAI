@@ -1,0 +1,5 @@
+{
+  "sales": { "read": false, "write": false },
+  "products": { "read": false, "write": false },
+  "batches": { "read": false, "write": false }
+}

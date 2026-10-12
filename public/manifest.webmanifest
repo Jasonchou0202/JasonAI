@@ -1,0 +1,17 @@
+{
+  "name": "章鱼哥 AI 工作室销售系统",
+  "short_name": "生意手账",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f5f6f3",
+  "theme_color": "#166b55",
+  "icons": [
+    {
+      "src": "octopus.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "envId": "REPLACE_WITH_YOUR_ENV_ID",
+  "functionRoot": "cloudfunctions",
+  "functions": [
+    {
+      "name": "sales",
+      "runtime": "Nodejs18.15",
+      "handler": "index.main",
+      "timeout": 60,
+      "memorySize": 256,
+      "envVariables": { "OWNER_UID": "REPLACE_WITH_FIXED_CLOUDBASE_UID" }
+    }
+  ]
+}

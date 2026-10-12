@@ -1,0 +1,45 @@
+name: Verify and publish sales system
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: pages
+  cancel-in-progress: false
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run check
+        env:
+          VITE_CLOUDBASE_ENV_ID: ${{ vars.VITE_CLOUDBASE_ENV_ID }}
+          VITE_CLOUDBASE_REGION: ${{ vars.VITE_CLOUDBASE_REGION }}
+          VITE_CLOUDBASE_PUBLISHABLE_KEY: ${{ vars.VITE_CLOUDBASE_PUBLISHABLE_KEY }}
+          VITE_CLOUDBASE_FUNCTION: sales
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+      - uses: actions/upload-artifact@v4
+        with:
+          name: cloudbase-sales-function
+          path: cloudfunctions/sales
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/deploy-pages@v4
+        id: deployment

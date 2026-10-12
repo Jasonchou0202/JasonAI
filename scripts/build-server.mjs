@@ -1,0 +1,31 @@
+import { build } from "esbuild";
+import { mkdir, writeFile } from "node:fs/promises";
+import { resolve } from "node:path";
+await mkdir("cloudfunctions/sales", { recursive: true });
+await build({
+  entryPoints: ["server/cloud.ts"],
+  outfile: "cloudfunctions/sales/index.js",
+  bundle: true,
+  platform: "node",
+  format: "cjs",
+  target: "node18",
+  sourcemap: false,
+  logLevel: "info",
+  alias: {
+    "lodash.set": resolve("vendor/lodash-set/index.cjs"),
+    "lodash.unset": resolve("vendor/lodash-unset/index.cjs"),
+  },
+});
+await writeFile(
+  "cloudfunctions/sales/package.json",
+  JSON.stringify(
+    {
+      name: "zhangyuge-sales-function",
+      version: "1.0.0",
+      private: true,
+      main: "index.js",
+    },
+    null,
+    2,
+  ) + "\n",
+);
