@@ -645,6 +645,20 @@ label small {
   font-size: 10px;
   flex-wrap: wrap;
 }
+.push-settings { margin-bottom: 24px; padding-bottom: 22px; }
+.push-settings h2 { display: flex; align-items: center; gap: 9px; }
+.push-settings > p, .push-settings > small, .push-settings > .form-actions, .push-settings > .error-note { margin: 14px 24px; }
+.push-settings > small { display: block; line-height: 1.8; }
+.push-guide { display: flex; gap: 14px; margin: 0 24px; padding: 18px; background: var(--light); border-radius: 12px; }
+.push-guide svg { flex-shrink: 0; color: var(--green); }
+.push-guide p { line-height: 1.8; font-size: 13px; margin: 6px 0 0; color: #617369; }
+.push-notice { color: var(--green); line-height: 1.8; font-size: 13px; }
+.push-settings .form-actions { flex-wrap: wrap; }
+@media (max-width: 680px) {
+  .mobile-nav { grid-template-columns: repeat(4, 1fr); }
+  .push-settings > p, .push-settings > small, .push-settings > .form-actions, .push-settings > .error-note { margin-left: 16px; margin-right: 16px; }
+  .push-guide { margin-left: 16px; margin-right: 16px; padding: 13px; }
+}
 .chart-summary > strong {
   font-family: "Manrope", sans-serif;
   font-size: 21px;

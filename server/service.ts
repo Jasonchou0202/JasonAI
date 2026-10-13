@@ -6,7 +6,22 @@ import type {
   ImportBatch,
   Backup,
   Filters,
+  Customer,
+  CustomerTask,
 } from "../src/domain/model";
+import {
+  customerId,
+  resolveCustomerId,
+  customerAliases,
+  customerProducts,
+  customerRanking,
+  monthSales,
+} from "../src/domain/customers";
+import {
+  filterTasks,
+  validateTaskInput,
+  utcInstant,
+} from "../src/domain/tasks";
 import {
   validateSale,
   validateProduct,
@@ -18,7 +33,14 @@ import {
 import { today, validDate } from "../src/domain/dates";
 import { signature, validateBackup } from "../src/domain/import";
 
-export type Collection = "sales" | "products" | "batches";
+export type Collection =
+  | "sales"
+  | "products"
+  | "batches"
+  | "customers"
+  | "tasks"
+  | "subscriptions"
+  | "deliveries";
 export interface Transaction {
   get<T>(collection: Collection, id: string): Promise<T | null>;
   put<T>(collection: Collection, id: string, value: T): Promise<void>;
@@ -35,6 +57,7 @@ export interface Context {
 }
 interface Ledger {
   hasSales: boolean;
+  hasData?: boolean;
   restoreId?: string | null;
 }
 export const CHUNK_SIZE = 20;
@@ -75,6 +98,110 @@ async function visible(store: Store): Promise<Sale[]> {
     batches.filter((b) => b.status === "complete").map((b) => b.id),
   );
   return rows.filter((r) => !r.importBatch || complete.has(r.importBatch));
+}
+async function ensureCustomer(
+  tx: Transaction,
+  name: string,
+  ctx: Context,
+  time: string,
+): Promise<Customer | null> {
+  const id = await customerId(name, ctx.hash);
+  if (!id) return null;
+  const old = await tx.get<Customer>("customers", id);
+  if (old) {
+    if (old.name !== name) throw new Error("客户编号冲突");
+    return old;
+  }
+  const customer: Customer = {
+    id,
+    name,
+    mergedInto: null,
+    revision: 1,
+    createdAt: time,
+    updatedAt: time,
+  };
+  await tx.put("customers", id, customer);
+  return customer;
+}
+/** Includes deleted and pending historical sales; exact original text is the identity. */
+async function initializeCustomers(
+  store: Store,
+  ctx: Context,
+  time: string,
+): Promise<Customer[]> {
+  await writable(store);
+  const [sales, customers] = await Promise.all([
+    store.list<Sale>("sales"),
+    store.list<Customer>("customers"),
+  ]);
+  const names = new Set(customers.map((c) => c.name));
+  const missing = [
+    ...new Set(
+      sales.map((s) => s.customer).filter((n) => n.trim() && !names.has(n)),
+    ),
+  ];
+  if (!missing.length) return customers;
+  // Disjoint batches only read the shared ledger; at most four transactions run
+  // together. Each transaction still serializes its own database operations.
+  const parallelBatches = 4;
+  for (let i = 0; i < missing.length; i += CHUNK_SIZE * parallelBatches) {
+    const batches = Array.from({ length: parallelBatches }, (_, batch) =>
+      missing.slice(i + batch * CHUNK_SIZE, i + (batch + 1) * CHUNK_SIZE),
+    ).filter((batch) => batch.length);
+    const results = await Promise.allSettled(
+      batches.map((names) =>
+        store.transaction(async (tx) => {
+          await writable(tx);
+          for (const name of names) await ensureCustomer(tx, name, ctx, time);
+        }),
+      ),
+    );
+    const failure = results.find((result) => result.status === "rejected");
+    if (failure?.status === "rejected") throw failure.reason;
+  }
+  return store.list<Customer>("customers");
+}
+async function customerRoot(
+  tx: Transaction,
+  id: string,
+  forbidden?: string,
+): Promise<Customer> {
+  const seen = new Set<string>();
+  for (;;) {
+    if (id === forbidden) throw new Error("客户不能合并到自己或形成循环");
+    if (seen.has(id)) throw new Error("客户合并形成循环");
+    seen.add(id);
+    const c = await tx.get<Customer>("customers", id);
+    if (!c) throw new Error("客户不存在");
+    if (!c.mergedInto) return c;
+    id = c.mergedInto;
+  }
+}
+interface MutationReceipt<T> {
+  fingerprint: string;
+  result: T;
+}
+/** Durable receipts keep older retries harmless even after later edits. */
+async function mutation<T>(
+  tx: Transaction,
+  ctx: Context,
+  request: unknown,
+  action: string,
+  input: unknown,
+  apply: () => Promise<T>,
+): Promise<T> {
+  const requestId = recordId(request),
+    id = "mutation_" + (await ctx.hash(requestId));
+  const fingerprint = await ctx.hash(JSON.stringify([action, input]));
+  const prior = await tx.get<MutationReceipt<T>>("batches", id);
+  if (prior) {
+    if (prior.fingerprint !== fingerprint)
+      throw new Error("请求编号已用于其他修改，请刷新后重试");
+    return prior.result;
+  }
+  const result = await apply();
+  await tx.put("batches", id, { fingerprint, result });
+  return result;
 }
 export async function execute(
   store: Store,
@@ -117,6 +244,193 @@ export async function execute(
             .filter(Boolean),
         ),
       ].sort();
+    case "customers.list":
+      return (await initializeCustomers(store, ctx, now())).sort(
+        (a, b) => a.name.localeCompare(b.name) || a.id.localeCompare(b.id),
+      );
+    case "customers.ranking": {
+      const customers = await initializeCustomers(store, ctx, now());
+      return customerRanking(customers, await visible(store), p.month);
+    }
+    case "customers.detail": {
+      const id = recordId(p.id),
+        customers = await initializeCustomers(store, ctx, now());
+      const root = resolveCustomerId(customers, id),
+        customer = customers.find((c) => c.id === root)!;
+      const aliases = customerAliases(customers, root),
+        names = new Set([customer, ...aliases].map((c) => c.name));
+      const sales = monthSales(await visible(store), p.month).filter((s) =>
+        names.has(s.customer),
+      );
+      return {
+        customer,
+        aliases: aliases.map((c) => c.name),
+        totals: totals(sales),
+        products: customerProducts(sales),
+        sales,
+      };
+    }
+    case "customers.merge":
+    case "customers.unmerge": {
+      await initializeCustomers(store, ctx, now());
+      const sourceId = recordId(p.sourceId ?? p.id);
+      const targetId =
+        action === "customers.merge" ? recordId(p.targetId) : null;
+      return store.transaction(async (tx) => {
+        await writable(tx);
+        return mutation(
+          tx,
+          ctx,
+          p.requestId,
+          action,
+          { sourceId, targetId, revision: p.revision },
+          async () => {
+            const source = await tx.get<Customer>("customers", sourceId);
+            if (!source) throw new Error("客户不存在");
+            if (source.revision !== p.revision)
+              throw new Error("客户已在另一处修改，请刷新后重试");
+            // Preserve the chosen redirect, including subtrees, so an unmerge restores the original IDs.
+            if (targetId) {
+              await customerRoot(tx, targetId, sourceId);
+            }
+            const row: Customer = {
+              ...source,
+              mergedInto: targetId,
+              updatedAt: now(),
+              revision: source.revision + 1,
+              lastMutation: recordId(p.requestId),
+            };
+            await tx.put("customers", sourceId, row);
+            return row;
+          },
+        );
+      });
+    }
+    case "tasks.list": {
+      const customers = await initializeCustomers(store, ctx, now());
+      return filterTasks(await store.list<CustomerTask>("tasks"), customers, p);
+    }
+    case "tasks.get": {
+      await writable(store);
+      const row = await store.get<CustomerTask>("tasks", recordId(p.id));
+      if (!row) throw new Error("日程不存在");
+      return row;
+    }
+    case "tasks.create": {
+      await initializeCustomers(store, ctx, now());
+      const id = recordId(p.requestId),
+        input = validateTaskInput(p.task ?? p);
+      return store.transaction(async (tx) => {
+        const ledger = await writable(tx);
+        return mutation(tx, ctx, id, action, input, async () => {
+          if (await tx.get<CustomerTask>("tasks", id))
+            throw new Error("日程编号已存在");
+          await customerRoot(tx, input.customerId);
+          const time = utcInstant(now());
+          const task: CustomerTask = {
+            ...input,
+            id,
+            completedAt: null,
+            deletedAt: null,
+            createdAt: time,
+            updatedAt: time,
+            revision: 1,
+            lastMutation: id,
+            reminderStartAt: time,
+            reminderGeneration: await ctx.hash(
+              JSON.stringify([id, time, "create"]),
+            ),
+          };
+          await tx.put("tasks", id, task);
+          await tx.put("batches", "_ledger", { ...ledger, hasData: true });
+          return task;
+        });
+      });
+    }
+    case "tasks.update":
+    case "tasks.complete":
+    case "tasks.reopen":
+    case "tasks.delete":
+    case "tasks.restore": {
+      const id = recordId(p.id),
+        requestId = recordId(p.requestId);
+      // Updates accept a full task or a partial patch; only editable input fields are applied.
+      const patch =
+        action === "tasks.update" ? (p.task ?? p.patch ?? p) : undefined;
+      const editable = [
+        "customerId",
+        "at",
+        "title",
+        "feedback",
+        "nextAction",
+        "reminder",
+      ] as const;
+      const changes: Record<string, unknown> = {};
+      if (patch !== undefined) {
+        if (!patch || typeof patch !== "object" || Array.isArray(patch))
+          throw new Error("日程格式无效");
+        for (const key of editable)
+          if (Object.hasOwn(patch, key)) changes[key] = patch[key];
+      }
+      return store.transaction(async (tx) => {
+        await writable(tx);
+        return mutation(
+          tx,
+          ctx,
+          requestId,
+          action,
+          { id, revision: p.revision, changes },
+          async () => {
+            const old = await tx.get<CustomerTask>("tasks", id);
+            if (!old) throw new Error("日程不存在");
+            if (old.revision !== p.revision)
+              throw new Error("日程已在另一处修改，请刷新后重试");
+            if (old.deletedAt && action !== "tasks.restore")
+              throw new Error("请先恢复日程");
+            const input =
+              action === "tasks.update"
+                ? validateTaskInput({ ...old, ...changes })
+                : validateTaskInput(old);
+            await customerRoot(tx, input.customerId);
+            const time = utcInstant(now());
+            const completedAt =
+              action === "tasks.complete"
+                ? (old.completedAt ?? time)
+                : action === "tasks.reopen"
+                  ? null
+                  : old.completedAt;
+            const deletedAt =
+              action === "tasks.delete"
+                ? (old.deletedAt ?? time)
+                : action === "tasks.restore"
+                  ? null
+                  : old.deletedAt;
+            const reminderChanged =
+              input.at !== old.at ||
+              input.reminder !== old.reminder ||
+              completedAt !== old.completedAt ||
+              deletedAt !== old.deletedAt;
+            const row: CustomerTask = {
+              ...old,
+              ...input,
+              completedAt,
+              deletedAt,
+              updatedAt: time,
+              revision: old.revision + 1,
+              lastMutation: requestId,
+              reminderGeneration: reminderChanged
+                ? await ctx.hash(
+                    JSON.stringify([old.reminderGeneration, requestId, action]),
+                  )
+                : old.reminderGeneration,
+              reminderStartAt: reminderChanged ? time : old.reminderStartAt,
+            };
+            await tx.put("tasks", id, row);
+            return row;
+          },
+        );
+      });
+    }
     case "products.list":
       return (await store.list<Product>("products")).sort(
         (a, b) => a.order - b.order,
@@ -152,6 +466,7 @@ export async function execute(
           };
         await tx.put("batches", "_ledger", { ...ledger, hasSales: true });
         await tx.put("sales", id, sale);
+        await ensureCustomer(tx, sale.customer, ctx, time);
         return sale;
       });
     }
@@ -189,6 +504,7 @@ export async function execute(
           lastMutation: requestId,
         };
         await tx.put("sales", id, row);
+        await ensureCustomer(tx, row.customer, ctx, row.updatedAt);
         return row;
       });
     }
@@ -277,6 +593,8 @@ export async function execute(
         );
         const processed = batch.processed + portion.length,
           done = processed === rows.length;
+        for (const name of new Set(sales.map((s) => s.customer)))
+          await ensureCustomer(tx, name, ctx, batch.createdAt);
         await Promise.all([
           ...newProducts
             .filter((_, i) => !savedProducts[i])
@@ -300,19 +618,44 @@ export async function execute(
       const batches = await store.list<ImportBatch>("batches");
       if (batches.some((b) => b.status === "pending"))
         throw new Error("请先完成正在进行的导入或恢复，再下载完整备份");
+      const customers = await initializeCustomers(store, ctx, now());
       return validateBackup({
         format: "zhangyuge-sales",
-        version: 1,
+        version: 2,
         exportedAt: now(),
         sales: await visible(store),
         products: await store.list<Product>("products"),
+        customers,
+        tasks: await store.list<CustomerTask>("tasks"),
       } satisfies Backup);
     }
     case "backup.restore": {
       const b = validateBackup(p.backup),
         digest = await ctx.hash(JSON.stringify(b)),
         id = "restore_" + digest.slice(0, 40);
-      const existing = await store.list<Sale>("sales");
+      const customers: Customer[] = b.version === 2 ? b.customers : [];
+      if (b.version === 2) {
+        for (const customer of customers)
+          if ((await customerId(customer.name, ctx.hash)) !== customer.id)
+            throw new Error("备份客户编号与原名不一致");
+      } else {
+        for (const name of new Set(
+          b.sales.map((s) => s.customer).filter((n) => n.trim()),
+        ))
+          customers.push({
+            id: (await customerId(name, ctx.hash))!,
+            name,
+            mergedInto: null,
+            revision: 1,
+            createdAt: new Date(b.exportedAt).toISOString(),
+            updatedAt: new Date(b.exportedAt).toISOString(),
+          });
+      }
+      const [existing, existingCustomers, existingTasks] = await Promise.all([
+        store.list<Sale>("sales"),
+        store.list<Customer>("customers"),
+        store.list<CustomerTask>("tasks"),
+      ]);
       return store.transaction(async (tx) => {
         const ledger = await tx.get<Ledger>("batches", "_ledger"),
           previous = await tx.get<ImportBatch>("batches", id);
@@ -321,11 +664,15 @@ export async function execute(
         if (ledger?.restoreId && ledger.restoreId !== id)
           throw new Error("请先完成另一份备份的恢复");
         if (
-          (!ledger?.restoreId && ledger?.hasSales) ||
-          existing.some((r) => r.importBatch !== id)
+          (!ledger?.restoreId && (ledger?.hasSales || ledger?.hasData)) ||
+          existing.some((r) => r.importBatch !== id) ||
+          (!previous &&
+            (existingCustomers.length > 0 || existingTasks.length > 0))
         )
           throw new Error("备份恢复仅用于空账本，现有记录不会被覆盖");
-        const count = b.products.length + b.sales.length;
+        const tasks = b.version === 2 ? b.tasks : [];
+        const count =
+          b.products.length + b.sales.length + customers.length + tasks.length;
         const batch: ImportBatch = previous || {
           id,
           fingerprint: digest,
@@ -341,12 +688,33 @@ export async function execute(
             c: "sales" as const,
             v: { ...v, importBatch: id },
           })),
+          ...customers.map((v) => ({ c: "customers" as const, v })),
+          ...tasks.map((v) => ({ c: "tasks" as const, v })),
         ];
-        const portion = objects.slice(
-            batch.processed,
-            batch.processed + CHUNK_SIZE,
-          ),
-          processed = batch.processed + portion.length,
+        const portion = await Promise.all(
+          objects
+            .slice(batch.processed, batch.processed + CHUNK_SIZE)
+            .map(async (object) => {
+              if (object.c !== "tasks") return object;
+              const { lastMutation, ...v } = object.v;
+              return {
+                c: "tasks" as const,
+                v: {
+                  ...v,
+                  reminderStartAt: utcInstant(batch.createdAt),
+                  reminderGeneration: await ctx.hash(
+                    JSON.stringify([
+                      v.reminderGeneration,
+                      id,
+                      batch.createdAt,
+                      "restore",
+                    ]),
+                  ),
+                },
+              };
+            }),
+        );
+        const processed = batch.processed + portion.length,
           done = processed === count;
         await Promise.all([
           ...portion.map((x) => tx.put(x.c, x.v.id, x.v)),
@@ -363,7 +731,10 @@ export async function execute(
         return {
           count: b.sales.length,
           done,
-          processed: Math.max(0, processed - b.products.length),
+          processed: Math.min(
+            b.sales.length,
+            Math.max(0, processed - b.products.length),
+          ),
         };
       });
     }

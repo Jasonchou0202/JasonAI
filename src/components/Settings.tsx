@@ -22,6 +22,8 @@ import type {
 import { money, moneyInput, parseMoney } from "../domain/finance";
 import { useQuery, ErrorNote, Modal, message, Loading } from "./ui";
 import { readImport, readBackup, download, downloadCsv } from "../lib/files";
+import { PushSettings } from "./PushSettings";
+import { CustomerAliases } from "./CustomerAliases";
 type CommitResult = {
   count: number;
   repeated?: boolean;
@@ -176,6 +178,8 @@ export function Settings({
           个人私密账本
         </span>
       </div>
+      <PushSettings api={api} demo={demo} />
+      <CustomerAliases api={api} version={version} onChange={onChange} />
       {(error || opError) && <ErrorNote>{error || opError}</ErrorNote>}
       <section className="panel settings-panel">
         <div className="panel-heading">
@@ -261,7 +265,7 @@ export function Settings({
           </div>
           <h2>保存一份完整备份</h2>
           <p>
-            包含销售、回收站记录和商品预设。保存为 JSON 文件，可用于恢复空账本。
+            包含销售、商品、客户别名和日程（含回收站）。保存为 JSON 文件，可用于恢复空账本；设备推送授权需重新开启。
           </p>
           <button
             className="button secondary"
@@ -409,7 +413,7 @@ export function Settings({
         >
           <p>
             这份备份包含 {backup.sales.length} 条销售记录和{" "}
-            {backup.products.length} 个商品。
+            {backup.products.length} 个商品、{backup.version === 2 ? backup.customers.length : 0} 个客户档案和 {backup.version === 2 ? backup.tasks.length : 0} 条日程。
           </p>
           <p className="subtle">
             仅允许恢复到空账本，不覆盖已有销售；回收站记录也会一并恢复。

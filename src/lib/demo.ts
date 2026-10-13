@@ -15,7 +15,7 @@ export function createDemo(): Api {
   const saved = localStorage.getItem(key);
   if (saved) {
     try {
-      store.data = JSON.parse(saved);
+      store.data = { ...store.data, ...JSON.parse(saved) };
     } catch {
       seed();
     }

@@ -10,6 +10,9 @@ artifacts/
 cloudfunctions/sales/index.js
 cloudfunctions/sales/node_modules/
 cloudfunctions/sales/package-lock.json
+cloudfunctions/reminders/index.js
+cloudfunctions/reminders/node_modules/
+cloudfunctions/reminders/package-lock.json
 *.log
 .cloudbase/
 .tcb/

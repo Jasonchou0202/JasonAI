@@ -4,6 +4,7 @@ export async function handle(
   ctx: Context,
   event: unknown,
   diagnose?: (code: string) => void,
+  extra?: (store: Store, action: string, payload: unknown) => Promise<unknown>,
 ) {
   try {
     identity(ctx);
@@ -13,7 +14,9 @@ export async function handle(
     if (typeof e.action !== "string") throw new Error("请求格式无效");
     return {
       ok: true,
-      data: await execute(store(), ctx, e.action, e.payload ?? {}),
+      data: e.action.startsWith("push.") && extra
+        ? await extra(store(), e.action, e.payload ?? {})
+        : await execute(store(), ctx, e.action, e.payload ?? {}),
     };
   } catch (error) {
     const code =

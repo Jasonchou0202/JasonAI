@@ -4,7 +4,11 @@ import type {
   ImportPreview,
   Sale,
   Backup,
+  Customer,
+  CustomerTask,
 } from "./model";
+import { customerRoots } from "./customers";
+import { utcInstant, validRecordId, validateTaskInput } from "./tasks";
 import {
   parseMoney,
   totals,
@@ -139,7 +143,7 @@ export function validateBackup(value: unknown): Backup {
   if (
     !b ||
     b.format !== "zhangyuge-sales" ||
-    b.version !== 1 ||
+    (b.version !== 1 && b.version !== 2) ||
     !Array.isArray(b.sales) ||
     !Array.isArray(b.products)
   )
@@ -192,13 +196,86 @@ export function validateBackup(value: unknown): Backup {
     !Number.isFinite(Date.parse(b.exportedAt))
   )
     throw new Error("备份时间无效");
-  return {
+  const base = {
     format: "zhangyuge-sales",
-    version: 1,
     exportedAt: b.exportedAt,
     sales,
     products,
+  } as const;
+  if (b.version === 1) return { ...base, version: 1 };
+  if (
+    !Array.isArray(b.customers) ||
+    !Array.isArray(b.tasks) ||
+    b.customers.length > 100000 ||
+    b.tasks.length > 100000
+  )
+    throw new Error("备份客户或日程无效或超出支持范围");
+  const metadata = (v: Customer | CustomerTask) => {
+    if (!validRecordId(v.id) || !Number.isInteger(v.revision) || v.revision < 1)
+      throw new Error("备份编号或版本无效");
+    utcInstant(v.createdAt);
+    utcInstant(v.updatedAt);
+    if (v.lastMutation !== undefined && !validRecordId(v.lastMutation))
+      throw new Error("备份请求编号无效");
   };
+  const customerIds = new Set<string>(),
+    names = new Set<string>();
+  const customers = b.customers.map((c): Customer => {
+    metadata(c);
+    if (
+      typeof c.name !== "string" ||
+      !c.name.trim() ||
+      c.name.length > 500 ||
+      names.has(c.name) ||
+      customerIds.has(c.id) ||
+      (c.mergedInto !== null && !validRecordId(c.mergedInto))
+    )
+      throw new Error("备份客户无效或重复");
+    customerIds.add(c.id);
+    names.add(c.name);
+    return {
+      id: c.id,
+      name: c.name,
+      mergedInto: c.mergedInto,
+      revision: c.revision,
+      createdAt: c.createdAt,
+      updatedAt: c.updatedAt,
+      ...(c.lastMutation ? { lastMutation: c.lastMutation } : {}),
+    };
+  });
+  customerRoots(customers);
+  if (sales.some((s) => s.customer.trim() && !names.has(s.customer)))
+    throw new Error("备份缺少销售客户档案");
+  const taskIds = new Set<string>();
+  const tasks = b.tasks.map((t): CustomerTask => {
+    metadata(t);
+    const input = validateTaskInput(t);
+    if (
+      taskIds.has(t.id) ||
+      !customerIds.has(t.customerId) ||
+      typeof t.reminderGeneration !== "string" ||
+      !t.reminderGeneration ||
+      t.reminderGeneration.length > 200
+    )
+      throw new Error("备份日程无效或重复");
+    taskIds.add(t.id);
+    if (t.completedAt !== null) utcInstant(t.completedAt);
+    if (t.deletedAt !== null) utcInstant(t.deletedAt);
+    utcInstant(t.reminderStartAt);
+    return {
+      ...input,
+      id: t.id,
+      revision: t.revision,
+      createdAt: t.createdAt,
+      updatedAt: t.updatedAt,
+      completedAt: t.completedAt,
+      deletedAt: t.deletedAt,
+      reminderGeneration: t.reminderGeneration,
+      reminderStartAt: t.reminderStartAt,
+      ...(t.lastMutation ? { lastMutation: t.lastMutation } : {}),
+    };
+  });
+  return { ...base, version: 2, customers, tasks };
 }
 export function exportCsv(rows: Sale[]): string {
   const cell = (v: unknown) => {

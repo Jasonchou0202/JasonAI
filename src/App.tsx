@@ -12,20 +12,24 @@ import {
   CheckCircle2,
   Sparkles,
   RefreshCw,
+  CalendarDays,
 } from "lucide-react";
 import { Dashboard } from "./components/Dashboard";
 import { SaleForm } from "./components/SaleForm";
 import { Details } from "./components/Details";
 import { Settings } from "./components/Settings";
+import { Calendar } from "./components/Calendar";
+import { CustomerDetails } from "./components/CustomerDetails";
+import { stopPush } from "./lib/notifications";
 import { Brand, ErrorNote, Loading, message } from "./components/ui";
 import type { Filters, Sale } from "./domain/model";
 import { cloudApi, configured, session, login, logout } from "./lib/cloud";
 import { createDemo } from "./lib/demo";
 import { routeParams, readFilters, filterQuery } from "./lib/routes";
-type Page = "dashboard" | "entry" | "details" | "settings";
+type Page = "dashboard" | "entry" | "details" | "settings" | "calendar" | "customer";
 function readRoute(): Page {
   const p = location.hash.replace("#/", "").split("?")[0];
-  return ["entry", "details", "settings"].includes(p)
+  return ["entry", "details", "settings", "calendar", "customer"].includes(p)
     ? (p as Page)
     : "dashboard";
 }
@@ -48,7 +52,12 @@ export default function App() {
       .then(async (ok) => {
         if (ok) {
           await cloudApi.call("session");
-          if (alive) setMode("cloud");
+          if (alive) {
+            setMode("cloud");
+            const pending = sessionStorage.getItem("zhangyuge-return-route");
+            if (pending && /^#\/(calendar|customer)(\?|$)/.test(pending)) location.hash = pending;
+            sessionStorage.removeItem("zhangyuge-return-route");
+          }
         } else if (alive)
           setMode(
             sessionStorage.getItem("zhangyuge-demo") === "true"
@@ -137,13 +146,21 @@ export default function App() {
     setEdit(s);
     go("entry", "id=" + encodeURIComponent(s.id));
   }
+  function customer(id: string, month?: string) {
+    go("customer", new URLSearchParams({ id, ...(month ? { month } : {}) }).toString());
+  }
   async function signOut() {
     try {
-      if (mode === "cloud") await logout();
+      let reminderWarning = "";
+      if (mode === "cloud") {
+        try { await stopPush(api); }
+        catch { reminderWarning = "已退出登录；云端提醒撤销未确认，请联网后在设置中重试关闭提醒。"; }
+        await logout();
+      }
       sessionStorage.removeItem("zhangyuge-demo");
       setMode("login");
       setEdit(undefined);
-      setError("");
+      setError(reminderWarning);
       go("dashboard");
     } catch (e) {
       setToast(message(e));
@@ -299,6 +316,9 @@ export default function App() {
             <ReceiptText size={19} />
             销售明细
           </button>
+          <button className={page === "calendar" || page === "customer" ? "active" : ""} onClick={() => go("calendar")}>
+            <CalendarDays size={19} />客户日程
+          </button>
         </nav>
         <div className="sidebar-bottom">
           <div className="sidebar-note">
@@ -344,6 +364,8 @@ export default function App() {
                   entry: edit ? "编辑销售" : "记一笔",
                   details: "销售明细",
                   settings: "账本设置",
+                  calendar: "客户日程",
+                  customer: "客户详情",
                 }[page]
               }
             </strong>
@@ -392,6 +414,7 @@ export default function App() {
               version={version}
               onNew={newSale}
               onEdit={editSale}
+              onCustomer={customer}
               onFilter={(f) => {
                 setFilters(f);
                 go("details", filterQuery(f));
@@ -437,6 +460,8 @@ export default function App() {
               onLogout={() => void signOut()}
             />
           )}
+          {page === "calendar" && <Calendar api={api} version={version} mode={mode} onChange={changed} onCustomer={customer} taskId={routeParams().get("task") || undefined} />}
+          {page === "customer" && <CustomerDetails key={routeParams().get("id")} api={api} version={version} mode={mode} id={routeParams().get("id") || ""} month={routeParams().get("month") || undefined} onChange={changed} onBack={() => go("dashboard")} onCustomer={customer} onEditSale={editSale} />}
           <footer className="app-footer">
             <span>章鱼哥 AI 工作室</span>
             <span>认真记账，轻松经营。</span>
@@ -470,6 +495,7 @@ export default function App() {
           <ReceiptText size={20} />
           <span>明细</span>
         </button>
+        <button className={page === "calendar" || page === "customer" ? "active" : ""} onClick={() => go("calendar")}><CalendarDays size={20} /><span>日程</span></button>
       </nav>
       {toast && (
         <div className="toast" role="status">

@@ -4,6 +4,10 @@ export class MemoryStore implements Store {
     sales: {},
     products: {},
     batches: {},
+    customers: {},
+    tasks: {},
+    subscriptions: {},
+    deliveries: {},
   };
   private queue = Promise.resolve();
   async get<T>(c: Collection, id: string): Promise<T | null> {

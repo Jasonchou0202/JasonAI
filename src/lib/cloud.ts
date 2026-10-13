@@ -48,6 +48,7 @@ export async function session() {
   return Boolean(r.data?.session);
 }
 export async function login() {
+  if (/^#\/(calendar|customer)(\?|$)/.test(location.hash)) sessionStorage.setItem("zhangyuge-return-route", location.hash);
   const app = await cloud();
   const { error } = await app.auth.signInWithOAuth({
     provider: "github",

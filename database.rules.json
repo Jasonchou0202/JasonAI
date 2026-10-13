@@ -1,5 +1,9 @@
 {
   "sales": { "read": false, "write": false },
   "products": { "read": false, "write": false },
-  "batches": { "read": false, "write": false }
+  "batches": { "read": false, "write": false },
+  "customers": { "read": false, "write": false },
+  "tasks": { "read": false, "write": false },
+  "subscriptions": { "read": false, "write": false },
+  "deliveries": { "read": false, "write": false }
 }

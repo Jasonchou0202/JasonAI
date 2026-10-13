@@ -19,18 +19,21 @@ import type {
 import { money, totals } from "../domain/finance";
 import { today, periodRange } from "../domain/dates";
 import { useQuery, ErrorNote, Loading, Money, Empty, SaleRows } from "./ui";
+import { CustomerRanking } from "./CustomerRanking";
 export function Dashboard({
   api,
   version,
   onFilter,
   onNew,
   onEdit,
+  onCustomer,
 }: {
   api: Api;
   version: number;
   onFilter: (f: Filters) => void;
   onNew: () => void;
   onEdit: (r: Sale) => void;
+  onCustomer: (id: string, month: string) => void;
 }) {
   const { data, error, loading } = useQuery<Data>(
     api,
@@ -211,6 +214,7 @@ export function Dashboard({
           </div>
         </div>
       </section>
+      <CustomerRanking api={api} version={version} onCustomer={onCustomer} />
       <div className="dashboard-bottom">
         <section className="panel">
           <div className="panel-heading">

@@ -29,3 +29,19 @@ await writeFile(
     2,
   ) + "\n",
 );
+await mkdir("cloudfunctions/reminders", { recursive: true });
+await build({
+  entryPoints: ["server/reminder-cloud.ts"],
+  outfile: "cloudfunctions/reminders/index.js",
+  bundle: true,
+  platform: "node",
+  format: "cjs",
+  target: "node20",
+  sourcemap: false,
+  logLevel: "info",
+  alias: {
+    "lodash.set": resolve("vendor/lodash-set/index.cjs"),
+    "lodash.unset": resolve("vendor/lodash-unset/index.cjs"),
+  },
+});
+await writeFile("cloudfunctions/reminders/package.json", JSON.stringify({ name: "zhangyuge-reminders-function", version: "1.0.0", private: true, main: "index.js" }, null, 2) + "\n");

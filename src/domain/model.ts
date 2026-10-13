@@ -75,13 +75,72 @@ export interface ImportPreview {
   digest: string;
   duplicateRows: number[];
 }
-export interface Backup {
+export interface Customer {
+  id: string;
+  name: string;
+  mergedInto: string | null;
+  revision: number;
+  createdAt: string;
+  updatedAt: string;
+  lastMutation?: string;
+}
+export interface CustomerProduct {
+  name: string;
+  profit: number;
+  count: number;
+}
+export interface CustomerRanking {
+  rank: number;
+  customerId: string;
+  name: string;
+  aliases: string[];
+  products: CustomerProduct[];
+  totals: Totals;
+}
+export interface CustomerRankingResult {
+  items: CustomerRanking[];
+  unassigned: Totals;
+  totals: Totals;
+}
+export interface CustomerDetail {
+  customer: Customer;
+  aliases: string[];
+  totals: Totals;
+  products: CustomerProduct[];
+  sales: Sale[];
+}
+export interface CustomerTaskInput {
+  customerId: string;
+  at: string;
+  title: string;
+  feedback: string;
+  nextAction: string;
+  reminder: "both" | "due" | "off";
+}
+export interface CustomerTask extends CustomerTaskInput {
+  id: string;
+  completedAt: string | null;
+  deletedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+  revision: number;
+  lastMutation?: string;
+  reminderGeneration: string;
+  reminderStartAt: string;
+}
+export interface BackupV1 {
   format: "zhangyuge-sales";
   version: 1;
   exportedAt: string;
   sales: Sale[];
   products: Product[];
 }
+export interface BackupV2 extends Omit<BackupV1, "version"> {
+  version: 2;
+  customers: Customer[];
+  tasks: CustomerTask[];
+}
+export type Backup = BackupV1 | BackupV2;
 export interface ImportBatch {
   id: string;
   fingerprint: string;
@@ -95,6 +154,8 @@ export interface AppState {
   sales: Sale[];
   products: Product[];
   batches: ImportBatch[];
+  customers?: Customer[];
+  tasks?: CustomerTask[];
 }
 export interface SalesPage {
   items: Sale[];
