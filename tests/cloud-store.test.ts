@@ -37,6 +37,56 @@ it("reads beyond a CloudBase database page without truncating statistics", async
   };
   expect(await new CloudStore(db).list("sales")).toHaveLength(305);
 });
+it("serializes transaction operations and stops queued writes after a failed operation", async () => {
+  let active = 0,
+    maximum = 0,
+    fail = false;
+  const writes: string[] = [];
+  const operation = async (id: string, write: boolean) => {
+    active += 1;
+    maximum = Math.max(maximum, active);
+    await Promise.resolve();
+    await Promise.resolve();
+    active -= 1;
+    if (fail) throw new Error("database failure");
+    if (write) writes.push(id);
+    return { data: { _id: id, id } };
+  };
+  const db = {
+    runTransaction: (fn: (tx: any) => unknown) =>
+      fn({
+        collection: () => ({
+          doc: (id: string) => ({
+            get: () => operation(id, false),
+            set: () => operation(id, true),
+          }),
+        }),
+      }),
+  };
+  const store = new CloudStore(db);
+  await store.transaction(async (tx) => {
+    await Promise.all(
+      Array.from({ length: 20 }, (_, i) => tx.get("sales", String(i))),
+    );
+    await Promise.all(
+      Array.from({ length: 20 }, (_, i) =>
+        tx.put("sales", String(i), { id: String(i) }),
+      ),
+    );
+  });
+  expect(maximum).toBe(1);
+  expect(writes).toHaveLength(20);
+  fail = true;
+  await expect(
+    store.transaction((tx) =>
+      Promise.all([
+        tx.get("sales", "bad"),
+        tx.put("sales", "must-not-write", {}),
+      ]),
+    ),
+  ).rejects.toThrow("database failure");
+  expect(writes).not.toContain("must-not-write");
+});
 it("patched legacy lodash adapters preserve operations and block prototype pollution", () => {
   const value = {};
   set(value, "a.b", 1);

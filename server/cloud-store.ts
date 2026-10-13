@@ -33,14 +33,31 @@ export class CloudStore implements Store {
     }
   }
   async transaction<T>(fn: (tx: Transaction) => Promise<T>): Promise<T> {
-    return this.db.runTransaction((transaction: any) =>
-      fn({
-        get: async <V>(c: Collection, id: string) =>
-          documentData<V>(await transaction.collection(c).doc(id).get()),
-        put: async <V>(c: Collection, id: string, value: V) => {
-          await transaction.collection(c).doc(id).set(value);
-        },
-      }),
-    );
+    return this.db.runTransaction(async (transaction: any) => {
+      // A database transaction must not issue concurrent operations.
+      let pending: Promise<unknown> = Promise.resolve();
+      const serial = <V>(operation: () => Promise<V>): Promise<V> => {
+        const result = pending.then(operation);
+        pending = result;
+        return result;
+      };
+      try {
+        const result = await fn({
+          get: <V>(c: Collection, id: string) =>
+            serial(async () =>
+              documentData<V>(await transaction.collection(c).doc(id).get()),
+            ),
+          put: <V>(c: Collection, id: string, value: V) =>
+            serial(async () => {
+              await transaction.collection(c).doc(id).set(value);
+            }),
+        });
+        await pending;
+        return result;
+      } catch (error) {
+        await pending.catch(() => undefined);
+        throw error;
+      }
+    });
   }
 }
