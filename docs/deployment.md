@@ -4,11 +4,15 @@
 
 本人登录 [CloudBase 控制台](https://tcb.cloud.tencent.com/dev)，创建可用的免费环境或选择已有环境，使用文档数据库。先查看控制台当前免费额度和到期时间；不要默认长期免费。收费前由本人决定。[官方计费](https://tcb.cloud.tencent.com/pricing)
 
+当前免费体验版控制台限制普通云函数执行时间为 3 秒，且添加外部 Web 安全域名要求升级套餐。GitHub Pages 的云端登录因此不能直接假定免费可用。可先验证环境已允许的默认静态托管域名，使用预构建的 `dist/` 上传，部署路径为 `/JasonAI`，安装和构建命令留空；若环境不支持该方案，应由本人决定是否升级，不自动购买。上线前必须实测全部接口和导入耗时。
+
+默认静态托管域名仅用于虚构数据验收，不作为正式记账入口。[官方限制说明](https://docs.cloudbase.net/service/alias)要求正式浏览器网站使用自定义域名。本项目正式入口仍使用 GitHub Pages；需要套餐允许添加 Pages 的安全域名，购买前核对本人预算、实际总价和自动续费选项。
+
 创建三个集合：`sales`、`products`、`batches`。每个集合设置“所有用户不可读写”，高级规则为 `{"read":false,"write":false}`（分别应用，`database.rules.json` 是集合规则清单）。仅云函数服务端 SDK 使用管理权限读写。不要开放数据库 HTTP 接口或客户端写权限。
 
 ## 2. GitHub 身份源
 
-在环境的身份认证中配置 GitHub OAuth。按控制台显示的实际 callback URL 创建 GitHub OAuth App；Homepage 使用 `https://jasonchou0202.github.io/JasonAI/`。OAuth Client Secret 只填 CloudBase 控制台，不能填前端、Actions 变量或提交源码。不申请 repo/repository 或组织管理权限。
+在环境的身份认证中配置 GitHub OAuth。此项目使用 SDK V3 `signInWithOAuth` 和 `detectSessionInUrl`，GitHub OAuth App 的 Redirect URI 必须与前端传入的 `redirectTo` 一致，即实际网站的 `https://<网站域名>/JasonAI/`；不要把其他登录流程使用的 `/__auth/` 当作本项目回调。Homepage 使用实际入口网址。OAuth Client Secret 只填 CloudBase 控制台，不能填前端、Actions 变量或提交源码。不申请 repo/repository 或组织管理权限。
 
 安全来源配置 `https://jasonchou0202.github.io`；允许重定向至 `https://jasonchou0202.github.io/JasonAI/`。如测试 localhost，另加 `http://127.0.0.1:5173`，上线后可以移除。
 

@@ -29,7 +29,14 @@ export const cloudApi: Api = {
     const result = response.result;
     if (!result || typeof result.ok !== "boolean")
       throw new Error("后台响应异常，请稍后重试");
-    if (!result.ok) throw new Error(result.error || "操作未完成");
+    if (!result.ok) {
+      if (
+        typeof result.code === "string" &&
+        /^[A-Za-z0-9_.-]{1,100}$/.test(result.code)
+      )
+        console.warn("云端错误码", result.code);
+      throw new Error(result.error || "操作未完成");
+    }
     return result.data as T;
   },
 };

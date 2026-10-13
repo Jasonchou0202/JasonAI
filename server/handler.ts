@@ -1,5 +1,10 @@
 import { execute, identity, type Context, type Store } from "./service";
-export async function handle(store: () => Store, ctx: Context, event: unknown) {
+export async function handle(
+  store: () => Store,
+  ctx: Context,
+  event: unknown,
+  diagnose?: (code: string) => void,
+) {
   try {
     identity(ctx);
     if (!event || typeof event !== "object" || Array.isArray(event))
@@ -11,9 +16,16 @@ export async function handle(store: () => Store, ctx: Context, event: unknown) {
       data: await execute(store(), ctx, e.action, e.payload ?? {}),
     };
   } catch (error) {
+    const code =
+      error && typeof error === "object" && "code" in error
+        ? String(error.code)
+        : "";
+    const safeCode = /^[A-Za-z0-9_.-]{1,100}$/.test(code) ? code : undefined;
+    if (safeCode) diagnose?.(safeCode);
     const text = error instanceof Error ? error.message : "";
     return {
       ok: false,
+      ...(safeCode ? { code: safeCode } : {}),
       error:
         /[\u4e00-\u9fa5]/.test(text) && text.length <= 200
           ? text

@@ -52,6 +52,35 @@ function imports(count: number): ImportRow[] {
   }));
 }
 describe("private cloud business operations", () => {
+  it("diagnoses SDK errors without exposing payload or provider messages", async () => {
+    const codes: string[] = [];
+    const store = new MemoryStore();
+    store.list = async () => {
+      throw { code: "DATABASE_TRANSACTION_FAIL", message: "private payload" };
+    };
+    const result = await handle(
+      () => store,
+      context,
+      { action: "dashboard" },
+      (code) => codes.push(code),
+    );
+    expect(result).toEqual({
+      ok: false,
+      code: "DATABASE_TRANSACTION_FAIL",
+      error: "云端操作未完成，请稍后重试",
+    });
+    expect(codes).toEqual(["DATABASE_TRANSACTION_FAIL"]);
+    store.list = async () => {
+      throw { code: "private payload" };
+    };
+    await handle(
+      () => store,
+      context,
+      { action: "dashboard" },
+      (code) => codes.push(code),
+    );
+    expect(codes).toHaveLength(1);
+  });
   it("rejects every action for guests and other accounts without touching the database", async () => {
     for (const uid of [null, "other"])
       for (const action of [

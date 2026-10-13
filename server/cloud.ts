@@ -14,5 +14,6 @@ export async function main(event: unknown, context: any) {
       hash: async (value) => createHash("sha256").update(value).digest("hex"),
     },
     event,
+    (code) => console.warn("sales request failed", code),
   );
 }

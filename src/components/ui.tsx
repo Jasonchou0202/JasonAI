@@ -9,8 +9,12 @@ import {
 import type { Api, Sale } from "../domain/model";
 import { money } from "../domain/finance";
 import { dateLabel } from "../domain/dates";
-export const message = (e: unknown) =>
-  e instanceof Error ? e.message : "操作未完成，请重试";
+export function message(e: unknown) {
+  const text = e instanceof Error ? e.message : "";
+  if (/fetch|network|timeout|timed out/i.test(text))
+    return "连接暂时失败，请稍后重试。未保存的草稿仍在本机。";
+  return /[\u4e00-\u9fa5]/.test(text) ? text : "操作未完成，请稍后重试";
+}
 export function useQuery<T>(
   api: Api,
   action: string,
@@ -25,7 +29,6 @@ export function useQuery<T>(
     let current = true;
     setLoading(true);
     setError("");
-    setData(undefined);
     setData(undefined);
     api
       .call<T>(action, JSON.parse(encoded))
