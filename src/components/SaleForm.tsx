@@ -308,7 +308,7 @@ export function SaleForm({
               maxLength={2000}
             />
           </section>
-          {error && <ErrorNote>{error}。未保存的内容仍在草稿中。</ErrorNote>}
+          {error && <ErrorNote>{error}</ErrorNote>}
           <div className="form-actions">
             <button type="submit" disabled={busy} className="button primary">
               <Check size={17} />
