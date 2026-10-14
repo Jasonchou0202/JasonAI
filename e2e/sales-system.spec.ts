@@ -74,7 +74,11 @@ function fixture() {
     sales,
     customers,
     tasks,
-    products: {},
+    products: {
+      "preset-claude": {id:"preset-claude",name:"Claude Max 5x",price:12000,cost:3000,active:true,order:0},
+      "preset-chatgpt": {id:"preset-chatgpt",name:"ChatGPT Plus",price:18000,cost:9000,active:true,order:1},
+      "acceptance-product": {id:"acceptance-product",name:"虚构导入验收商品",price:100,cost:0,active:true,order:2},
+    },
     batches: {},
     subscriptions: {},
     deliveries: {},
@@ -302,4 +306,48 @@ test("offline save keeps the draft and retry creates exactly one sale", async ({
   );
   expect(rows).toHaveLength(1);
   expect((rows[0] as any).revenue - (rows[0] as any).cost).toBe(1033);
+});
+test("sales customer search opens schedule management", async ({page}) => {
+  await page.goto("./#/details");
+  await page.getByRole("textbox",{name:"搜索销售记录"}).fill("客户01");
+  const customerLinks=page.getByLabel("查询客户的日程管理");
+  await expect(customerLinks).toContainText("客户01 · 日程管理");
+  await customerLinks.getByRole("button",{name:"客户01 · 日程管理",exact:true}).click();
+  await expect(page).toHaveURL(new RegExp(`customer\\?id=${hash("客户01")}&month=all`));
+  await expect(page.getByRole("heading",{name:/今日日程/})).toBeVisible();
+});
+test("calendar supports both name search and dropdown, and prioritizes today's tasks",async ({page})=>{
+  await page.goto("./#/calendar");
+  const todayPanel=page.locator(".customer-today");
+  await expect(todayPanel.locator("article")).toHaveCount(3);
+  await page.getByRole("searchbox",{name:"输入客户名字查找日程"}).fill("客户02");
+  await expect(todayPanel).toContainText("今天没有日程");
+  await page.getByRole("combobox",{name:"按客户查看",exact:true}).selectOption(hash("客户01"));
+  await expect(page.getByRole("searchbox",{name:"输入客户名字查找日程"})).toHaveValue("");
+  await expect(todayPanel.locator("article")).toHaveCount(3);
+  const history=page.locator(".customer-history .customer-task-list article");
+  await expect(history.nth(0)).toContainText("验收-late");
+  await expect(history.nth(2)).toContainText("验收-done");
+  await expect(history.nth(3)).toContainText("验收-tomorrow");
+});
+test("full directories, grouped product dropdown and recoverable acceptance cleanup",async ({page})=>{
+  await page.goto("./#/settings");
+  const directory=page.locator(".catalog-directory");
+  await expect(directory.getByRole("button",{name:"日程管理",exact:true}).first()).toBeVisible();
+  await directory.getByRole("button",{name:"所有商品",exact:true}).click();
+  await expect(directory).toContainText("年卡");
+  await expect(directory.locator(".catalog-product-group h3").first()).toContainText("ChatGPT");
+  const cleanup=page.locator(".catalog-cleanup");
+  await cleanup.getByRole("button",{name:"清理验收客户与商品",exact:true}).click();
+  await expect(cleanup).toContainText("没有需要清理");
+  await expect(directory).not.toContainText("虚构导入验收商品");
+  await cleanup.getByText("已删除清单（1 项）",{exact:true}).click();
+  await cleanup.getByRole("button",{name:"恢复",exact:true}).click();
+  await expect(directory).toContainText("虚构导入验收商品");
+  await page.goto("./#/entry");
+  await page.getByRole("combobox",{name:"下拉选择商品",exact:true}).selectOption("ChatGPT Plus");
+  await expect(page.getByLabel(/商品名称/)).toHaveValue("ChatGPT Plus");
+  await expect(page.getByLabel(/销售额/)).toHaveValue("180.00");
+  await page.getByLabel(/商品名称/).fill("新手动商品");
+  await expect(page.getByRole("combobox",{name:"下拉选择商品",exact:true})).toHaveValue("");
 });

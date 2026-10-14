@@ -1,6 +1,21 @@
 import type { Customer, CustomerTask, CustomerTaskInput } from "./model";
 import { customerRoots } from "./customers";
-import { validDate } from "./dates";
+import { validDate, today } from "./dates";
+export function sortTasksTodayFirst(
+  tasks: CustomerTask[],
+  day: string,
+): CustomerTask[] {
+  const date = (task: CustomerTask) => today(new Date(task.at));
+  const priority = (task: CustomerTask) =>
+    date(task) === day ? 0 : date(task) > day ? 1 : 2;
+  return [...tasks].sort(
+    (a, b) =>
+      priority(a) - priority(b) ||
+      (priority(a) === 2 ? date(b).localeCompare(date(a)) : 0) ||
+      a.at.localeCompare(b.at) ||
+      a.id.localeCompare(b.id),
+  );
+}
 
 export function validRecordId(value: unknown): value is string {
   return typeof value === "string" && /^[\w-]{1,128}$/.test(value);

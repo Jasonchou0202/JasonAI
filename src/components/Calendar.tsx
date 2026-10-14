@@ -12,6 +12,8 @@ import {
 } from "lucide-react";
 import type { Api } from "../domain/model";
 import { displayCustomerName } from "../domain/customers";
+import { customerChoices, matchesCustomer } from "../domain/catalog";
+import { sortTasksTodayFirst } from "../domain/tasks";
 import {
   beijingDay,
   beijingInput,
@@ -72,6 +74,7 @@ function CustomerCalendar({
   const [focus, setFocus] = useState<CustomerTask>();
   const [search, setSearch] = useState("");
   const [filterCustomerId, setFilterCustomerId] = useState("");
+  const [customerSearch, setCustomerSearch] = useState("");
   const filterId = useId();
   const [history, setHistory] = useState<"all" | "completed" | "deleted">(
     "all",
@@ -113,8 +116,15 @@ function CustomerCalendar({
   const today = beijingDay(new Date(now).toISOString());
   const tomorrow = dayPlus(today, 1);
   const names = new Map(customers.data?.map((c) => [c.id, c]));
+  const choices = customerChoices(customers.data || []);
+  const matchingIds = new Set(
+    choices.filter((c) => matchesCustomer(c, customerSearch)).map((c) => c.id),
+  );
+  const matchesName = (t: CustomerTask) =>
+    !customerSearch.trim() ||
+    matchingIds.has(customerRoot(customers.data || [], t.customerId));
   const activeTasks = (tasks.data || [])
-    .filter((t) => !t.deletedAt)
+    .filter((t) => !t.deletedAt && matchesName(t))
     .sort((a, b) => a.at.localeCompare(b.at));
   const grouped = new Map<string, CustomerTask[]>();
   for (const task of activeTasks) {
@@ -174,10 +184,6 @@ function CustomerCalendar({
   }
   const upcoming = [
     {
-      label: "逾期待跟进",
-      rows: activeTasks.filter((t) => !t.completedAt && Date.parse(t.at) < now),
-    },
-    {
       label: "今日待办",
       rows: activeTasks.filter(
         (t) =>
@@ -192,9 +198,14 @@ function CustomerCalendar({
         (t) => !t.completedAt && beijingDay(t.at) === tomorrow,
       ),
     },
+    {
+      label: "逾期待跟进",
+      rows: activeTasks.filter((t) => !t.completedAt && Date.parse(t.at) < now),
+    },
   ];
   const query = search.trim().toLocaleLowerCase();
   const historyRows = (history === "deleted" ? deleted.data || [] : activeTasks)
+    .filter(matchesName)
     .filter((t) => history !== "completed" || Boolean(t.completedAt))
     .filter((t) => {
       const c = names.get(t.customerId);
@@ -213,15 +224,10 @@ function CustomerCalendar({
           .toLocaleLowerCase()
           .includes(query)
       );
-    })
-    .sort((a, b) => b.at.localeCompare(a.at));
+    });
+  const orderedHistory = sortTasksTodayFirst(historyRows, today);
   const customerResults = query
-    ? customers.data?.filter((c) =>
-        [c.name, ...(c.aliases || [])]
-          .join(" ")
-          .toLocaleLowerCase()
-          .includes(query),
-      )
+    ? choices.filter((c) => matchesCustomer(c, query))
     : [];
   return (
     <div className="customer-ui customer-calendar-page">
@@ -255,30 +261,28 @@ function CustomerCalendar({
             value={filterCustomerId}
             onChange={(e) => {
               setFilterCustomerId(e.target.value);
+              setCustomerSearch("");
               setHistoryLimit(20);
             }}
           >
             <option value="">全部客户</option>
-            {customers.data
-              ?.filter((c) => !c.mergedInto)
-              .map((c) => {
-                const aliases = customers
-                  .data!.filter(
-                    (a) =>
-                      a.id !== c.id &&
-                      customerRoot(customers.data!, a.id) === c.id,
-                  )
-                  .map((a) => a.name);
-                return (
-                  <option key={c.id} value={c.id}>
-                    {displayCustomerName(c.name)}
-                    {aliases.length
-                      ? `（含 ${aliases.map(displayCustomerName).join("、")}）`
-                      : ""}
-                  </option>
-                );
-              })}
+            {choices.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name}
+              </option>
+            ))}
           </select>
+          <input
+            type="search"
+            aria-label="输入客户名字查找日程"
+            placeholder="直接输入客户名字或别名"
+            value={customerSearch}
+            onChange={(e) => {
+              setCustomerSearch(e.target.value);
+              setFilterCustomerId("");
+              setHistoryLimit(20);
+            }}
+          />
           <span className="subtle">月历、待办和历史记录同步筛选</span>
         </div>
       )}
@@ -299,6 +303,25 @@ function CustomerCalendar({
           }}
         />
       )}
+      <section className="panel customer-today">
+        <div className="panel-heading">
+          <div>
+            <h2>今日日程 · {today}</h2>
+            <p>{(grouped.get(today) || []).length} 次跟进 · 当天事项优先显示</p>
+          </div>
+        </div>
+        {tasks.loading ? (
+          <Loading />
+        ) : tasks.error ? (
+          <ErrorNote>{tasks.error}</ErrorNote>
+        ) : (grouped.get(today) || []).length ? (
+          <div className="customer-task-list">
+            {grouped.get(today)!.map(card)}
+          </div>
+        ) : (
+          <Empty title="今天没有日程" />
+        )}
+      </section>
       <section className="panel customer-calendar">
         <div className="panel-heading customer-heading">
           <div>
@@ -408,21 +431,27 @@ function CustomerCalendar({
           })}
         </div>
       </section>
-      <section className="panel">
-        <div className="panel-heading">
-          <div>
-            <h2>{selected.replaceAll("-", " / ")} · 日程</h2>
-            <p>{selectedTasks.length} 次跟进</p>
+      {selected !== today && (
+        <section className="panel">
+          <div className="panel-heading">
+            <div>
+              <h2>{selected.replaceAll("-", " / ")} · 日程</h2>
+              <p>{selectedTasks.length} 次跟进</p>
+            </div>
           </div>
-        </div>
-        {!tasks.loading &&
-          !tasks.error &&
-          (selectedTasks.length ? (
-            <div className="customer-task-list">{selectedTasks.map(card)}</div>
-          ) : (
-            <Empty title="这一天没有日程">点击新增日程，记下下一次沟通。</Empty>
-          ))}
-      </section>
+          {!tasks.loading &&
+            !tasks.error &&
+            (selectedTasks.length ? (
+              <div className="customer-task-list">
+                {selectedTasks.map(card)}
+              </div>
+            ) : (
+              <Empty title="这一天没有日程">
+                点击新增日程，记下下一次沟通。
+              </Empty>
+            ))}
+        </section>
+      )}
       {!customerId && (
         <div className="customer-agenda">
           {upcoming.map((group) => (
@@ -496,7 +525,6 @@ function CustomerCalendar({
                 }
               >
                 {displayCustomerName(c.name)}
-                {c.mergedInto ? "（已合并）" : ""}
                 <ArrowUpRight size={15} />
               </button>
             ))}
@@ -521,7 +549,7 @@ function CustomerCalendar({
           : tasks.loading || tasks.error) &&
           (historyRows.length ? (
             <div className="customer-task-list">
-              {historyRows.slice(0, historyLimit).map(card)}
+              {orderedHistory.slice(0, historyLimit).map(card)}
             </div>
           ) : (
             <Empty title="没有符合条件的日程" />

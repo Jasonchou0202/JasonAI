@@ -5,6 +5,7 @@ import { today } from "../domain/dates";
 import { displayCustomerName } from "../domain/customers";
 import { money, moneyInput, parseMoney } from "../domain/finance";
 import { useQuery, ErrorNote, message } from "./ui";
+import { groupProducts } from "../domain/catalog";
 type Draft = {
   productId: string;
   productName: string;
@@ -58,6 +59,10 @@ export function SaleForm({
     {},
   );
   const { data: customers } = useQuery<string[]>(api, "customers", {});
+  const { data: catalog } = useQuery<Product[]>(api, "products.catalog", {});
+  const productGroups = groupProducts(
+    (catalog || products || []).filter((p) => p.active),
+  );
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [dirty, setDirty] = useState(false);
@@ -176,12 +181,41 @@ export function SaleForm({
             <label htmlFor="product-name">
               商品名称<span className="required">*</span>
             </label>
+            <select
+              aria-label="下拉选择商品"
+              value={
+                productGroups
+                  .flatMap((g) => g.items)
+                  .some((p) => p.name === form.productName)
+                  ? form.productName
+                  : ""
+              }
+              onChange={(e) => {
+                const preset = productGroups
+                  .flatMap((g) => g.items)
+                  .find((p) => p.name === e.target.value);
+                if (preset) select(preset);
+              }}
+            >
+              <option value="">选择商品，或在下方手动输入</option>
+              {productGroups.map((g) => (
+                <optgroup key={g.category} label={g.category}>
+                  {g.items.map((p) => (
+                    <option key={p.name} value={p.name}>
+                      {p.name}
+                    </option>
+                  ))}
+                </optgroup>
+              ))}
+            </select>
             <input
               id="product-name"
               value={form.productName}
               onChange={(e) => {
                 const v = e.target.value;
-                const preset = products?.find((p) => p.active && p.name === v);
+                const preset = productGroups
+                  .flatMap((g) => g.items)
+                  .find((p) => p.name === v);
                 if (preset) select(preset);
                 else setForm((f) => ({ ...f, productName: v, productId: "" }));
               }}
@@ -191,7 +225,7 @@ export function SaleForm({
               list="product-names"
             />
             <datalist id="product-names">
-              {products
+              {(catalog || products)
                 ?.filter((p) => p.active)
                 .map((p) => (
                   <option key={p.id} value={p.name} />
@@ -227,9 +261,11 @@ export function SaleForm({
                   maxLength={500}
                 />
                 <datalist id="customers">
-                  {[...new Set(customers?.map(displayCustomerName))].map((c) => (
-                    <option key={c} value={c} />
-                  ))}
+                  {[...new Set(customers?.map(displayCustomerName))].map(
+                    (c) => (
+                      <option key={c} value={c} />
+                    ),
+                  )}
                 </datalist>
               </div>
               <div>

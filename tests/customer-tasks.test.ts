@@ -265,8 +265,9 @@ describe("customer archive and rankings", () => {
     expect(check.mergedInto).toBeNull();
     expect(await c.call("customers.list")).toEqual(lists[0]);
     expect(await c.call("customers")).toEqual(
-      [" \t ", " Alpha ", "Alpha", "alpha"].sort(),
+      expect.arrayContaining(["原名", "Alpha", "alpha"]),
     );
+    expect(await c.call("customers")).toHaveLength(3);
   });
 
   it("ranks the complete selected month in cents, with negative amounts, product totals, unassigned and deterministic ties", async () => {

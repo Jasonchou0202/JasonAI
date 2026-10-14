@@ -80,6 +80,12 @@ export function validateSale(raw: SaleInput): SaleInput {
 }
 export function validateProduct(p: Product): Product {
   if (
+    p?.archivedAt != null &&
+    (typeof p.archivedAt !== "string" ||
+      !Number.isFinite(Date.parse(p.archivedAt)))
+  )
+    throw new Error("商品删除日期无效");
+  if (
     !p ||
     typeof p.id !== "string" ||
     !p.id ||
@@ -101,6 +107,7 @@ export function validateProduct(p: Product): Product {
     cost: p.cost,
     active: p.active,
     order: p.order,
+    ...(p.archivedAt !== undefined ? { archivedAt: p.archivedAt } : {}),
   };
 }
 export function filterSales(sales: Sale[], f: Filters = {}): Sale[] {

@@ -26,7 +26,8 @@ import type { Filters, Sale } from "./domain/model";
 import { cloudApi, configured, session, login, logout } from "./lib/cloud";
 import { createDemo } from "./lib/demo";
 import { routeParams, readFilters, filterQuery } from "./lib/routes";
-type Page = "dashboard" | "entry" | "details" | "settings" | "calendar" | "customer";
+type Page =
+  "dashboard" | "entry" | "details" | "settings" | "calendar" | "customer";
 function readRoute(): Page {
   const p = location.hash.replace("#/", "").split("?")[0];
   return ["entry", "details", "settings", "calendar", "customer"].includes(p)
@@ -55,7 +56,8 @@ export default function App() {
           if (alive) {
             setMode("cloud");
             const pending = sessionStorage.getItem("zhangyuge-return-route");
-            if (pending && /^#\/(calendar|customer)(\?|$)/.test(pending)) location.hash = pending;
+            if (pending && /^#\/(calendar|customer)(\?|$)/.test(pending))
+              location.hash = pending;
             sessionStorage.removeItem("zhangyuge-return-route");
           }
         } else if (alive)
@@ -147,14 +149,21 @@ export default function App() {
     go("entry", "id=" + encodeURIComponent(s.id));
   }
   function customer(id: string, month?: string) {
-    go("customer", new URLSearchParams({ id, ...(month ? { month } : {}) }).toString());
+    go(
+      "customer",
+      new URLSearchParams({ id, ...(month ? { month } : {}) }).toString(),
+    );
   }
   async function signOut() {
     try {
       let reminderWarning = "";
       if (mode === "cloud") {
-        try { await stopPush(api); }
-        catch { reminderWarning = "已退出登录；云端提醒撤销未确认，请联网后在设置中重试关闭提醒。"; }
+        try {
+          await stopPush(api);
+        } catch {
+          reminderWarning =
+            "已退出登录；云端提醒撤销未确认，请联网后在设置中重试关闭提醒。";
+        }
         await logout();
       }
       sessionStorage.removeItem("zhangyuge-demo");
@@ -316,8 +325,14 @@ export default function App() {
             <ReceiptText size={19} />
             销售明细
           </button>
-          <button className={page === "calendar" || page === "customer" ? "active" : ""} onClick={() => go("calendar")}>
-            <CalendarDays size={19} />客户日程
+          <button
+            className={
+              page === "calendar" || page === "customer" ? "active" : ""
+            }
+            onClick={() => go("calendar")}
+          >
+            <CalendarDays size={19} />
+            客户日程
           </button>
         </nav>
         <div className="sidebar-bottom">
@@ -448,6 +463,7 @@ export default function App() {
               onEdit={editSale}
               onNew={newSale}
               onChange={changed}
+              onCustomer={customer}
             />
           )}
           {page === "settings" && (
@@ -458,10 +474,33 @@ export default function App() {
               onBack={() => go("dashboard")}
               onChange={changed}
               onLogout={() => void signOut()}
+              onCustomer={customer}
             />
           )}
-          {page === "calendar" && <Calendar api={api} version={version} mode={mode} onChange={changed} onCustomer={customer} taskId={routeParams().get("task") || undefined} />}
-          {page === "customer" && <CustomerDetails key={routeParams().get("id")} api={api} version={version} mode={mode} id={routeParams().get("id") || ""} month={routeParams().get("month") || undefined} onChange={changed} onBack={() => go("dashboard")} onCustomer={customer} onEditSale={editSale} />}
+          {page === "calendar" && (
+            <Calendar
+              api={api}
+              version={version}
+              mode={mode}
+              onChange={changed}
+              onCustomer={customer}
+              taskId={routeParams().get("task") || undefined}
+            />
+          )}
+          {page === "customer" && (
+            <CustomerDetails
+              key={routeParams().get("id")}
+              api={api}
+              version={version}
+              mode={mode}
+              id={routeParams().get("id") || ""}
+              month={routeParams().get("month") || undefined}
+              onChange={changed}
+              onBack={() => go("dashboard")}
+              onCustomer={customer}
+              onEditSale={editSale}
+            />
+          )}
           <footer className="app-footer">
             <span>章鱼哥 AI 工作室</span>
             <span>认真记账，轻松经营。</span>
@@ -495,7 +534,13 @@ export default function App() {
           <ReceiptText size={20} />
           <span>明细</span>
         </button>
-        <button className={page === "calendar" || page === "customer" ? "active" : ""} onClick={() => go("calendar")}><CalendarDays size={20} /><span>日程</span></button>
+        <button
+          className={page === "calendar" || page === "customer" ? "active" : ""}
+          onClick={() => go("calendar")}
+        >
+          <CalendarDays size={20} />
+          <span>日程</span>
+        </button>
       </nav>
       {toast && (
         <div className="toast" role="status">

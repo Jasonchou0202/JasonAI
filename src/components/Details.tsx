@@ -8,8 +8,21 @@ import {
   ChevronLeft,
   ChevronRight,
   Pencil,
+  CalendarDays,
 } from "lucide-react";
-import type { Api, Filters, Product, Sale, SalesPage } from "../domain/model";
+import type {
+  Api,
+  Filters,
+  Product,
+  Sale,
+  SalesPage,
+  Customer,
+} from "../domain/model";
+import {
+  customerChoices,
+  matchesCustomer,
+  groupProducts,
+} from "../domain/catalog";
 import { money } from "../domain/finance";
 import { displayCustomerName } from "../domain/customers";
 import { today, periodRange } from "../domain/dates";
@@ -31,6 +44,7 @@ export function Details({
   onEdit,
   onNew,
   onChange,
+  onCustomer,
 }: {
   api: Api;
   version: number;
@@ -39,6 +53,7 @@ export function Details({
   onEdit: (s: Sale) => void;
   onNew: () => void;
   onChange: (s: string) => void;
+  onCustomer: (id: string, month?: string) => void;
 }) {
   const { data, error, loading } = useQuery<SalesPage>(
     api,
@@ -53,6 +68,18 @@ export function Details({
     version,
   );
   const [confirm, setConfirm] = useState<Sale | null>(null);
+  const { data: customerRecords } = useQuery<Customer[]>(
+    api,
+    "customers.list",
+    {},
+    version,
+  );
+  const choices = customerChoices(customerRecords || []);
+  const matchingCustomers = filters.search?.trim()
+    ? choices.filter((c) => matchesCustomer(c, filters.search!))
+    : [];
+  const customerFor = (name: string) =>
+    choices.find((c) => c.aliases.includes(name));
   const [purgeId, setPurgeId] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [opError, setError] = useState("");
@@ -168,10 +195,14 @@ export function Details({
             onChange={(e) => filter({ productId: e.target.value })}
           >
             <option value="">全部商品</option>
-            {products?.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.name}
-              </option>
+            {groupProducts(products || []).map((g) => (
+              <optgroup key={g.category} label={g.category}>
+                {g.items.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name}
+                  </option>
+                ))}
+              </optgroup>
             ))}
           </select>
           <div className="quick-filters">
@@ -196,6 +227,20 @@ export function Details({
             {filters.deleted ? "回到明细" : "回收站"}
           </button>
         </div>
+        {matchingCustomers.length > 0 && (
+          <div className="directory-results" aria-label="查询客户的日程管理">
+            {matchingCustomers.map((c) => (
+              <button
+                key={c.id}
+                className="button secondary"
+                onClick={() => onCustomer(c.id, "all")}
+              >
+                <CalendarDays size={15} />
+                {c.name} · 日程管理
+              </button>
+            ))}
+          </div>
+        )}
         {(error || opError) && <ErrorNote>{error || opError}</ErrorNote>}
         {data && (
           <div className="list-summary">
@@ -258,6 +303,18 @@ export function Details({
                     </span>
                   </div>
                   <div className="detail-actions">
+                    {customerFor(r.customer) && (
+                      <button
+                        className="text-button"
+                        aria-label={`${displayCustomerName(r.customer)}日程管理`}
+                        onClick={() =>
+                          onCustomer(customerFor(r.customer)!.id, "all")
+                        }
+                      >
+                        <CalendarDays size={15} />
+                        日程管理
+                      </button>
+                    )}
                     {filters.deleted ? (
                       <>
                         <button

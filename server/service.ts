@@ -37,6 +37,13 @@ import {
 } from "../src/domain/finance";
 import { today, validDate } from "../src/domain/dates";
 import { signature, validateBackup } from "../src/domain/import";
+import {
+  customerChoices,
+  productCatalog,
+  groupProducts,
+  isAcceptanceCustomer,
+  isAcceptanceProduct,
+} from "../src/domain/catalog";
 
 export type Collection =
   | "sales"
@@ -117,6 +124,7 @@ async function ensureCustomer(
   const old = await tx.get<Customer>("customers", id);
   if (old) {
     if (old.name !== name) throw new Error("客户编号冲突");
+    if (old.archivedAt) throw new Error("客户资料已删除，请先在设置中恢复");
     return old;
   }
   const customer: Customer = {
@@ -298,18 +306,15 @@ export async function execute(
       return row;
     }
     case "customers":
-      return [
-        ...new Set(
-          (await visible(store))
-            .filter((r) => !r.deletedAt)
-            .map((r) => r.customer)
-            .filter(Boolean),
-        ),
-      ].sort();
-    case "customers.list":
-      return (await initializeCustomers(store, ctx, now())).sort(
-        (a, b) => a.name.localeCompare(b.name) || a.id.localeCompare(b.id),
+      return customerChoices(await initializeCustomers(store, ctx, now())).map(
+        (c) => c.name,
       );
+    case "customers.list":
+      return (await initializeCustomers(store, ctx, now()))
+        .filter((c) => !c.archivedAt)
+        .sort(
+          (a, b) => a.name.localeCompare(b.name) || a.id.localeCompare(b.id),
+        );
     case "customers.ranking": {
       const customers = await initializeCustomers(store, ctx, now());
       return customerRanking(
@@ -581,9 +586,138 @@ export async function execute(
       });
     }
     case "products.list":
-      return (await store.list<Product>("products")).sort(
-        (a, b) => a.order - b.order,
+      return groupProducts(
+        (await store.list<Product>("products")).filter((p) => !p.archivedAt),
+      ).flatMap((g) => g.items);
+    case "products.catalog":
+      return productCatalog(
+        await store.list<Product>("products"),
+        await visible(store),
       );
+    case "catalog.cleanup.preview": {
+      const customers = await initializeCustomers(store, ctx, now());
+      const [products, sales, tasks] = await Promise.all([
+        store.list<Product>("products"),
+        visible(store),
+        store.list<CustomerTask>("tasks"),
+      ]);
+      const roots = customerRoots(customers);
+      const customerCandidates = customers
+        .filter((c) => !c.archivedAt && isAcceptanceCustomer(c.name))
+        .map((c) => ({
+          id: c.id,
+          name: c.name,
+          revision: c.revision,
+          blocked:
+            customers.some(
+              (a) =>
+                roots.get(a.id) === roots.get(c.id) &&
+                !isAcceptanceCustomer(a.name),
+            ) ||
+            sales.some((s) => !s.deletedAt && s.customer === c.name) ||
+            tasks.some((t) => roots.get(t.customerId) === roots.get(c.id)),
+        }));
+      const productCandidates = products
+        .filter((p) => !p.archivedAt && isAcceptanceProduct(p.name))
+        .map((p) => ({
+          id: p.id,
+          name: p.name,
+          blocked: sales.some(
+            (s) =>
+              !s.deletedAt &&
+              (s.productId === p.id || s.productName === p.name),
+          ),
+        }));
+      return { customers: customerCandidates, products: productCandidates };
+    }
+    case "catalog.cleanup": {
+      const preview = (await execute(
+        store,
+        ctx,
+        "catalog.cleanup.preview",
+      )) as {
+        customers: { id: string; revision: number; blocked: boolean }[];
+        products: { id: string; blocked: boolean }[];
+      };
+      if (
+        preview.customers.some((c) => c.blocked) ||
+        preview.products.some((c) => c.blocked)
+      )
+        throw new Error("验收清单仍关联销售或日程，请先核对，未删除任何资料");
+      return store.transaction(async (tx) => {
+        await writable(tx);
+        return mutation(tx, ctx, p.requestId, action, {}, async () => {
+          let customerCount = 0,
+            productCount = 0;
+          for (const c of preview.customers) {
+            const row = await tx.get<Customer>("customers", c.id);
+            if (!row || row.revision !== c.revision)
+              throw new Error("客户已在另一处修改，请刷新后重试");
+            await tx.put("customers", c.id, {
+              ...row,
+              archivedAt: now(),
+              updatedAt: now(),
+              revision: row.revision + 1,
+            });
+            customerCount++;
+          }
+          for (const c of preview.products) {
+            const row = await tx.get<Product>("products", c.id);
+            if (!row || !isAcceptanceProduct(row.name))
+              throw new Error("商品资料已修改，请刷新后重试");
+            await tx.put("products", c.id, { ...row, archivedAt: now() });
+            productCount++;
+          }
+          return { customers: customerCount, products: productCount };
+        });
+      });
+    }
+    case "catalog.deleted": {
+      const [customers, products] = await Promise.all([
+        store.list<Customer>("customers"),
+        store.list<Product>("products"),
+      ]);
+      return [
+        ...customers
+          .filter((c) => c.archivedAt)
+          .map((c) => ({ kind: "customer", id: c.id, name: c.name })),
+        ...products
+          .filter((c) => c.archivedAt)
+          .map((c) => ({ kind: "product", id: c.id, name: c.name })),
+      ];
+    }
+    case "catalog.restore": {
+      const collection =
+        p.kind === "customer"
+          ? "customers"
+          : p.kind === "product"
+            ? "products"
+            : null;
+      if (!collection) throw new Error("清单类型无效");
+      const id = recordId(p.id);
+      return store.transaction(async (tx) => {
+        await writable(tx);
+        return mutation(
+          tx,
+          ctx,
+          p.requestId,
+          action,
+          { id, kind: p.kind },
+          async () => {
+            const row = await tx.get<Customer & Product>(collection, id);
+            if (!row?.archivedAt) throw new Error("资料未删除");
+            await tx.put(collection, id, {
+              ...row,
+              archivedAt: null,
+              ...(collection === "customers"
+                ? { updatedAt: now(), revision: row.revision + 1 }
+                : {}),
+            });
+            return { restored: true };
+          },
+        );
+      });
+    }
     case "products.save": {
       const product = validateProduct(p as Product);
       recordId(product.id);

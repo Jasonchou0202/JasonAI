@@ -24,6 +24,8 @@ import { useQuery, ErrorNote, Modal, message, Loading } from "./ui";
 import { readImport, readBackup, download, downloadCsv } from "../lib/files";
 import { PushSettings } from "./PushSettings";
 import { CustomerAliases } from "./CustomerAliases";
+import { CatalogSettings } from "./CatalogSettings";
+import { groupProducts } from "../domain/catalog";
 type CommitResult = {
   count: number;
   repeated?: boolean;
@@ -37,6 +39,7 @@ export function Settings({
   onBack,
   onChange,
   onLogout,
+  onCustomer,
 }: {
   api: Api;
   version: number;
@@ -44,6 +47,7 @@ export function Settings({
   onBack: () => void;
   onChange: (s: string) => void;
   onLogout: () => void;
+  onCustomer: (id: string, month?: string) => void;
 }) {
   const { data: products, error } = useQuery<Product[]>(
     api,
@@ -179,6 +183,12 @@ export function Settings({
         </span>
       </div>
       <PushSettings api={api} demo={demo} />
+      <CatalogSettings
+        api={api}
+        version={version}
+        onCustomer={onCustomer}
+        onChange={onChange}
+      />
       <CustomerAliases api={api} version={version} onChange={onChange} />
       {(error || opError) && <ErrorNote>{error || opError}</ErrorNote>}
       <section className="panel settings-panel">
@@ -211,23 +221,28 @@ export function Settings({
             <span>常用成本</span>
             <span />
           </div>
-          {products?.map((p) => (
-            <div className="product-table-row" key={p.id}>
-              <span>
-                {p.name}
-                {!p.active && <small>已停用</small>}
-              </span>
-              <strong>¥{money(p.price)}</strong>
-              <span>¥{money(p.cost)}</span>
-              <button
-                className="icon-button"
-                aria-label={`设置${p.name}`}
-                onClick={() => setProduct(p)}
-              >
-                <Pencil size={16} />
-              </button>
-            </div>
-          ))}
+          {groupProducts(products || []).flatMap((g) => [
+            <div key={g.category} className="product-category-heading">
+              {g.category}
+            </div>,
+            ...g.items.map((p) => (
+              <div className="product-table-row" key={p.id}>
+                <span>
+                  {p.name}
+                  {!p.active && <small>已停用</small>}
+                </span>
+                <strong>¥{money(p.price)}</strong>
+                <span>¥{money(p.cost)}</span>
+                <button
+                  className="icon-button"
+                  aria-label={`设置${p.name}`}
+                  onClick={() => setProduct(p)}
+                >
+                  <Pencil size={16} />
+                </button>
+              </div>
+            )),
+          ])}
           {!products?.length && (
             <p className="subtle empty-products">
               还没有商品。添加后，记账会更快。
@@ -265,7 +280,8 @@ export function Settings({
           </div>
           <h2>保存一份完整备份</h2>
           <p>
-            包含销售、商品、客户别名和日程（含回收站）。保存为 JSON 文件，可用于恢复空账本；设备推送授权需重新开启。
+            包含销售、商品、客户别名和日程（含回收站）。保存为 JSON
+            文件，可用于恢复空账本；设备推送授权需重新开启。
           </p>
           <button
             className="button secondary"
@@ -413,7 +429,9 @@ export function Settings({
         >
           <p>
             这份备份包含 {backup.sales.length} 条销售记录和{" "}
-            {backup.products.length} 个商品、{backup.version === 2 ? backup.customers.length : 0} 个客户档案和 {backup.version === 2 ? backup.tasks.length : 0} 条日程。
+            {backup.products.length} 个商品、
+            {backup.version === 2 ? backup.customers.length : 0} 个客户档案和{" "}
+            {backup.version === 2 ? backup.tasks.length : 0} 条日程。
           </p>
           <p className="subtle">
             仅允许恢复到空账本，不覆盖已有销售；回收站记录也会一并恢复。

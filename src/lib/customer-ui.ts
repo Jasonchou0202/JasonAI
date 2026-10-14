@@ -10,6 +10,7 @@ import { message } from "../components/ui";
 
 export type CustomerMode = "demo" | "cloud";
 export interface Customer {
+  archivedAt?: string | null;
   id: string;
   name: string;
   mergedInto: string | null;

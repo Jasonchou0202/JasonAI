@@ -18,6 +18,7 @@ export interface Sale extends SaleInput {
   lastMutation?: string;
 }
 export interface Product {
+  archivedAt?: string | null;
   id: string;
   name: string;
   price: number;
@@ -81,6 +82,7 @@ export interface ImportPreview {
   duplicateRows: number[];
 }
 export interface Customer {
+  archivedAt?: string | null;
   id: string;
   name: string;
   mergedInto: string | null;

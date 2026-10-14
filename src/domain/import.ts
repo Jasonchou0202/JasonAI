@@ -222,6 +222,7 @@ export function validateBackup(value: unknown): Backup {
     names = new Set<string>();
   const customers = b.customers.map((c): Customer => {
     metadata(c);
+    if (c.archivedAt != null) utcInstant(c.archivedAt);
     if (
       typeof c.name !== "string" ||
       !c.name.trim() ||
@@ -241,6 +242,7 @@ export function validateBackup(value: unknown): Backup {
       createdAt: c.createdAt,
       updatedAt: c.updatedAt,
       ...(c.lastMutation ? { lastMutation: c.lastMutation } : {}),
+      ...(c.archivedAt !== undefined ? { archivedAt: c.archivedAt } : {}),
     };
   });
   customerRoots(customers);
