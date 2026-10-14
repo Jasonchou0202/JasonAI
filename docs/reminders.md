@@ -113,3 +113,8 @@ loginType: LOGINTYPE
 执行限制为每 tick 最多 20 次发送、网络并发最多 4，每次网络超时 10 秒、TTL 600 秒，并在预算不足时停止领取；未领取的工作留给下一 tick。提醒为提前 15 分钟与到期两种时点，每个时点只有 10 分钟有效窗口，不补发早于或等于 reminderStartAt 的提醒；临时故障最多尝试 3 次、间隔 2 分钟。事务租约和稳定 tag 提供幂等与客户端去重；外部请求已接受但写回前进程中断时，无法承诺端到端恰好一次展示。
 
 安全结论限于当前源码和上述部署边界。仍需部署方执行线上身份拒绝验证；没有线上日志证据时，不宣称 CloudBase 实际 context 已提供 timer 来源，也不宣称通知已到达设备。
+# 本地部署与升级
+
+将 `docs/deploy-env.example.json` 复制到 Git 忽略的 `private-data/deploy-env.json`，填写现有环境 ID、本人 ID、VAPID 配置和提醒触发 token。不要更换既有 VAPID 密钥，以免现有设备订阅失效。执行 `tcb login` 后运行 `npm run deploy:functions`，也可先用 `node scripts/deploy-functions.mjs --check` 只检查配置。
+
+脚本构建并部署 sales / reminders 的代码与环境变量，保留每分钟 cron `0 * * * * * *` 和 token 前 32 位组成的受保护触发器名称；未找到已登录的官方 CLI 时提供控制台步骤，不购买服务。密钥配置及生成的部署文件仅留在被忽略的 private-data 中。部署后检查最新定时扫描时间、测试通知和通知跳转；页面静态缓存不会缓存登录信息、业务数据或云接口。

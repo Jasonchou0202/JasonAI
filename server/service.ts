@@ -15,7 +15,12 @@ import {
   customerAliases,
   customerProducts,
   customerRanking,
+  customerSuggestions,
+  customerKey,
+  customerRoots,
+  displayCustomerName,
   monthSales,
+  parseRankPeriod,
 } from "../src/domain/customers";
 import {
   filterTasks,
@@ -44,6 +49,7 @@ export type Collection =
 export interface Transaction {
   get<T>(collection: Collection, id: string): Promise<T | null>;
   put<T>(collection: Collection, id: string, value: T): Promise<void>;
+  del(collection: Collection, id: string): Promise<void>;
 }
 export interface Store extends Transaction {
   list<T>(collection: Collection): Promise<T[]>;
@@ -104,6 +110,7 @@ async function ensureCustomer(
   name: string,
   ctx: Context,
   time: string,
+  redirect?: string | null,
 ): Promise<Customer | null> {
   const id = await customerId(name, ctx.hash);
   if (!id) return null;
@@ -115,13 +122,36 @@ async function ensureCustomer(
   const customer: Customer = {
     id,
     name,
-    mergedInto: null,
+    mergedInto: redirect && redirect !== id ? redirect : null,
     revision: 1,
     createdAt: time,
     updatedAt: time,
   };
   await tx.put("customers", id, customer);
   return customer;
+}
+
+/** Preferred root per canonical key: cleanest name first, then earliest, then id. */
+function customerKeyRoots(customers: Customer[]): Map<string, string> {
+  const roots = customerRoots(customers);
+  const byKey = new Map<string, string>();
+  const cleanRank = (c: Customer) =>
+    c.name === displayCustomerName(c.name) ? 0 : 1;
+  const sorted = [...customers].sort(
+    (a, b) =>
+      cleanRank(a) - cleanRank(b) ||
+      a.createdAt.localeCompare(b.createdAt) ||
+      a.id.localeCompare(b.id),
+  );
+  for (const c of sorted) {
+    const key = customerKey(c.name);
+    if (key && !byKey.has(key)) byKey.set(key, roots.get(c.id)!);
+  }
+  return byKey;
+}
+
+function redirectFor(byKey: Map<string, string>, name: string): string | null {
+  return byKey.get(customerKey(name)) ?? null;
 }
 /** Includes deleted and pending historical sales; exact original text is the identity. */
 async function initializeCustomers(
@@ -141,6 +171,37 @@ async function initializeCustomers(
     ),
   ];
   if (!missing.length) return customers;
+  // Deterministic redirect plan: the cleanest name per key becomes the root;
+  // ✅/IP variants attach to it. Independent of batch timing.
+  const rootsMap = customerRoots(customers);
+  const idsByName = new Map<string, string>();
+  const candidates: { id: string; name: string; createdAt: string }[] =
+    customers.map((c) => ({
+      id: c.id,
+      name: c.name,
+      createdAt: c.createdAt,
+    }));
+  for (const name of missing)
+    idsByName.set(name, (await customerId(name, ctx.hash))!);
+  for (const [name, id] of idsByName)
+    candidates.push({ id, name, createdAt: time });
+  const cleanRank = (name: string) =>
+    name === displayCustomerName(name) ? 0 : 1;
+  const rootFor = new Map<string, string>();
+  for (const c of candidates.sort(
+    (a, b) =>
+      cleanRank(a.name) - cleanRank(b.name) ||
+      a.createdAt.localeCompare(b.createdAt) ||
+      a.id.localeCompare(b.id),
+  )) {
+    const key = customerKey(c.name);
+    if (key && !rootFor.has(key)) rootFor.set(key, rootsMap.get(c.id) ?? c.id);
+  }
+  const redirects = new Map<string, string | null>();
+  for (const name of missing) {
+    const root = rootFor.get(customerKey(name));
+    redirects.set(name, root && root !== idsByName.get(name) ? root : null);
+  }
   // Disjoint batches only read the shared ledger; at most four transactions run
   // together. Each transaction still serializes its own database operations.
   const parallelBatches = 4;
@@ -152,7 +213,8 @@ async function initializeCustomers(
       batches.map((names) =>
         store.transaction(async (tx) => {
           await writable(tx);
-          for (const name of names) await ensureCustomer(tx, name, ctx, time);
+          for (const name of names)
+            await ensureCustomer(tx, name, ctx, time, redirects.get(name));
         }),
       ),
     );
@@ -250,7 +312,19 @@ export async function execute(
       );
     case "customers.ranking": {
       const customers = await initializeCustomers(store, ctx, now());
-      return customerRanking(customers, await visible(store), p.month);
+      return customerRanking(
+        customers,
+        await visible(store),
+        parseRankPeriod(p.period ?? p.month ?? "all"),
+      );
+    }
+    case "customers.suggestions": {
+      const customers = await initializeCustomers(store, ctx, now());
+      const [sales, tasks] = await Promise.all([
+        visible(store),
+        store.list<CustomerTask>("tasks"),
+      ]);
+      return customerSuggestions(customers, sales, tasks);
     }
     case "customers.detail": {
       const id = recordId(p.id),
@@ -306,6 +380,58 @@ export async function execute(
         );
       });
     }
+    case "customers.mergeMany": {
+      await initializeCustomers(store, ctx, now());
+      const targetId = recordId(p.targetId);
+      if (
+        !Array.isArray(p.sources) ||
+        !p.sources.length ||
+        p.sources.length > 200
+      )
+        throw new Error("合并来源无效");
+      const sources = p.sources.map((source: any) => ({
+        id: recordId(source?.id),
+        revision: Number(source?.revision),
+      }));
+      if (
+        sources.some((s) => !Number.isInteger(s.revision) || s.revision < 1) ||
+        sources.some((s) => s.id === targetId)
+      )
+        throw new Error("合并来源无效");
+      return store.transaction(async (tx) => {
+        await writable(tx);
+        return mutation(
+          tx,
+          ctx,
+          p.requestId,
+          action,
+          { targetId, sources },
+          async () => {
+            const target = await tx.get<Customer>("customers", targetId);
+            if (!target || target.mergedInto)
+              throw new Error("目标客户不存在或已合并");
+            let merged = 0;
+            for (const source of sources) {
+              const row = await tx.get<Customer>("customers", source.id);
+              if (!row) throw new Error("客户不存在");
+              if (row.mergedInto === targetId) continue;
+              if (row.mergedInto || row.revision !== source.revision)
+                throw new Error("客户已在另一处修改，请刷新后重试");
+              await customerRoot(tx, targetId, source.id);
+              await tx.put("customers", source.id, {
+                ...row,
+                mergedInto: targetId,
+                updatedAt: now(),
+                revision: row.revision + 1,
+                lastMutation: recordId(p.requestId),
+              });
+              merged++;
+            }
+            return { merged };
+          },
+        );
+      });
+    }
     case "tasks.list": {
       const customers = await initializeCustomers(store, ctx, now());
       return filterTasks(await store.list<CustomerTask>("tasks"), customers, p);
@@ -345,6 +471,29 @@ export async function execute(
           await tx.put("batches", "_ledger", { ...ledger, hasData: true });
           return task;
         });
+      });
+    }
+    case "tasks.purge": {
+      const id = recordId(p.id),
+        requestId = recordId(p.requestId);
+      return store.transaction(async (tx) => {
+        await writable(tx);
+        return mutation(
+          tx,
+          ctx,
+          requestId,
+          action,
+          { id, revision: p.revision },
+          async () => {
+            const old = await tx.get<CustomerTask>("tasks", id);
+            if (!old) throw new Error("日程不存在");
+            if (old.revision !== p.revision)
+              throw new Error("日程已在另一处修改，请刷新后重试");
+            if (!old.deletedAt) throw new Error("只能彻底删除回收站中的日程");
+            await tx.del("tasks", id);
+            return { purged: true };
+          },
+        );
       });
     }
     case "tasks.update":
@@ -447,9 +596,13 @@ export async function execute(
     case "sales.create": {
       const id = recordId(p.requestId),
         input = validateSale(p.sale as SaleInput);
+      const customers = await store.list<Customer>("customers");
+      const byKey = customerKeyRoots(customers);
       return store.transaction(async (tx) => {
         const ledger = await writable(tx),
           existing = await tx.get<Sale>("sales", id);
+        if (await tx.get("batches", "_purged_sale_" + (await ctx.hash(id))))
+          throw new Error("这次保存的记录已彻底删除，请新建一笔销售");
         if (existing) {
           if (signature(existing) !== signature(input))
             throw new Error("这次保存已完成，请刷新后再编辑");
@@ -466,7 +619,13 @@ export async function execute(
           };
         await tx.put("batches", "_ledger", { ...ledger, hasSales: true });
         await tx.put("sales", id, sale);
-        await ensureCustomer(tx, sale.customer, ctx, time);
+        await ensureCustomer(
+          tx,
+          sale.customer,
+          ctx,
+          time,
+          redirectFor(byKey, sale.customer),
+        );
         return sale;
       });
     }
@@ -477,6 +636,8 @@ export async function execute(
         requestId = recordId(p.requestId);
       const input =
         action === "sales.update" ? validateSale(p.sale) : undefined;
+      const customers = await store.list<Customer>("customers");
+      const byKey = customerKeyRoots(customers);
       return store.transaction(async (tx) => {
         await writable(tx);
         const old = await tx.get<Sale>("sales", id);
@@ -504,8 +665,40 @@ export async function execute(
           lastMutation: requestId,
         };
         await tx.put("sales", id, row);
-        await ensureCustomer(tx, row.customer, ctx, row.updatedAt);
+        await ensureCustomer(
+          tx,
+          row.customer,
+          ctx,
+          row.updatedAt,
+          redirectFor(byKey, row.customer),
+        );
         return row;
+      });
+    }
+    case "sales.purge": {
+      const id = recordId(p.id),
+        requestId = recordId(p.requestId);
+      return store.transaction(async (tx) => {
+        await writable(tx);
+        return mutation(
+          tx,
+          ctx,
+          requestId,
+          action,
+          { id, revision: p.revision },
+          async () => {
+            const old = await tx.get<Sale>("sales", id);
+            if (!old) throw new Error("记录不存在");
+            if (old.revision !== p.revision)
+              throw new Error("记录已在另一处修改，请刷新后重试");
+            if (!old.deletedAt) throw new Error("只能彻底删除回收站中的记录");
+            await tx.put("batches", "_purged_sale_" + (await ctx.hash(id)), {
+              id,
+            });
+            await tx.del("sales", id);
+            return { purged: true };
+          },
+        );
       });
     }
     case "import.preview": {
@@ -531,6 +724,8 @@ export async function execute(
         throw new Error("文件名无效");
       const fingerprint = await ctx.hash(JSON.stringify(rows));
       const products = await store.list<Product>("products");
+      const customers = await store.list<Customer>("customers");
+      const byKey = customerKeyRoots(customers);
       const byName = new Map(products.map((x) => [x.name, x]));
       for (const r of rows)
         if (!byName.has(r.productName))
@@ -593,8 +788,17 @@ export async function execute(
         );
         const processed = batch.processed + portion.length,
           done = processed === rows.length;
-        for (const name of new Set(sales.map((s) => s.customer)))
-          await ensureCustomer(tx, name, ctx, batch.createdAt);
+        for (const name of new Set(sales.map((s) => s.customer))) {
+          const customer = await ensureCustomer(
+            tx,
+            name,
+            ctx,
+            batch.createdAt,
+            redirectFor(byKey, name),
+          );
+          if (customer && !byKey.has(customerKey(name)))
+            byKey.set(customerKey(name), customer.mergedInto || customer.id);
+        }
         await Promise.all([
           ...newProducts
             .filter((_, i) => !savedProducts[i])

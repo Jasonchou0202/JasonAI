@@ -67,6 +67,9 @@ class FakeStore implements Store {
   async put<T>(c: Collection, id: string, value: T): Promise<void> {
     this.data.set(c + "/" + id, structuredClone(value));
   }
+  async del(c: Collection, id: string): Promise<void> {
+    this.data.delete(c + "/" + id);
+  }
   async list<T>(c: Collection): Promise<T[]> {
     this.reads++;
     return [...this.data]

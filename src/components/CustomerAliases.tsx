@@ -1,9 +1,15 @@
-import { useEffect, useId, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { ArrowRight, GitMerge, RotateCcw } from "lucide-react";
-import type { Api, CustomerTask } from "../domain/model";
+import type {
+  Api,
+  CustomerSuggestionGroup,
+  CustomerTask,
+} from "../domain/model";
 import { money } from "../domain/finance";
+import { displayCustomerName } from "../domain/customers";
 import {
   apiMode,
+  beijingInput,
   useCustomerMutation,
   useCustomerQuery,
   type Customer,
@@ -27,6 +33,9 @@ export function CustomerAliases({
   const [targetId, setTargetId] = useState("");
   const [preview, setPreview] = useState(false);
   const [confirmed, setConfirmed] = useState(false);
+  const [allPreview, setAllPreview] = useState(false);
+  const [allBusy, setAllBusy] = useState(false);
+  const batchLock = useRef(false);
   const prefix = useId();
   const customers = useCustomerQuery<Customer[]>(
     api,
@@ -36,6 +45,14 @@ export function CustomerAliases({
     refresh,
   );
   const mutation = useCustomerMutation(api, apiMode(api), "aliases");
+  const suggestMutation = useCustomerMutation(api, apiMode(api), "suggestions");
+  const suggestions = useCustomerQuery<CustomerSuggestionGroup[]>(
+    api,
+    "customers.suggestions",
+    {},
+    version,
+    refresh,
+  );
   const active = customers.data?.filter((c) => !c.mergedInto) || [];
   const query = search.trim().toLocaleLowerCase();
   const merged =
@@ -55,6 +72,48 @@ export function CustomerAliases({
   function changed(msg: string) {
     setRefresh((v) => v + 1);
     onChange(msg);
+  }
+  function groupSources(group: CustomerSuggestionGroup) {
+    return group.members
+      .filter((m) => m.customer.id !== group.targetId)
+      .map((m) => ({ id: m.customer.id, revision: m.customer.revision }));
+  }
+  async function mergeGroup(group: CustomerSuggestionGroup) {
+    const sources = groupSources(group);
+    if (!sources.length) return;
+    if (
+      await suggestMutation.run("customers.mergeMany", {
+        targetId: group.targetId,
+        sources,
+      })
+    )
+      changed(`已把 ${group.members.length} 个名称合并为一个客户`);
+  }
+  async function mergeAll() {
+    if (batchLock.current) return;
+    batchLock.current = true;
+    setAllBusy(true);
+    const groups = suggestions.data || [];
+    let merged = 0;
+    try {
+      for (const group of groups) {
+        const sources = groupSources(group);
+        if (!sources.length) continue;
+        if (
+          !(await suggestMutation.run("customers.mergeMany", {
+            targetId: group.targetId,
+            sources,
+          }))
+        )
+          return;
+        merged++;
+      }
+    } finally {
+      batchLock.current = false;
+      setAllBusy(false);
+      setAllPreview(false);
+      if (merged) changed(`已合并 ${merged} 组建议名称，剩余建议可继续处理`);
+    }
   }
   async function unmerge(customer: Customer) {
     if (
@@ -123,7 +182,7 @@ export function CustomerAliases({
                 .filter((c) => c.id !== targetId)
                 .map((c) => (
                   <option key={c.id} value={c.id}>
-                    {c.name}
+                    {displayCustomerName(c.name)}
                   </option>
                 ))}
             </select>
@@ -142,7 +201,7 @@ export function CustomerAliases({
                 .filter((c) => c.id !== sourceId)
                 .map((c) => (
                   <option key={c.id} value={c.id}>
-                    {c.name}
+                    {displayCustomerName(c.name)}
                   </option>
                 ))}
             </select>
@@ -195,6 +254,122 @@ export function CustomerAliases({
             填写销售客户后，名称会出现在这里。
           </Empty>
         )}
+        {suggestions.error && <ErrorNote>{suggestions.error}</ErrorNote>}
+        {(!!suggestions.data?.length || suggestMutation.hasPending) && (
+          <div className="customer-suggestions">
+            <div className="customer-suggestions-head">
+              <h3>疑似同一客户（建议合并）</h3>
+              <button
+                className="button secondary"
+                disabled={
+                  allBusy || suggestMutation.busy || suggestMutation.hasPending
+                }
+                onClick={() => setAllPreview((v) => !v)}
+              >
+                全部合并
+              </button>
+            </div>
+            {allPreview && (
+              <div className="customer-pending">
+                <p>
+                  请核对下方全部 {suggestions.data?.length || 0}{" "}
+                  组建议，包含仅大小写不同的名称。每组将归属到推荐客户，合并后可解除。
+                </p>
+                <button
+                  className="button primary"
+                  disabled={allBusy}
+                  onClick={() => void mergeAll()}
+                >
+                  {allBusy ? "合并中…" : "已预览，确认全部合并"}
+                </button>
+                <button
+                  className="text-button"
+                  disabled={allBusy}
+                  onClick={() => setAllPreview(false)}
+                >
+                  取消
+                </button>
+              </div>
+            )}
+            {suggestMutation.error && (
+              <ErrorNote>{suggestMutation.error}</ErrorNote>
+            )}
+            {suggestMutation.hasPending && (
+              <div className="customer-pending">
+                <p>上次合并结果待确认，请先重试原请求。</p>
+                <button
+                  className="button secondary"
+                  disabled={suggestMutation.busy || allBusy}
+                  onClick={async () => {
+                    const pending = suggestMutation.pending;
+                    if (
+                      pending &&
+                      (await suggestMutation.run(
+                        pending.action,
+                        pending.payload,
+                      ))
+                    )
+                      changed("上次合并已确认");
+                  }}
+                >
+                  重试上次合并
+                </button>
+              </div>
+            )}
+            {suggestions.data?.map((group) => {
+              const target = group.members.find(
+                (m) => m.customer.id === group.targetId,
+              )!;
+              return (
+                <div className="suggestion-card" key={group.id}>
+                  <div className="suggestion-head">
+                    <strong>
+                      {group.reason === "ip_or_symbol"
+                        ? "IP 或符号变体"
+                        : "仅大小写不同"}
+                    </strong>
+                    <span className="subtle">
+                      {group.members.length} 个名称
+                    </span>
+                  </div>
+                  <div className="suggestion-members">
+                    {group.members.map((m) => (
+                      <span key={m.customer.id}>
+                        {displayCustomerName(m.customer.name)}
+                        <small>
+                          {m.totals.count} 笔 · 利润 ¥{money(m.totals.profit)} ·{" "}
+                          {m.taskCount} 日程
+                        </small>
+                      </span>
+                    ))}
+                  </div>
+                  <p className="subtle">
+                    合计 {group.totals.count} 笔 · 利润 ¥
+                    {money(group.totals.profit)} · {group.taskCount}{" "}
+                    条日程；归属到「{displayCustomerName(target.customer.name)}
+                    」。
+                  </p>
+                  <SuggestionDetails
+                    api={api}
+                    group={group}
+                    version={version + refresh}
+                  />
+                  <button
+                    className="button primary"
+                    disabled={
+                      allBusy ||
+                      suggestMutation.busy ||
+                      suggestMutation.hasPending
+                    }
+                    onClick={() => void mergeGroup(group)}
+                  >
+                    一键合并
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        )}
         <div className="customer-alias-divider">
           <h3>已合并名称</h3>
           <input
@@ -210,11 +385,15 @@ export function CustomerAliases({
             {merged.map((c) => (
               <li key={c.id}>
                 <div>
-                  <strong>{c.name}</strong>
+                  <strong>{displayCustomerName(c.name)}</strong>
                   <small>
                     归属：
-                    {customers.data?.find((t) => t.id === c.mergedInto)?.name ||
-                      c.mergedInto}
+                    {displayCustomerName(
+                      customers.data?.find((t) => t.id === c.mergedInto)
+                        ?.name ||
+                        c.mergedInto ||
+                        "",
+                    )}
                   </small>
                 </div>
                 <button
@@ -238,6 +417,85 @@ export function CustomerAliases({
         )}
       </div>
     </section>
+  );
+}
+function SuggestionDetails({
+  api,
+  group,
+  version,
+}: {
+  api: Api;
+  group: CustomerSuggestionGroup;
+  version: number;
+}) {
+  const [open, setOpen] = useState(false);
+  return (
+    <details onToggle={(event) => setOpen(event.currentTarget.open)}>
+      <summary>展开销售与日程明细</summary>
+      {open &&
+        group.members.map((member) => (
+          <SuggestionMemberDetails
+            key={member.customer.id}
+            api={api}
+            id={member.customer.id}
+            version={version}
+          />
+        ))}
+    </details>
+  );
+}
+function SuggestionMemberDetails({
+  api,
+  id,
+  version,
+}: {
+  api: Api;
+  id: string;
+  version: number;
+}) {
+  const sales = useCustomerQuery<CustomerDetail>(
+    api,
+    "customers.detail",
+    { id, month: "all" },
+    version,
+  );
+  const tasks = useCustomerQuery<CustomerTask[]>(
+    api,
+    "tasks.list",
+    { customerId: id },
+    version,
+  );
+  return (
+    <div className="customer-merge-preview">
+      {(sales.loading || tasks.loading) && <Loading />}
+      {(sales.error || tasks.error) && (
+        <ErrorNote>{sales.error || tasks.error}</ErrorNote>
+      )}
+      {sales.data && (
+        <>
+          <strong>
+            {displayCustomerName(sales.data.customer.name)} · 档案{" "}
+            {id.slice(-6)}
+          </strong>
+          <ul>
+            {sales.data.sales.map((sale) => (
+              <li key={sale.id}>
+                {sale.date} · {sale.productName} · 利润 ¥
+                {money(sale.revenue - sale.cost)}
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
+      <ul>
+        {tasks.data?.map((task) => (
+          <li key={task.id}>
+            {beijingInput(task.at).replace("T", " ")}（北京时间） · {task.title}{" "}
+            · {task.completedAt ? "已完成" : "未完成"}
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }
 function MergePreview({
@@ -274,8 +532,20 @@ function MergePreview({
     version,
     retry,
   );
-  const leftTasks = useCustomerQuery<CustomerTask[]>(api, "tasks.list", { customerId: source.id }, version, retry);
-  const rightTasks = useCustomerQuery<CustomerTask[]>(api, "tasks.list", { customerId: target.id }, version, retry);
+  const leftTasks = useCustomerQuery<CustomerTask[]>(
+    api,
+    "tasks.list",
+    { customerId: source.id },
+    version,
+    retry,
+  );
+  const rightTasks = useCustomerQuery<CustomerTask[]>(
+    api,
+    "tasks.list",
+    { customerId: target.id },
+    version,
+    retry,
+  );
   const ready = Boolean(
     left.data &&
     right.data &&
@@ -283,7 +553,12 @@ function MergePreview({
     !right.loading &&
     !left.error &&
     !right.error &&
-    leftTasks.data && rightTasks.data && !leftTasks.loading && !rightTasks.loading && !leftTasks.error && !rightTasks.error &&
+    leftTasks.data &&
+    rightTasks.data &&
+    !leftTasks.loading &&
+    !rightTasks.loading &&
+    !leftTasks.error &&
+    !rightTasks.error &&
     left.data.customer.id === source.id &&
     right.data.customer.id === target.id &&
     !left.data.customer.mergedInto &&
@@ -292,7 +567,9 @@ function MergePreview({
   return (
     <div className="customer-merge-preview">
       <h3>合并前 · 全历史销售</h3>
-      {(leftTasks.error || rightTasks.error) && <ErrorNote>{leftTasks.error || rightTasks.error}</ErrorNote>}
+      {(leftTasks.error || rightTasks.error) && (
+        <ErrorNote>{leftTasks.error || rightTasks.error}</ErrorNote>
+      )}
       {(left.loading || right.loading) && <Loading />}
       {(left.error || right.error) && (
         <>
@@ -314,17 +591,29 @@ function MergePreview({
         {[left.data, right.data].map((detail, i) => (
           <div key={i}>
             <small>{i === 0 ? "来源客户" : "目标客户"}</small>
-            <strong>{i === 0 ? source.name : target.name}</strong>
+            <strong>
+              {displayCustomerName(i === 0 ? source.name : target.name)}
+            </strong>
             <span>{detail ? `${detail.totals.count} 笔成交` : "正在核对"}</span>
             <span>利润 {detail ? `¥${money(detail.totals.profit)}` : "—"}</span>
-            <span>{(i === 0 ? leftTasks.data : rightTasks.data)?.length ?? "—"} 条日程</span>
-            {(i === 0 ? leftTasks.data : rightTasks.data)?.slice(0, 3).map(task => <small key={task.id}>{task.title}{task.completedAt ? " · 已完成" : " · 未完成"}</small>)}
+            <span>
+              {(i === 0 ? leftTasks.data : rightTasks.data)?.length ?? "—"}{" "}
+              条日程
+            </span>
+            {(i === 0 ? leftTasks.data : rightTasks.data)
+              ?.slice(0, 3)
+              .map((task) => (
+                <small key={task.id}>
+                  {task.title}
+                  {task.completedAt ? " · 已完成" : " · 未完成"}
+                </small>
+              ))}
           </div>
         ))}
       </div>
       {ready && (
         <p className="customer-merge-result">
-          合并后归属「{target.name}」：共{" "}
+          合并后归属「{displayCustomerName(target.name)}」：共{" "}
           {left.data!.totals.count + right.data!.totals.count} 笔，利润 ¥
           {money(left.data!.totals.profit + right.data!.totals.profit)}。
         </p>

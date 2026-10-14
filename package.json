@@ -8,6 +8,8 @@
     "build": "tsc -b && vite build",
     "preview": "vite preview --host 127.0.0.1",
     "test": "vitest run",
+    "test:e2e": "playwright test",
+    "deploy:functions": "node scripts/deploy-functions.mjs",
     "typecheck": "tsc -b",
     "build:server": "node scripts/build-server.mjs",
     "check": "npm run test && npm run build && npm run build:server"
@@ -25,12 +27,14 @@
     "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz"
   },
   "devDependencies": {
+    "@playwright/test": "^1.64.0",
     "@types/node": "^22.10.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "@types/web-push": "^3.6.4",
     "@vitejs/plugin-react": "^4.3.4",
     "esbuild": "^0.25.0",
+    "fflate": "^0.8.3",
     "prettier": "^3.9.10",
     "typescript": "~5.7.2",
     "vite": "^6.0.5",

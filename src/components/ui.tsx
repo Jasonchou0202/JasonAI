@@ -9,6 +9,7 @@ import {
 import type { Api, Sale } from "../domain/model";
 import { money } from "../domain/finance";
 import { dateLabel } from "../domain/dates";
+import { displayCustomerName } from "../domain/customers";
 export function message(e: unknown) {
   const text = e instanceof Error ? e.message : "";
   if (/fetch|network|timeout|timed out/i.test(text))
@@ -118,7 +119,7 @@ export function SaleRows({
           <span className="sale-info">
             <strong>{r.productName}</strong>
             <small>
-              {r.customer || "未填写客户"}
+              {displayCustomerName(r.customer) || "未填写客户"}
               <i>·</i>
               {dateLabel(r.date)}
             </small>

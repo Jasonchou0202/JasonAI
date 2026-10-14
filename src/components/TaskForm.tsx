@@ -1,6 +1,7 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { Save } from "lucide-react";
 import type { Api } from "../domain/model";
+import { displayCustomerName } from "../domain/customers";
 import {
   beijingInput,
   beijingToUTC,
@@ -229,7 +230,7 @@ function TaskEditor({
             )}
           {active.map((c) => (
             <option key={c.id} value={c.id}>
-              {c.name}
+              {displayCustomerName(c.name)}
             </option>
           ))}
         </select>

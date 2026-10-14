@@ -1,5 +1,6 @@
 import { build } from "esbuild";
-import { mkdir, writeFile } from "node:fs/promises";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { zipSync } from "fflate";
 import { resolve } from "node:path";
 await mkdir("cloudfunctions/sales", { recursive: true });
 await build({
@@ -44,4 +45,28 @@ await build({
     "lodash.unset": resolve("vendor/lodash-unset/index.cjs"),
   },
 });
-await writeFile("cloudfunctions/reminders/package.json", JSON.stringify({ name: "zhangyuge-reminders-function", version: "1.0.0", private: true, main: "index.js" }, null, 2) + "\n");
+await writeFile(
+  "cloudfunctions/reminders/package.json",
+  JSON.stringify(
+    {
+      name: "zhangyuge-reminders-function",
+      version: "1.0.0",
+      private: true,
+      main: "index.js",
+    },
+    null,
+    2,
+  ) + "\n",
+);
+await mkdir("artifacts", { recursive: true });
+for (const name of ["sales", "reminders"]) {
+  const entries = Object.fromEntries(
+    await Promise.all(
+      ["index.js", "package.json"].map(async (file) => [
+        file,
+        new Uint8Array(await readFile(`cloudfunctions/${name}/${file}`)),
+      ]),
+    ),
+  );
+  await writeFile(`artifacts/customer-${name}-function.zip`, zipSync(entries));
+}

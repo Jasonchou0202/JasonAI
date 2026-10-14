@@ -14,6 +14,9 @@ export class CloudStore implements Store {
   async put<T>(c: Collection, id: string, value: T) {
     await this.db.collection(c).doc(id).set(value);
   }
+  async del(c: Collection, id: string) {
+    await this.db.collection(c).doc(id).remove();
+  }
   async list<T>(c: Collection): Promise<T[]> {
     const rows: T[] = [];
     let cursor: string | undefined;
@@ -50,6 +53,10 @@ export class CloudStore implements Store {
           put: <V>(c: Collection, id: string, value: V) =>
             serial(async () => {
               await transaction.collection(c).doc(id).set(value);
+            }),
+          del: (c: Collection, id: string) =>
+            serial(async () => {
+              await transaction.collection(c).doc(id).remove();
             }),
         });
         await pending;

@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import type { Api, Filters, Product, Sale, SalesPage } from "../domain/model";
 import { money } from "../domain/finance";
+import { displayCustomerName } from "../domain/customers";
 import { today, periodRange } from "../domain/dates";
 import {
   useQuery,
@@ -52,6 +53,7 @@ export function Details({
     version,
   );
   const [confirm, setConfirm] = useState<Sale | null>(null);
+  const [purgeId, setPurgeId] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [opError, setError] = useState("");
   const mutations = useRef<Record<string, string>>({});
@@ -71,6 +73,26 @@ export function Details({
       });
       setConfirm(null);
       onChange(restore ? "记录已恢复" : "记录已移入回收站");
+    } catch (e) {
+      setError(message(e));
+    } finally {
+      setBusy(false);
+    }
+  }
+  async function purge(row: Sale) {
+    setBusy(true);
+    setError("");
+    try {
+      await api.call("sales.purge", {
+        id: row.id,
+        revision: row.revision,
+        requestId:
+          mutations.current["purge" + row.id + row.revision] ||
+          (mutations.current["purge" + row.id + row.revision] =
+            crypto.randomUUID()),
+      });
+      setPurgeId(null);
+      onChange("记录已彻底删除");
     } catch (e) {
       setError(message(e));
     } finally {
@@ -210,7 +232,11 @@ export function Details({
                 <div className="detail-row">
                   <div className="detail-main">
                     <strong>{r.productName}</strong>
-                    <span>{r.customer || "未填写客户"}</span>
+                    <span>
+                      {r.customer
+                        ? displayCustomerName(r.customer)
+                        : "未填写客户"}
+                    </span>
                     {r.note && <small>{r.note}</small>}
                   </div>
                   <div className="detail-numbers">
@@ -233,26 +259,45 @@ export function Details({
                   </div>
                   <div className="detail-actions">
                     {filters.deleted ? (
-                      <button
-                        className="text-button"
-                        disabled={busy}
-                        onClick={() => void mutate(r, true)}
-                      >
-                        <RotateCcw size={15} />
-                        恢复
-                      </button>
+                      <>
+                        <button
+                          className="text-button"
+                          disabled={busy}
+                          onClick={() => void mutate(r, true)}
+                        >
+                          <RotateCcw size={15} />
+                          恢复
+                        </button>
+                        {purgeId === r.id ? (
+                          <button
+                            className="text-button negative"
+                            disabled={busy}
+                            onClick={() => void purge(r)}
+                          >
+                            确认彻底删除（不可恢复）
+                          </button>
+                        ) : (
+                          <button
+                            className="text-button negative"
+                            disabled={busy}
+                            onClick={() => setPurgeId(r.id)}
+                          >
+                            彻底删除
+                          </button>
+                        )}
+                      </>
                     ) : (
                       <>
                         <button
                           className="icon-button"
-                          aria-label={`编辑${r.productName} ${r.customer}`}
+                          aria-label={`编辑${r.productName} ${displayCustomerName(r.customer)}`}
                           onClick={() => onEdit(r)}
                         >
                           <Pencil size={16} />
                         </button>
                         <button
                           className="icon-button"
-                          aria-label={`删除${r.productName} ${r.customer}`}
+                          aria-label={`删除${r.productName} ${displayCustomerName(r.customer)}`}
                           onClick={() => setConfirm(r)}
                         >
                           <Trash2 size={16} />
@@ -302,7 +347,7 @@ export function Details({
         >
           <p>
             {confirm.date} · {confirm.productName} ·{" "}
-            {confirm.customer || "未填写客户"}
+            {displayCustomerName(confirm.customer) || "未填写客户"}
           </p>
           <p className="subtle">
             这笔记录将从利润统计中移除，之后可以在回收站恢复。

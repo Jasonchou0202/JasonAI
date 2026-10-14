@@ -250,11 +250,19 @@ describe("customer archive and rankings", () => {
       Array.from({ length: 4 }, () => c.call<Customer[]>("customers.list")),
     );
     expect(lists.every((l) => l.length === 4)).toBe(true);
-    for (const name of names.slice(0, 4)) {
-      const row = lists[0].find((c) => c.name === name)!;
-      expect(row.id).toBe("c_" + (await hash(name)));
-      expect(row).toMatchObject({ mergedInto: null, revision: 1 });
+    const alpha = lists[0].find((c) => c.name === "Alpha")!;
+    const spaced = lists[0].find((c) => c.name === " Alpha ")!;
+    const lower = lists[0].find((c) => c.name === "alpha")!;
+    const check = lists[0].find((c) => c.name === "✅原名 1.2.3.4")!;
+    for (const row of [alpha, spaced, lower, check]) {
+      expect(row.id).toBe("c_" + (await hash(row.name)));
+      expect(row.revision).toBe(1);
     }
+    // The clean "Alpha" wins the shared key; the space variant attaches to it.
+    expect(spaced.mergedInto).toBe(alpha.id);
+    expect(alpha.mergedInto).toBeNull();
+    expect(lower.mergedInto).toBeNull();
+    expect(check.mergedInto).toBeNull();
     expect(await c.call("customers.list")).toEqual(lists[0]);
     expect(await c.call("customers")).toEqual(
       [" \t ", " Alpha ", "Alpha", "alpha"].sort(),
@@ -852,6 +860,10 @@ describe("backup v1/v2 and authorization", () => {
         "customers.detail",
         "customers.merge",
         "customers.unmerge",
+        "customers.suggestions",
+        "customers.mergeMany",
+        "sales.purge",
+        "tasks.purge",
         "tasks.list",
         "tasks.get",
         "tasks.create",

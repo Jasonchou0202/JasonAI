@@ -11,6 +11,7 @@ import {
   ArrowUpRight,
 } from "lucide-react";
 import type { Api } from "../domain/model";
+import { displayCustomerName } from "../domain/customers";
 import {
   beijingDay,
   beijingInput,
@@ -270,8 +271,10 @@ function CustomerCalendar({
                   .map((a) => a.name);
                 return (
                   <option key={c.id} value={c.id}>
-                    {c.name}
-                    {aliases.length ? `（含 ${aliases.join("、")}）` : ""}
+                    {displayCustomerName(c.name)}
+                    {aliases.length
+                      ? `（含 ${aliases.map(displayCustomerName).join("、")}）`
+                      : ""}
                   </option>
                 );
               })}
@@ -492,7 +495,7 @@ function CustomerCalendar({
                   onCustomer(customerRoot(customers.data || [], c.id))
                 }
               >
-                {c.name}
+                {displayCustomerName(c.name)}
                 {c.mergedInto ? "（已合并）" : ""}
                 <ArrowUpRight size={15} />
               </button>
@@ -633,6 +636,7 @@ function TaskCard({
   onNext: () => void;
 }) {
   const mutation = useCustomerMutation(api, mode, `task-${task.id}`);
+  const [confirmPurge, setConfirmPurge] = useState(false);
   async function act(action: string) {
     if (
       await mutation.run(`tasks.${action}`, {
@@ -647,6 +651,7 @@ function TaskCard({
             reopen: "日程已重新打开",
             delete: "日程已移入回收站",
             restore: "日程已恢复",
+            purge: "日程已彻底删除",
           } as Record<string, string>
         )[action] || "日程已更新",
       );
@@ -671,7 +676,7 @@ function TaskCard({
           )
         }
       >
-        {customer?.name || "查看客户"}
+        {customer ? displayCustomerName(customer.name) : "查看客户"}
         <ArrowUpRight size={13} />
       </button>
       {task.feedback && (
@@ -708,14 +713,33 @@ function TaskCard({
             {mutation.busy ? "重试中…" : "重试上次操作"}
           </button>
         ) : task.deletedAt ? (
-          <button
-            className="text-button"
-            disabled={mutation.busy}
-            onClick={() => void act("restore")}
-          >
-            <RotateCcw size={14} />
-            恢复
-          </button>
+          <>
+            <button
+              className="text-button"
+              disabled={mutation.busy}
+              onClick={() => void act("restore")}
+            >
+              <RotateCcw size={14} />
+              恢复
+            </button>
+            {confirmPurge ? (
+              <button
+                className="text-button negative"
+                disabled={mutation.busy}
+                onClick={() => void act("purge")}
+              >
+                确认彻底删除（不可恢复）
+              </button>
+            ) : (
+              <button
+                className="text-button negative"
+                disabled={mutation.busy}
+                onClick={() => setConfirmPurge(true)}
+              >
+                彻底删除
+              </button>
+            )}
+          </>
         ) : (
           <>
             <button
@@ -740,7 +764,7 @@ function TaskCard({
               onClick={onNext}
             >
               <Plus size={14} />
-              下一次
+              安排下一次
             </button>
             <button
               className="text-button negative"

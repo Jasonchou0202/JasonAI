@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import type { Api, Sale } from "../domain/model";
 import { money } from "../domain/finance";
+import { displayCustomerName } from "../domain/customers";
 import {
   currentMonth,
   shiftMonth,
@@ -66,7 +67,7 @@ function CustomerProfile({
             <ArrowLeft size={15} />
             返回
           </button>
-          <h1>{data?.customer.name || "客户详情"}</h1>
+          <h1>{data ? displayCustomerName(data.customer.name) : "客户详情"}</h1>
           <p className="subtle">成交记录与每一次跟进，放在一起看。</p>
         </div>
       </div>
@@ -99,38 +100,53 @@ function CustomerProfile({
           {data.aliases.length > 0 && (
             <div className="customer-alias-chips" aria-label="客户别名">
               {data.aliases.map((name) => (
-                <span key={name}>{name}</span>
+                <span key={name}>{displayCustomerName(name)}</span>
               ))}
             </div>
           )}
           <section className="panel">
             <div className="panel-heading customer-heading">
               <div>
-                <h2>每月成交</h2>
+                <h2>{month === "all" ? "历史成交" : "每月成交"}</h2>
                 <p>利润 = 收入 − 成本</p>
               </div>
-              <div className="customer-month">
-                <button
-                  className="icon-button"
-                  aria-label="客户销售上个月"
-                  onClick={() => changeMonth(shiftMonth(month, -1))}
-                >
-                  <ChevronLeft size={18} />
-                </button>
-                <input
-                  type="month"
-                  aria-label="客户销售月份"
-                  value={month}
-                  onChange={(e) => changeMonth(e.target.value)}
-                />
-                <button
-                  className="icon-button"
-                  aria-label="客户销售下个月"
-                  onClick={() => changeMonth(shiftMonth(month, 1))}
-                >
-                  <ChevronRight size={18} />
-                </button>
-              </div>
+              {month === "all" ? (
+                <div className="customer-all-history">
+                  <strong>全部历史</strong>
+                  <button
+                    className="text-button"
+                    onClick={() => setMonth(currentMonth)}
+                  >
+                    按月查看
+                  </button>
+                </div>
+              ) : (
+                <div className="customer-month">
+                  <button
+                    className="icon-button"
+                    aria-label="客户销售上个月"
+                    onClick={() => changeMonth(shiftMonth(month, -1))}
+                  >
+                    <ChevronLeft size={18} />
+                  </button>
+                  <input
+                    type="month"
+                    aria-label="客户销售月份"
+                    value={month}
+                    onChange={(e) => changeMonth(e.target.value)}
+                  />
+                  <button
+                    className="icon-button"
+                    aria-label="客户销售下个月"
+                    onClick={() => changeMonth(shiftMonth(month, 1))}
+                  >
+                    <ChevronRight size={18} />
+                  </button>
+                  <button className="text-button" onClick={() => setMonth("all")}>
+                    全部历史
+                  </button>
+                </div>
+              )}
             </div>
             <div className="customer-stats">
               <div>
@@ -172,7 +188,10 @@ function CustomerProfile({
                       <span className="customer-sale-info">
                         <strong>{sale.productName}</strong>
                         <small>
-                          {sale.date} · {sale.customer || data.customer.name}
+                          {sale.date} ·{" "}
+                          {sale.customer
+                            ? displayCustomerName(sale.customer)
+                            : displayCustomerName(data.customer.name)}
                         </small>
                         {sale.note && (
                           <small className="customer-sale-note">
@@ -205,7 +224,7 @@ function CustomerProfile({
                 })}
               </div>
             ) : (
-              <Empty title="这个月还没有销售记录" />
+              <Empty title={month === "all" ? "还没有销售记录" : "这个月还没有销售记录"} />
             )}
           </section>
         </>
@@ -215,7 +234,7 @@ function CustomerProfile({
         version={version}
         mode={mode}
         customerId={data?.customer.mergedInto || id}
-        month={month}
+        month={month === "all" ? undefined : month}
         onChange={(msg) => {
           setRefresh((v) => v + 1);
           onChange(msg);

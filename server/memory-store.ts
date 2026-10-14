@@ -16,6 +16,9 @@ export class MemoryStore implements Store {
   async put<T>(c: Collection, id: string, v: T) {
     this.data[c][id] = structuredClone(v);
   }
+  async del(c: Collection, id: string) {
+    delete this.data[c][id];
+  }
   async list<T>(c: Collection): Promise<T[]> {
     return structuredClone(Object.values(this.data[c])) as T[];
   }

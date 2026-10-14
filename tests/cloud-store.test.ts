@@ -1,6 +1,27 @@
 import { expect, it } from "vitest";
 import { createRequire } from "node:module";
 import { CloudStore, documentData } from "../server/cloud-store";
+it("removes records through direct and serialized transaction adapters", async () => {
+  const removed: string[] = [];
+  const handle = {
+    collection: (c: string) => ({
+      doc: (id: string) => ({
+        remove: async () => {
+          removed.push(`${c}/${id}`);
+        },
+      }),
+    }),
+  };
+  const store = new CloudStore({
+    ...handle,
+    runTransaction: (fn: (tx: unknown) => unknown) => fn(handle),
+  });
+  await store.del("sales", "a");
+  await store.transaction(async (tx) => {
+    await tx.del("tasks", "b");
+  });
+  expect(removed).toEqual(["sales/a", "tasks/b"]);
+});
 const require = createRequire(import.meta.url);
 const set = require("../vendor/lodash-set/index.cjs"),
   unset = require("../vendor/lodash-unset/index.cjs");

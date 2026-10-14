@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { ArrowLeft, Check, Plus, Save, RotateCcw } from "lucide-react";
 import type { Api, Product, Sale, SaleInput } from "../domain/model";
 import { today } from "../domain/dates";
+import { displayCustomerName } from "../domain/customers";
 import { money, moneyInput, parseMoney } from "../domain/finance";
 import { useQuery, ErrorNote, message } from "./ui";
 type Draft = {
@@ -226,7 +227,7 @@ export function SaleForm({
                   maxLength={500}
                 />
                 <datalist id="customers">
-                  {customers?.map((c) => (
+                  {[...new Set(customers?.map(displayCustomerName))].map((c) => (
                     <option key={c} value={c} />
                   ))}
                 </datalist>

@@ -40,6 +40,11 @@ export interface Filters {
   page?: number;
 }
 export type Period = "day" | "week" | "month";
+export type RankPeriodType = "all" | "month" | "quarter" | "half" | "year";
+export interface RankPeriod {
+  type: RankPeriodType;
+  value?: string;
+}
 export interface Bucket extends Totals {
   key: string;
   label: string;
@@ -101,6 +106,19 @@ export interface CustomerRankingResult {
   items: CustomerRanking[];
   unassigned: Totals;
   totals: Totals;
+}
+export interface CustomerSuggestionMember {
+  customer: Customer;
+  totals: Totals;
+  taskCount: number;
+}
+export interface CustomerSuggestionGroup {
+  id: string;
+  reason: "ip_or_symbol" | "case";
+  targetId: string;
+  members: CustomerSuggestionMember[];
+  totals: Totals;
+  taskCount: number;
 }
 export interface CustomerDetail {
   customer: Customer;

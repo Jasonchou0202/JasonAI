@@ -1,6 +1,30 @@
-/* Notifications only: never cache authenticated responses or business data. */
-self.addEventListener("install", event => { event.waitUntil(self.skipWaiting()); });
-self.addEventListener("activate", event => { event.waitUntil(self.clients.claim()); });
+/* Cache only the public app shell. Auth, cloud requests and business data bypass it. */
+const SHELL_CACHE = "zhangyuge-shell-__BUILD_VERSION__";
+const SHELL_FILES = /*__SHELL_FILES__*/ ["/JasonAI/", "/JasonAI/index.html"];
+const STATIC_FILES = new Set(SHELL_FILES);
+self.addEventListener("install", event => {
+  event.waitUntil(caches.open(SHELL_CACHE).then(cache => cache.addAll(SHELL_FILES)).then(() => self.skipWaiting()));
+});
+self.addEventListener("activate", event => {
+  event.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(key => key.startsWith("zhangyuge-shell-") && key !== SHELL_CACHE).map(key => caches.delete(key)))).then(() => self.clients.claim()));
+});
+self.addEventListener("fetch", event => {
+  const request = event.request, url = new URL(request.url);
+  if (request.method !== "GET" || url.origin !== self.location.origin || url.search || !url.pathname.startsWith("/JasonAI/")) return;
+  if (request.mode === "navigate" && ["/JasonAI/", "/JasonAI/index.html"].includes(url.pathname)) {
+    event.respondWith(fetch(request).catch(async () => (await caches.match("/JasonAI/", {cacheName: SHELL_CACHE})) || Response.error()));
+  } else if (STATIC_FILES.has(url.pathname)) {
+    event.respondWith(caches.open(SHELL_CACHE).then(async cache => {
+      // The same public asset can be requested with different Origin headers
+      // by module scripts and precaching; neither response contains user data.
+      const saved = await cache.match(request, { ignoreVary: true });
+      if (saved) return saved;
+      const response = await fetch(request);
+      if (response.ok && response.type === "basic") await cache.put(request, response.clone());
+      return response;
+    }));
+  }
+});
 self.addEventListener("push", event => {
   let data = {};
   try { data = event.data?.json() || {}; } catch { /* generic notification */ }
