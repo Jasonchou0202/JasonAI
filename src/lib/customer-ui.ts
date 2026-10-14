@@ -35,6 +35,7 @@ export interface CustomerDetail {
   sales: Sale[];
 }
 export interface CustomerRank {
+  pendingTaskCount: number;
   rank: number;
   customerId: string;
   name: string;

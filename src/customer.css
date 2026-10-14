@@ -115,6 +115,36 @@
   color: #6e7c71;
   font-size: 11px;
 }
+.customer-name-with-badge {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+}
+.customer-name-with-badge strong {
+  min-width: 0;
+}
+.customer-pending-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border-radius: 50%;
+  background: #d73535;
+  color: white;
+  font-size: 10px;
+  line-height: 1;
+  font-weight: 700;
+  transform: translateY(-4px);
+}
+.product-editor-fields {
+  padding: 0;
+  border: 0;
+  margin: 0;
+  min-width: 0;
+}
 .customer-rank-profit {
   display: flex;
   flex-direction: column;

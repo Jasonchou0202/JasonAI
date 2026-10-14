@@ -19,13 +19,14 @@ import type {
   Bucket,
   Sale,
 } from "../domain/model";
-import { money, moneyInput, parseMoney } from "../domain/finance";
+import { money } from "../domain/finance";
 import { useQuery, ErrorNote, Modal, message, Loading } from "./ui";
 import { readImport, readBackup, download, downloadCsv } from "../lib/files";
 import { PushSettings } from "./PushSettings";
 import { CustomerAliases } from "./CustomerAliases";
 import { CatalogSettings } from "./CatalogSettings";
 import { groupProducts } from "../domain/catalog";
+import { ProductEditor } from "./ProductEditor";
 type CommitResult = {
   count: number;
   repeated?: boolean;
@@ -56,6 +57,7 @@ export function Settings({
     version,
   );
   const [product, setProduct] = useState<Product | null>(null);
+  const [addingProduct, setAddingProduct] = useState(false);
   const [preview, setPreview] = useState<ImportPreview | null>(null);
   const [backup, setBackup] = useState<Backup | null>(null);
   const [busy, setBusy] = useState(false);
@@ -199,16 +201,7 @@ export function Settings({
           </div>
           <button
             className="button secondary"
-            onClick={() =>
-              setProduct({
-                id: crypto.randomUUID(),
-                name: "",
-                price: 0,
-                cost: 0,
-                active: true,
-                order: products?.length || 0,
-              })
-            }
+            onClick={() => setAddingProduct(true)}
           >
             <Plus size={16} />
             添加商品
@@ -231,8 +224,14 @@ export function Settings({
                   {p.name}
                   {!p.active && <small>已停用</small>}
                 </span>
-                <strong>¥{money(p.price)}</strong>
-                <span>¥{money(p.cost)}</span>
+                <strong>
+                  {p.hasDefaultPrice === false
+                    ? "未设置"
+                    : `¥${money(p.price)}`}
+                </strong>
+                <span>
+                  {p.hasDefaultCost === false ? "未设置" : `¥${money(p.cost)}`}
+                </span>
                 <button
                   className="icon-button"
                   aria-label={`设置${p.name}`}
@@ -336,13 +335,17 @@ export function Settings({
           {demo ? "退出演示" : "退出登录"}
         </button>
       </div>
-      {product && (
+      {(product || addingProduct) && (
         <ProductEditor
-          product={product}
+          product={product ?? undefined}
           api={api}
-          onClose={() => setProduct(null)}
+          onClose={() => {
+            setProduct(null);
+            setAddingProduct(false);
+          }}
           onSaved={() => {
             setProduct(null);
+            setAddingProduct(false);
             onChange("商品预设已保存");
           }}
         />
@@ -430,8 +433,10 @@ export function Settings({
           <p>
             这份备份包含 {backup.sales.length} 条销售记录和{" "}
             {backup.products.length} 个商品、
-            {backup.version === 2 ? backup.customers.length : 0} 个客户档案和{" "}
-            {backup.version === 2 ? backup.tasks.length : 0} 条日程。
+            {backup.version === 2
+              ? backup.customers.length
+              : 0} 个客户档案和 {backup.version === 2 ? backup.tasks.length : 0}{" "}
+            条日程。
           </p>
           <p className="subtle">
             仅允许恢复到空账本，不覆盖已有销售；回收站记录也会一并恢复。
@@ -457,100 +462,5 @@ export function Settings({
         </Modal>
       )}
     </>
-  );
-}
-function ProductEditor({
-  product,
-  api,
-  onClose,
-  onSaved,
-}: {
-  product: Product;
-  api: Api;
-  onClose: () => void;
-  onSaved: () => void;
-}) {
-  const [name, setName] = useState(product.name);
-  const [price, setPrice] = useState(moneyInput(product.price));
-  const [cost, setCost] = useState(moneyInput(product.cost));
-  const [active, setActive] = useState(product.active);
-  const [error, setError] = useState("");
-  const [busy, setBusy] = useState(false);
-  async function save() {
-    setBusy(true);
-    try {
-      await api.call("products.save", {
-        ...product,
-        name,
-        price: parseMoney(price),
-        cost: parseMoney(cost),
-        active,
-      });
-      onSaved();
-    } catch (e) {
-      setError(message(e));
-    } finally {
-      setBusy(false);
-    }
-  }
-  return (
-    <Modal
-      title="商品预设"
-      onClose={() => {
-        if (!busy) onClose();
-      }}
-    >
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          void save();
-        }}
-      >
-        <label htmlFor="p-name">商品名称</label>
-        <input
-          id="p-name"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          required
-          maxLength={200}
-        />
-        <div className="field-grid">
-          <div>
-            <label htmlFor="p-price">常用售价</label>
-            <input
-              id="p-price"
-              inputMode="decimal"
-              value={price}
-              onChange={(e) => setPrice(e.target.value)}
-              required
-            />
-          </div>
-          <div>
-            <label htmlFor="p-cost">常用成本</label>
-            <input
-              id="p-cost"
-              inputMode="decimal"
-              value={cost}
-              onChange={(e) => setCost(e.target.value)}
-              required
-            />
-          </div>
-        </div>
-        <label className="checkbox-label">
-          <input
-            type="checkbox"
-            checked={active}
-            onChange={(e) => setActive(e.target.checked)}
-          />
-          在常用商品中展示
-        </label>
-        {error && <ErrorNote>{error}</ErrorNote>}
-        <div className="form-actions">
-          <button className="button primary" disabled={busy} type="submit">
-            {busy ? "正在保存…" : "保存商品"}
-          </button>
-        </div>
-      </form>
-    </Modal>
   );
 }

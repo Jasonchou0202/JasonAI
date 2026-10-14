@@ -444,6 +444,7 @@ export default function App() {
               api={api}
               mode={mode}
               edit={edit}
+              onProductSaved={() => changed("商品已保存，销售尚未保存")}
               onBack={() => go("dashboard")}
               onSaved={(s, stay) => {
                 changed(s);

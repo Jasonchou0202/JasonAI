@@ -75,9 +75,30 @@ function fixture() {
     customers,
     tasks,
     products: {
-      "preset-claude": {id:"preset-claude",name:"Claude Max 5x",price:12000,cost:3000,active:true,order:0},
-      "preset-chatgpt": {id:"preset-chatgpt",name:"ChatGPT Plus",price:18000,cost:9000,active:true,order:1},
-      "acceptance-product": {id:"acceptance-product",name:"虚构导入验收商品",price:100,cost:0,active:true,order:2},
+      "preset-claude": {
+        id: "preset-claude",
+        name: "Claude Max 5x",
+        price: 12000,
+        cost: 3000,
+        active: true,
+        order: 0,
+      },
+      "preset-chatgpt": {
+        id: "preset-chatgpt",
+        name: "ChatGPT Plus",
+        price: 18000,
+        cost: 9000,
+        active: true,
+        order: 1,
+      },
+      "acceptance-product": {
+        id: "acceptance-product",
+        name: "虚构导入验收商品",
+        price: 100,
+        cost: 0,
+        active: true,
+        order: 2,
+      },
     },
     batches: {},
     subscriptions: {},
@@ -97,6 +118,143 @@ test.beforeEach(async ({ page }) => {
   ).toBeVisible();
 });
 const ranking = (page: Page) => page.locator(".customer-ranking");
+
+test("add product selects it, preserves the sale draft on cancel, and keeps manual category and empty defaults", async ({
+  page,
+}) => {
+  await page.goto("./#/entry");
+  const dropdown = page.getByRole("combobox", {
+    name: "下拉选择商品",
+    exact: true,
+  });
+  await dropdown.selectOption("ChatGPT Plus");
+  await page.getByLabel("客户名称", { exact: false }).fill("原销售客户");
+  await dropdown.selectOption("__add_product__");
+  let dialog = page.getByRole("dialog");
+  await dialog.getByLabel("商品名称", { exact: true }).fill("尚未保存商品");
+  await dialog.getByRole("button", { name: "取消", exact: true }).click();
+  await expect(page.getByLabel(/商品名称/)).toHaveValue("ChatGPT Plus");
+  await expect(page.getByLabel(/销售额/)).toHaveValue("180.00");
+  await dropdown.selectOption("__add_product__");
+  dialog = page.getByRole("dialog");
+  await dialog.getByLabel("商品名称", { exact: true }).fill("ChatGPT 新服务");
+  await expect(dialog.getByLabel("商品类目")).toHaveValue("ChatGPT");
+  await dialog.getByLabel("商品类目").selectOption("培训与教程");
+  await dialog
+    .getByLabel("商品名称", { exact: true })
+    .fill("ChatGPT 新服务年卡");
+  await expect(dialog.getByLabel("商品类目")).toHaveValue("培训与教程");
+  await dialog.getByLabel("常用成本（选填）").fill("0");
+  await dialog.getByRole("button", { name: "保存商品", exact: true }).click();
+  await expect(dialog).not.toBeVisible();
+  await expect(dropdown).toHaveValue("ChatGPT 新服务年卡");
+  await expect(page.getByLabel(/销售额/)).toHaveValue("");
+  await expect(page.getByLabel(/成本 \/ 出资/)).toHaveValue("0.00");
+  await expect(page.getByLabel("客户名称", { exact: false })).toHaveValue(
+    "原销售客户",
+  );
+  await page.reload();
+  await expect(dropdown).toHaveValue("ChatGPT 新服务年卡");
+  await page.goto("./#/settings");
+  const directory = page.locator(".catalog-directory");
+  await directory
+    .getByRole("button", { name: "所有商品", exact: true })
+    .click();
+  await expect(
+    directory
+      .locator(".catalog-product-group")
+      .filter({ hasText: "培训与教程" }),
+  ).toContainText("ChatGPT 新服务年卡");
+  const row = page
+    .locator(".product-table-row")
+    .filter({ hasText: "ChatGPT 新服务年卡" });
+  await expect(row).toContainText("未设置");
+  await row.getByRole("button").click();
+  await expect(page.getByRole("dialog").getByLabel("商品类目")).toHaveValue(
+    "培训与教程",
+  );
+});
+
+test("product offline retry survives modal close and adds once; existing names use their original defaults", async ({
+  page,
+  context,
+}) => {
+  await page.goto("./#/entry");
+  const dropdown = page.getByRole("combobox", {
+    name: "下拉选择商品",
+    exact: true,
+  });
+  await dropdown.selectOption("__add_product__");
+  let dialog = page.getByRole("dialog");
+  await dialog.getByLabel("商品名称", { exact: true }).fill("断网商品");
+  await context.setOffline(true);
+  await dialog.getByRole("button", { name: "保存商品", exact: true }).click();
+  await expect(dialog.getByRole("alert")).toContainText("网络已断开");
+  await dialog.getByRole("button", { name: "取消", exact: true }).click();
+  await context.setOffline(false);
+  await dropdown.selectOption("__add_product__");
+  dialog = page.getByRole("dialog");
+  await expect(dialog.getByLabel("商品名称", { exact: true })).toHaveValue(
+    "断网商品",
+  );
+  await dialog
+    .getByRole("button", { name: "重试保存商品", exact: true })
+    .dblclick();
+  await expect(dialog).not.toBeVisible();
+  expect(
+    await page.evaluate(
+      () =>
+        Object.values(
+          JSON.parse(localStorage.getItem("zhangyuge-demo-v1")!).products,
+        ).filter((p: any) => p.name === "断网商品").length,
+    ),
+  ).toBe(1);
+  await dropdown.selectOption("__add_product__");
+  dialog = page.getByRole("dialog");
+  await dialog.getByLabel("商品名称", { exact: true }).fill(" ChatGPT Plus ");
+  await dialog.getByLabel("常用售价（选填）").fill("999");
+  await dialog.getByRole("button", { name: "保存商品", exact: true }).click();
+  await expect(page.getByLabel(/销售额/)).toHaveValue("180.00");
+});
+
+test("ranking badges count future and overdue tasks, change after completion, and handle 99+ on mobile", async ({
+  page,
+}) => {
+  const first = ranking(page).locator(".customer-ranks > li").first();
+  await expect(first.getByRole("status")).toHaveText("4");
+  await ranking(page).getByRole("tab", { name: "月", exact: true }).click();
+  await expect(first.getByRole("status")).toHaveText("4");
+  await page.goto("./#/calendar");
+  await page
+    .locator(".customer-today article")
+    .filter({ hasText: "验收-late" })
+    .getByRole("button", { name: "完成", exact: true })
+    .click();
+  await page.getByRole("button", { name: "生意看板", exact: true }).click();
+  await expect(first.getByRole("status")).toHaveText("3");
+  await page.evaluate(() => {
+    const data = JSON.parse(localStorage.getItem("zhangyuge-demo-v1")!);
+    for (let i = 0; i < 100; i++)
+      data.tasks["large-" + i] = { ...data.tasks.future, id: "large-" + i };
+    const original = data.customers[data.tasks.future.customerId];
+    original.name = "这是一个用于验收长名称与待办角标是否重叠的客户名称";
+    for (const sale of Object.values(data.sales) as any[])
+      if (sale.customer === "客户01") sale.customer = original.name;
+    localStorage.setItem("zhangyuge-demo-v1", JSON.stringify(data));
+  });
+  await page.setViewportSize({ width: 375, height: 812 });
+  await page.reload();
+  await expect(first.getByRole("status")).toHaveText("99+");
+  await expect(first.getByRole("status")).toHaveAttribute(
+    "aria-label",
+    "103 条未完成日程",
+  );
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth,
+    ),
+  ).toBe(true);
+});
 
 test("all-time top twenty, sorting, expand, search and history link", async ({
   page,
@@ -307,47 +465,73 @@ test("offline save keeps the draft and retry creates exactly one sale", async ({
   expect(rows).toHaveLength(1);
   expect((rows[0] as any).revenue - (rows[0] as any).cost).toBe(1033);
 });
-test("sales customer search opens schedule management", async ({page}) => {
+test("sales customer search opens schedule management", async ({ page }) => {
   await page.goto("./#/details");
-  await page.getByRole("textbox",{name:"搜索销售记录"}).fill("客户01");
-  const customerLinks=page.getByLabel("查询客户的日程管理");
+  await page.getByRole("textbox", { name: "搜索销售记录" }).fill("客户01");
+  const customerLinks = page.getByLabel("查询客户的日程管理");
   await expect(customerLinks).toContainText("客户01 · 日程管理");
-  await customerLinks.getByRole("button",{name:"客户01 · 日程管理",exact:true}).click();
-  await expect(page).toHaveURL(new RegExp(`customer\\?id=${hash("客户01")}&month=all`));
-  await expect(page.getByRole("heading",{name:/今日日程/})).toBeVisible();
+  await customerLinks
+    .getByRole("button", { name: "客户01 · 日程管理", exact: true })
+    .click();
+  await expect(page).toHaveURL(
+    new RegExp(`customer\\?id=${hash("客户01")}&month=all`),
+  );
+  await expect(page.getByRole("heading", { name: /今日日程/ })).toBeVisible();
 });
-test("calendar supports both name search and dropdown, and prioritizes today's tasks",async ({page})=>{
+test("calendar supports both name search and dropdown, and prioritizes today's tasks", async ({
+  page,
+}) => {
   await page.goto("./#/calendar");
-  const todayPanel=page.locator(".customer-today");
+  const todayPanel = page.locator(".customer-today");
   await expect(todayPanel.locator("article")).toHaveCount(3);
-  await page.getByRole("searchbox",{name:"输入客户名字查找日程"}).fill("客户02");
+  await page
+    .getByRole("searchbox", { name: "输入客户名字查找日程" })
+    .fill("客户02");
   await expect(todayPanel).toContainText("今天没有日程");
-  await page.getByRole("combobox",{name:"按客户查看",exact:true}).selectOption(hash("客户01"));
-  await expect(page.getByRole("searchbox",{name:"输入客户名字查找日程"})).toHaveValue("");
+  await page
+    .getByRole("combobox", { name: "按客户查看", exact: true })
+    .selectOption(hash("客户01"));
+  await expect(
+    page.getByRole("searchbox", { name: "输入客户名字查找日程" }),
+  ).toHaveValue("");
   await expect(todayPanel.locator("article")).toHaveCount(3);
-  const history=page.locator(".customer-history .customer-task-list article");
+  const history = page.locator(".customer-history .customer-task-list article");
   await expect(history.nth(0)).toContainText("验收-late");
   await expect(history.nth(2)).toContainText("验收-done");
   await expect(history.nth(3)).toContainText("验收-tomorrow");
 });
-test("full directories, grouped product dropdown and recoverable acceptance cleanup",async ({page})=>{
+test("full directories, grouped product dropdown and recoverable acceptance cleanup", async ({
+  page,
+}) => {
   await page.goto("./#/settings");
-  const directory=page.locator(".catalog-directory");
-  await expect(directory.getByRole("button",{name:"日程管理",exact:true}).first()).toBeVisible();
-  await directory.getByRole("button",{name:"所有商品",exact:true}).click();
+  const directory = page.locator(".catalog-directory");
+  await expect(
+    directory.getByRole("button", { name: "日程管理", exact: true }).first(),
+  ).toBeVisible();
+  await directory
+    .getByRole("button", { name: "所有商品", exact: true })
+    .click();
   await expect(directory).toContainText("年卡");
-  await expect(directory.locator(".catalog-product-group h3").first()).toContainText("ChatGPT");
-  const cleanup=page.locator(".catalog-cleanup");
-  await cleanup.getByRole("button",{name:"清理验收客户与商品",exact:true}).click();
+  await expect(
+    directory.locator(".catalog-product-group h3").first(),
+  ).toContainText("ChatGPT");
+  const cleanup = page.locator(".catalog-cleanup");
+  await cleanup
+    .getByRole("button", { name: "清理验收客户与商品", exact: true })
+    .click();
   await expect(cleanup).toContainText("没有需要清理");
   await expect(directory).not.toContainText("虚构导入验收商品");
-  await cleanup.getByText("已删除清单（1 项）",{exact:true}).click();
-  await cleanup.getByRole("button",{name:"恢复",exact:true}).click();
+  await cleanup.getByText("已删除清单（1 项）", { exact: true }).click();
+  await cleanup.getByRole("button", { name: "恢复", exact: true }).click();
   await expect(directory).toContainText("虚构导入验收商品");
   await page.goto("./#/entry");
-  await page.getByRole("combobox",{name:"下拉选择商品",exact:true}).selectOption("ChatGPT Plus");
+  await page
+    .getByRole("combobox", { name: "下拉选择商品", exact: true })
+    .selectOption("ChatGPT Plus");
   await expect(page.getByLabel(/商品名称/)).toHaveValue("ChatGPT Plus");
   await expect(page.getByLabel(/销售额/)).toHaveValue("180.00");
   await page.getByLabel(/商品名称/).fill("新手动商品");
-  await expect(page.getByRole("combobox",{name:"下拉选择商品",exact:true})).toHaveValue("");
+  await expect(
+    page.getByRole("combobox", { name: "下拉选择商品", exact: true }),
+  ).toHaveValue("");
 });

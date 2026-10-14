@@ -59,14 +59,14 @@ export function productCategory(name: string): string {
   if (/视频|工作流/.test(name)) return "视频与工作流";
   return "其他";
 }
-export function groupProducts<T extends { name: string }>(
+export function groupProducts<T extends { name: string; category?: string }>(
   items: T[],
 ): { category: string; items: T[] }[] {
   return productCategories
     .map((category) => ({
       category,
       items: items
-        .filter((p) => productCategory(p.name) === category)
+        .filter((p) => (p.category ?? productCategory(p.name)) === category)
         .sort((a, b) =>
           a.name.localeCompare(b.name, "zh-CN", { numeric: true }),
         ),

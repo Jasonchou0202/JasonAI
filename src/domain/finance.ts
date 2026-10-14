@@ -9,6 +9,7 @@ import type {
   Product,
 } from "./model";
 import { addDays, periodRange, shiftPeriod, today, validDate } from "./dates";
+import { productCategories } from "./catalog";
 export const MAX_MONEY = 999_999_999_99;
 export function parseMoney(value: unknown): number {
   const s = String(value ?? "")
@@ -79,6 +80,11 @@ export function validateSale(raw: SaleInput): SaleInput {
   };
 }
 export function validateProduct(p: Product): Product {
+  if (p?.category !== undefined && !productCategories.includes(p.category))
+    throw new Error("商品类目无效");
+  for (const value of [p?.hasDefaultPrice, p?.hasDefaultCost])
+    if (value !== undefined && typeof value !== "boolean")
+      throw new Error("商品默认金额标记无效");
   if (
     p?.archivedAt != null &&
     (typeof p.archivedAt !== "string" ||
@@ -108,6 +114,13 @@ export function validateProduct(p: Product): Product {
     active: p.active,
     order: p.order,
     ...(p.archivedAt !== undefined ? { archivedAt: p.archivedAt } : {}),
+    ...(p.category !== undefined ? { category: p.category } : {}),
+    ...(p.hasDefaultPrice !== undefined
+      ? { hasDefaultPrice: p.hasDefaultPrice }
+      : {}),
+    ...(p.hasDefaultCost !== undefined
+      ? { hasDefaultCost: p.hasDefaultCost }
+      : {}),
   };
 }
 export function filterSales(sales: Sale[], f: Filters = {}): Sale[] {

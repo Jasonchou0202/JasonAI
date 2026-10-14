@@ -192,7 +192,21 @@ export function CustomerRanking({
                         {String(row.rank).padStart(2, "0")}
                       </span>
                       <span className="customer-rank-name">
-                        <strong>{displayCustomerName(row.name)}</strong>
+                        <span className="customer-name-with-badge">
+                          <strong>{displayCustomerName(row.name)}</strong>
+                          {(row.pendingTaskCount ?? 0) > 0 && (
+                            <span
+                              className="customer-pending-badge"
+                              role="status"
+                              aria-label={`${row.pendingTaskCount} 条未完成日程`}
+                              title={`${row.pendingTaskCount} 条未完成日程（含逾期和未来）`}
+                            >
+                              {row.pendingTaskCount > 99
+                                ? "99+"
+                                : row.pendingTaskCount}
+                            </span>
+                          )}
+                        </span>
                         <small>
                           {row.aliases
                             .filter((a) => a !== row.name)

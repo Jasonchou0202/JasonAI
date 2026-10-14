@@ -6,6 +6,7 @@ import { displayCustomerName } from "../domain/customers";
 import { money, moneyInput, parseMoney } from "../domain/finance";
 import { useQuery, ErrorNote, message } from "./ui";
 import { groupProducts } from "../domain/catalog";
+import { ProductEditor } from "./ProductEditor";
 type Draft = {
   productId: string;
   productName: string;
@@ -36,12 +37,14 @@ export function SaleForm({
   api,
   mode,
   edit,
+  onProductSaved,
   onSaved,
   onBack,
 }: {
   api: Api;
   mode: string;
   edit?: Sale;
+  onProductSaved: () => void;
   onSaved: (text: string, stay: boolean) => void;
   onBack: () => void;
 }) {
@@ -53,13 +56,21 @@ export function SaleForm({
     } catch {}
     return edit ? fromSale(edit) : fresh();
   });
+  const [productVersion, setProductVersion] = useState(0);
+  const [addingProduct, setAddingProduct] = useState(false);
   const { data: products, error: productError } = useQuery<Product[]>(
     api,
     "products.list",
     {},
+    productVersion,
   );
   const { data: customers } = useQuery<string[]>(api, "customers", {});
-  const { data: catalog } = useQuery<Product[]>(api, "products.catalog", {});
+  const { data: catalog, error: catalogError } = useQuery<Product[]>(
+    api,
+    "products.catalog",
+    {},
+    productVersion,
+  );
   const productGroups = groupProducts(
     (catalog || products || []).filter((p) => p.active),
   );
@@ -99,8 +110,8 @@ export function SaleForm({
       ...f,
       productId: p.id,
       productName: p.name,
-      revenue: moneyInput(p.price),
-      cost: moneyInput(p.cost),
+      revenue: p.hasDefaultPrice === false ? "" : moneyInput(p.price),
+      cost: p.hasDefaultCost === false ? "" : moneyInput(p.cost),
     }));
   }
   let profit: number | null = null;
@@ -191,6 +202,10 @@ export function SaleForm({
                   : ""
               }
               onChange={(e) => {
+                if (e.target.value === "__add_product__") {
+                  setAddingProduct(true);
+                  return;
+                }
                 const preset = productGroups
                   .flatMap((g) => g.items)
                   .find((p) => p.name === e.target.value);
@@ -198,6 +213,7 @@ export function SaleForm({
               }}
             >
               <option value="">选择商品，或在下方手动输入</option>
+              <option value="__add_product__">＋增加商品</option>
               {productGroups.map((g) => (
                 <optgroup key={g.category} label={g.category}>
                   {g.items.map((p) => (
@@ -228,7 +244,7 @@ export function SaleForm({
               {(catalog || products)
                 ?.filter((p) => p.active)
                 .map((p) => (
-                  <option key={p.id} value={p.name} />
+                  <option key={p.name} value={p.name} />
                 ))}
             </datalist>
             <div className="product-chips">
@@ -246,7 +262,9 @@ export function SaleForm({
                   </button>
                 ))}
             </div>
-            {productError && <ErrorNote>{productError}</ErrorNote>}
+            {(productError || catalogError) && (
+              <ErrorNote>{productError || catalogError}</ErrorNote>
+            )}
             <div className="field-grid">
               <div>
                 <label htmlFor="customer">
@@ -397,6 +415,18 @@ export function SaleForm({
           </div>
         </aside>
       </div>
+      {addingProduct && (
+        <ProductEditor
+          api={api}
+          onClose={() => setAddingProduct(false)}
+          onSaved={(p) => {
+            select(p);
+            setAddingProduct(false);
+            setProductVersion((v) => v + 1);
+            onProductSaved();
+          }}
+        />
+      )}
     </>
   );
 }

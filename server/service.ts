@@ -317,10 +317,15 @@ export async function execute(
         );
     case "customers.ranking": {
       const customers = await initializeCustomers(store, ctx, now());
+      const [sales, tasks] = await Promise.all([
+        visible(store),
+        store.list<CustomerTask>("tasks"),
+      ]);
       return customerRanking(
         customers,
-        await visible(store),
+        sales,
         parseRankPeriod(p.period ?? p.month ?? "all"),
+        tasks,
       );
     }
     case "customers.suggestions": {
@@ -718,13 +723,60 @@ export async function execute(
         );
       });
     }
+    case "products.create":
     case "products.save": {
-      const product = validateProduct(p as Product);
+      const raw = action === "products.create" ? p.product : p;
+      const product = validateProduct({
+        ...raw,
+        name: typeof raw?.name === "string" ? raw.name.trim() : raw?.name,
+      });
       recordId(product.id);
+      const nameKey = "product_name_" + (await ctx.hash(product.name));
+      const candidates = (await store.list<Product>("products"))
+        .filter((row) => row.name.trim() === product.name)
+        .sort((a, b) => a.id.localeCompare(b.id));
       return store.transaction(async (tx) => {
         await writable(tx);
-        await tx.put("products", product.id, product);
-        return product;
+        const apply = async () => {
+          const registry = await tx.get<{ productId: string }>(
+            "batches",
+            nameKey,
+          );
+          const registered = registry
+            ? await tx.get<Product>("products", registry.productId)
+            : null;
+          let sameName =
+            registered?.name.trim() === product.name ? registered : null;
+          if (!sameName)
+            for (const candidate of candidates) {
+              const current = await tx.get<Product>("products", candidate.id);
+              if (current?.name.trim() === product.name) {
+                sameName = current;
+                break;
+              }
+            }
+          if (action === "products.create" && sameName) {
+            if (sameName.archivedAt)
+              throw new Error("同名商品已删除，请到设置中恢复");
+            if (!sameName.active)
+              throw new Error("同名商品已停用，请到设置中启用");
+            await tx.put("batches", nameKey, { productId: sameName.id });
+            return { product: sameName, reused: true };
+          }
+          if (sameName && sameName.id !== product.id)
+            throw new Error("同名商品已存在，请选择已有商品");
+          const old = await tx.get<Product>("products", product.id);
+          if (action === "products.create" && old)
+            throw new Error("商品编号已存在，请重新打开增加商品");
+          if (old?.archivedAt) throw new Error("商品已删除，请到设置中恢复");
+          const saved = validateProduct({ ...old, ...product });
+          await tx.put("products", saved.id, saved);
+          await tx.put("batches", nameKey, { productId: saved.id });
+          return { product: saved, reused: false };
+        };
+        if (action === "products.create")
+          return mutation(tx, ctx, p.requestId, action, product, apply);
+        return (await apply()).product;
       });
     }
     case "sales.create": {

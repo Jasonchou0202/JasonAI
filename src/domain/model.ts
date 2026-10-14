@@ -18,6 +18,9 @@ export interface Sale extends SaleInput {
   lastMutation?: string;
 }
 export interface Product {
+  category?: string;
+  hasDefaultPrice?: boolean;
+  hasDefaultCost?: boolean;
   archivedAt?: string | null;
   id: string;
   name: string;
@@ -97,6 +100,7 @@ export interface CustomerProduct {
   count: number;
 }
 export interface CustomerRanking {
+  pendingTaskCount: number;
   rank: number;
   customerId: string;
   name: string;

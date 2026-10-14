@@ -228,11 +228,18 @@ export function customerRanking(
   customers: Customer[],
   sales: Sale[],
   period: unknown,
+  tasks: CustomerTask[] = [],
 ): CustomerRankingResult {
   const rows = periodSales(sales, parseRankPeriod(period));
   const names = new Map(customers.map((c) => [c.name, c.id]));
   const byId = new Map(customers.map((c) => [c.id, c]));
   const roots = customerRoots(customers);
+  const pending = new Map<string, number>();
+  for (const task of tasks) {
+    const root = roots.get(task.customerId);
+    if (root && !task.deletedAt && !task.completedAt)
+      pending.set(root, (pending.get(root) ?? 0) + 1);
+  }
   const aliases = new Map<string, string[]>();
   for (const c of customers) {
     const root = roots.get(c.id)!;
@@ -261,6 +268,7 @@ export function customerRanking(
     .map(([id, rows]) => ({
       rank: 0,
       customerId: id,
+      pendingTaskCount: pending.get(id) ?? 0,
       name: byId.get(id)!.name,
       aliases: aliases.get(id) || [],
       products: customerProducts(rows),
