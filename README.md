@@ -38,7 +38,9 @@ npm run check
 
 本地后台部署：参照 `docs/deploy-env.example.json` 创建被 Git 忽略的 `private-data/deploy-env.json`，填写现有身份和提醒配置；先执行 `tcb login`，再 `npm run deploy:functions`。脚本只部署现有环境中的两套函数与分钟触发器，不购买服务、不输出密钥。未登录则输出控制台步骤。CLI 配置说明见 [官方文档](https://docs.cloudbase.net/cli-v1/functions/deploy)。
 
-网页外壳和静态资源支持离线缓存；登录、云接口和真实业务数据不会进入缓存。断网时仍可填写本机草稿，联网并成功登录后才能读取云端账本或保存。
+网页外壳和静态资源支持离线缓存；登录、云接口和真实业务数据不会进入缓存。已打开的录入页可继续填写草稿；断网刷新后草稿仍留在本机，联网并成功登录后继续录入、读取云端账本和保存。
+
+上线对账：`node scripts/verify-customer-upgrade.mjs private-data/before.json private-data/after.json`，核对历史销售原文、金额、月/季/半年/年排行总和，报告保存在本机忽略的 `private-data/`。
 
 ## iPhone 提醒与备份
 

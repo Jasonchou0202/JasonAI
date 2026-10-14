@@ -12,7 +12,8 @@ export default defineConfig({
   },
   reporter: process.env.CI ? "github" : "list",
   webServer: {
-    command: "npm run build -- --outDir dist-e2e && npm run preview -- --outDir dist-e2e --port 4173 --strictPort",
+    command:
+      "npm run build -- --outDir dist-e2e && npm run preview -- --outDir dist-e2e --port 4173 --strictPort",
     url: "http://127.0.0.1:4173/JasonAI/",
     timeout: 180000,
     reuseExistingServer: false,

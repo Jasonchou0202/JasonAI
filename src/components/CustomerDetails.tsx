@@ -142,7 +142,10 @@ function CustomerProfile({
                   >
                     <ChevronRight size={18} />
                   </button>
-                  <button className="text-button" onClick={() => setMonth("all")}>
+                  <button
+                    className="text-button"
+                    onClick={() => setMonth("all")}
+                  >
                     全部历史
                   </button>
                 </div>
@@ -224,7 +227,11 @@ function CustomerProfile({
                 })}
               </div>
             ) : (
-              <Empty title={month === "all" ? "还没有销售记录" : "这个月还没有销售记录"} />
+              <Empty
+                title={
+                  month === "all" ? "还没有销售记录" : "这个月还没有销售记录"
+                }
+              />
             )}
           </section>
         </>

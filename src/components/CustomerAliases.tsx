@@ -34,6 +34,7 @@ export function CustomerAliases({
   const [preview, setPreview] = useState(false);
   const [confirmed, setConfirmed] = useState(false);
   const [allPreview, setAllPreview] = useState(false);
+  const [onlyIp, setOnlyIp] = useState(false);
   const [allBusy, setAllBusy] = useState(false);
   const batchLock = useRef(false);
   const prefix = useId();
@@ -54,6 +55,9 @@ export function CustomerAliases({
     refresh,
   );
   const active = customers.data?.filter((c) => !c.mergedInto) || [];
+  const previewGroups = (suggestions.data || []).filter(
+    (group) => !onlyIp || group.reason === "ip_or_symbol",
+  );
   const query = search.trim().toLocaleLowerCase();
   const merged =
     customers.data?.filter(
@@ -93,7 +97,7 @@ export function CustomerAliases({
     if (batchLock.current) return;
     batchLock.current = true;
     setAllBusy(true);
-    const groups = suggestions.data || [];
+    const groups = previewGroups;
     let merged = 0;
     try {
       for (const group of groups) {
@@ -264,23 +268,51 @@ export function CustomerAliases({
                 disabled={
                   allBusy || suggestMutation.busy || suggestMutation.hasPending
                 }
-                onClick={() => setAllPreview((v) => !v)}
+                onClick={() => {
+                  setOnlyIp(false);
+                  setAllPreview(true);
+                }}
               >
                 全部合并
               </button>
+              {suggestions.data?.some(
+                (group) => group.reason === "ip_or_symbol",
+              ) && (
+                <button
+                  className="button secondary"
+                  disabled={
+                    allBusy ||
+                    suggestMutation.busy ||
+                    suggestMutation.hasPending
+                  }
+                  onClick={() => {
+                    setOnlyIp(true);
+                    setAllPreview(true);
+                  }}
+                >
+                  仅合并 IP/符号变体
+                </button>
+              )}
             </div>
             {allPreview && (
               <div className="customer-pending">
                 <p>
-                  请核对下方全部 {suggestions.data?.length || 0}{" "}
-                  组建议，包含仅大小写不同的名称。每组将归属到推荐客户，合并后可解除。
+                  请核对下方 {previewGroups.length} 组建议，
+                  {onlyIp
+                    ? "此次仅合并 IP 或符号变体，大小写建议保持不变。"
+                    : "此次包含仅大小写不同的名称。"}
+                  每组将归属到推荐客户，合并后可解除。
                 </p>
                 <button
                   className="button primary"
-                  disabled={allBusy}
+                  disabled={allBusy || !previewGroups.length}
                   onClick={() => void mergeAll()}
                 >
-                  {allBusy ? "合并中…" : "已预览，确认全部合并"}
+                  {allBusy
+                    ? "合并中…"
+                    : onlyIp
+                      ? "已预览，确认合并 IP/符号变体"
+                      : "已预览，确认全部合并"}
                 </button>
                 <button
                   className="text-button"

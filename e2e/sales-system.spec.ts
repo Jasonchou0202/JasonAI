@@ -174,6 +174,25 @@ test("suggestions merge after preview and can be undone without changing sale te
     .click();
   await expect(page.locator(".suggestion-card")).toHaveCount(1);
 });
+test("IP-only batch merge leaves case suggestions for manual review", async ({
+  page,
+}) => {
+  await page.goto("./#/settings");
+  const suggestions = page.locator(".customer-suggestions");
+  await expect(suggestions.locator(".suggestion-card")).toHaveCount(2);
+  await suggestions
+    .getByRole("button", { name: "仅合并 IP/符号变体", exact: true })
+    .click();
+  await expect(suggestions).toContainText("大小写建议保持不变");
+  await suggestions
+    .getByRole("button", { name: "已预览，确认合并 IP/符号变体", exact: true })
+    .click();
+  await expect(suggestions.locator(".suggestion-card")).toHaveCount(1);
+  await expect(suggestions.locator(".suggestion-card")).toContainText(
+    "仅大小写不同",
+  );
+  await expect(page.locator(".customer-alias-list > li")).toHaveCount(1);
+});
 test("calendar mixed colours, complete, reopen, schedule next, delete, restore and purge", async ({
   page,
 }) => {
@@ -185,11 +204,9 @@ test("calendar mixed colours, complete, reopen, schedule next, delete, restore a
     }),
   ).toBeVisible();
   const history = page.locator(".customer-history");
-  const card = history
-    .locator("article")
-    .filter({
-      has: page.getByRole("heading", { name: "验收-soon", exact: true }),
-    });
+  const card = history.locator("article").filter({
+    has: page.getByRole("heading", { name: "验收-soon", exact: true }),
+  });
   await expect(card).toHaveClass(/task-urgent/);
   await card.getByRole("button", { name: "完成", exact: true }).click();
   await expect(card).toHaveClass(/task-complete/);
