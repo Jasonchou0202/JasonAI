@@ -1,6 +1,15 @@
 import type { Customer, CustomerTask, CustomerTaskInput } from "./model";
 import { customerRoots } from "./customers";
 import { validDate, today } from "./dates";
+/** Includes earlier overdue items today, but never yesterday or completed items. */
+export function dailyPendingTasks(
+  tasks: CustomerTask[],
+  day: string,
+): CustomerTask[] {
+  return tasks
+    .filter((task) => !task.deletedAt && !task.completedAt && today(new Date(task.at)) === day)
+    .sort((a, b) => a.at.localeCompare(b.at) || a.id.localeCompare(b.id));
+}
 export function sortTasksTodayFirst(
   tasks: CustomerTask[],
   day: string,

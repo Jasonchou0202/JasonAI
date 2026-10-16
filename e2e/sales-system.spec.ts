@@ -119,6 +119,73 @@ test.beforeEach(async ({ page }) => {
 });
 const ranking = (page: Page) => page.locator(".customer-ranking");
 
+test("daily reminder button counts today's open tasks and opens the correct schedule", async ({
+  page,
+}) => {
+  const bell = page.getByRole("button", {
+    name: "日常提醒，今日 2 条待办",
+    exact: true,
+  });
+  await expect(bell).toBeVisible();
+  await bell.click();
+  const dialog = page.getByRole("dialog");
+  await expect(
+    dialog.getByRole("heading", { name: "今日待办", exact: true }),
+  ).toBeVisible();
+  const list = dialog.getByRole("list", { name: "今日未完成日程" });
+  await expect(list.getByRole("listitem")).toHaveCount(2);
+  await expect(list).toContainText("11:00");
+  await expect(list).toContainText("13:00");
+  await expect(list).toContainText("客户01");
+  await expect(list).not.toContainText("验收-done");
+  await list.getByRole("button").filter({ hasText: "验收-soon" }).click();
+  const taskDialog = page.getByRole("dialog");
+  await expect(
+    taskDialog.getByRole("heading", { name: "跟进日程", exact: true }),
+  ).toBeVisible();
+  await taskDialog.getByRole("button", { name: "完成", exact: true }).click();
+  await expect(
+    page.getByRole("button", { name: "日常提醒，今日 1 条待办", exact: true }),
+  ).toBeVisible();
+  await taskDialog.getByRole("button", { name: "重开", exact: true }).click();
+  await expect(bell).toBeVisible();
+});
+
+test("daily reminders handle a new Beijing day, zero items, offline failure and mobile width", async ({
+  page,
+  context,
+}) => {
+  await page.setViewportSize({ width: 375, height: 812 });
+  await expect(
+    page.getByRole("button", { name: "日常提醒，今日 2 条待办", exact: true }),
+  ).toBeVisible();
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth,
+    ),
+  ).toBe(true);
+  await page.clock.setFixedTime(new Date("2026-10-16T16:00:01Z"));
+  await page.getByRole("button", { name: /日常提醒/ }).click();
+  const dialog = page.getByRole("dialog");
+  await expect(dialog).toContainText("2026-10-17");
+  await expect(dialog).toContainText("今天没有未完成事项");
+  await dialog.getByRole("button", { name: "关闭", exact: true }).click();
+  await expect(
+    page.getByRole("button", { name: "日常提醒，今日 0 条待办", exact: true }),
+  ).toBeVisible();
+  await context.setOffline(true);
+  await page.getByRole("button", { name: /日常提醒/ }).click();
+  await expect(dialog).toContainText("暂时无法更新今日待办");
+  await expect(dialog).not.toContainText("今天没有未完成事项");
+  await expect(
+    dialog.getByRole("button", { name: "重试", exact: true }),
+  ).toBeVisible();
+  await context.setOffline(false);
+  await expect(dialog).toContainText("今天没有未完成事项");
+  await dialog.getByRole("button", { name: "刷新待办", exact: true }).click();
+  await expect(dialog).toContainText("今天没有未完成事项");
+});
+
 test("add product selects it, preserves the sale draft on cancel, and keeps manual category and empty defaults", async ({
   page,
 }) => {

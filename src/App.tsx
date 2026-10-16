@@ -19,6 +19,7 @@ import { SaleForm } from "./components/SaleForm";
 import { Details } from "./components/Details";
 import { Settings } from "./components/Settings";
 import { Calendar } from "./components/Calendar";
+import { DailyReminders } from "./components/DailyReminders";
 import { CustomerDetails } from "./components/CustomerDetails";
 import { stopPush } from "./lib/notifications";
 import { Brand, ErrorNote, Loading, message } from "./components/ui";
@@ -386,6 +387,15 @@ export default function App() {
             </strong>
           </div>
           <div className="topbar-right">
+            <DailyReminders
+              key={mode}
+              api={api}
+              version={version}
+              onOpenTask={(id) =>
+                go("calendar", new URLSearchParams({ task: id }).toString())
+              }
+              onOpenCalendar={() => go("calendar")}
+            />
             <span className="privacy-label">
               <ShieldCheck size={14} />
               个人私密账本
