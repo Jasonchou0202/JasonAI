@@ -95,7 +95,7 @@ loginType: LOGINTYPE
 
 ## 安全 review 结论与线上验收
 
-本地 review 已确认：伪造 Timer payload、本次身份为其他用户或匿名、没有来源证明的无身份调用均有拒绝测试；密钥 Message 的允许路径与非本人携带正确 Message 的拒绝路径也有测试。发送仅允许 HTTPS 443 下的 `*.push.apple.com`、`fcm.googleapis.com`、`updates.push.services.mozilla.com`，使用 `web-push` 的原生 HTTPS 请求且不跟随重定向。API 不返回 endpoint 或私钥，SDK 的响应正文和认证头不进入公开错误。最新代码验证记录为 52 项提醒测试、全项目 90 项测试、TypeScript 检查、前端及两套后端打包通过；这不是线上触发器或设备收取验收结果。
+本地 review 已确认：伪造 Timer payload、本次身份为其他用户或匿名、没有来源证明的无身份调用均有拒绝测试；密钥 Message 的允许路径与非本人携带正确 Message 的拒绝路径也有测试。发送仅允许 HTTPS 443 下的 `*.push.apple.com`、`fcm.googleapis.com`、`updates.push.services.mozilla.com`、`*.notify.windows.com`，使用 `web-push` 的原生 HTTPS 请求且不跟随重定向。API 不返回 endpoint 或私钥，SDK 的响应正文和认证头不进入公开错误。最新代码验证记录为 52 项提醒测试、全项目 90 项测试、TypeScript 检查、前端及两套后端打包通过；这不是线上触发器或设备收取验收结果。
 
 上线时逐项确认以下实际结果。无需输出完整 event/context 来诊断；只记录字段是否存在、拒绝结果和计数。
 
@@ -114,6 +114,10 @@ loginType: LOGINTYPE
 
 安全结论限于当前源码和上述部署边界。仍需部署方执行线上身份拒绝验证；没有线上日志证据时，不宣称 CloudBase 实际 context 已提供 timer 来源，也不宣称通知已到达设备。
 # 本地部署与升级
+
+电脑端使用独立的 Edge、Chrome 或 Firefox，点击设置中的“开启此设备提醒”并允许通知。每个浏览器与 iPhone 分别登记，不会因手机已开启而自动启用电脑。Edge 的微软 WNS 通道仅允许 HTTPS 443、合法子域名的 `*.notify.windows.com`（[微软的域名校验说明](https://learn.microsoft.com/en-us/windows/apps/develop/notifications/push-notifications/wns-overview)），与苹果、Google、Mozilla 通道同时发送；不放开任意外部地址，不跟随重定向。
+
+设置显示通知权限、浏览器订阅与云端登记三个状态；失去订阅后可再次开启。“本机通知自检”只验证本机 Service Worker 的通知显示，不经过云端、不改变设备登记。若本机也看不到，检查 Windows 通知中心、浏览器的系统通知开关和勿扰模式；若本机能显示但云端测试失败，查看页面错误。Chrome 还需能连通 Google 推送服务。云端 accepted 仅表示服务接收；仍需实际确认电脑通知及点击日程跳转。关闭电脑、断网或系统限制会影响送达。
 
 将 `docs/deploy-env.example.json` 复制到 Git 忽略的 `private-data/deploy-env.json`，填写现有环境 ID、本人 ID、VAPID 配置和提醒触发 token。不要更换既有 VAPID 密钥，以免现有设备订阅失效。执行 `tcb login` 后运行 `npm run deploy:functions`，也可先用 `node scripts/deploy-functions.mjs --check` 只检查配置。
 

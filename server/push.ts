@@ -116,6 +116,7 @@ export function validatePushEndpoint(value: unknown): string {
   const allowed =
     host === "fcm.googleapis.com" ||
     host === "updates.push.services.mozilla.com" ||
+    /^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+notify\.windows\.com$/.test(host) ||
     /^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+push\.apple\.com$/.test(host);
   if (
     url.protocol !== "https:" ||

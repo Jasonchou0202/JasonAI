@@ -320,6 +320,12 @@ describe("push API and endpoint security", () => {
     "https://fcm.googleapis.com./send",
     "https://fcm.googleapis.com/send#redirect",
     "https://fcm.googleapis.com\\@evil.test/send",
+    "https://notify.windows.com/send",
+    "https://evilnotify.windows.com/send",
+    "https://wns.notify.windows.com.evil.test/send",
+    "https://wns.notify.windows.com:444/send",
+    "https://evil@wns.notify.windows.com/send",
+    "https://wns.notify.windows.com/send#redirect",
   ])("blocks disallowed endpoint %s", (endpoint) => {
     expect(() => validatePushEndpoint(endpoint)).toThrow("地址无效");
   });
@@ -328,6 +334,7 @@ describe("push API and endpoint security", () => {
       "https://fcm.googleapis.com:443/send",
       "https://updates.push.services.mozilla.com/send",
       "https://web.push.apple.com/send",
+      "https://wns2-test.notify.windows.com/w/?token=test",
     ])
       expect(validatePushSubscription({ endpoint, keys }).endpoint).toContain(
         "https://",
@@ -354,6 +361,39 @@ describe("push API and endpoint security", () => {
     expect(subscriptionId(owner, "https://fcm.googleapis.com/send")).not.toBe(
       subscriptionId("other", "https://fcm.googleapis.com/send"),
     );
+  });
+  it("registers Edge alongside iPhone and sends both device tests and scheduled reminders", async () => {
+    const f = await fixture();
+    const endpoints = [
+      "https://wns2-test.notify.windows.com/w/?token=test",
+      "https://web.push.apple.com/test",
+    ];
+    for (const endpoint of endpoints) {
+      const registered = (await pushAction(
+        f.store,
+        ctx(),
+        "push.subscribe",
+        { subscription: { endpoint, keys } },
+        config,
+        f.send,
+      )) as { id: string };
+      expect(
+        await pushAction(
+          f.store,
+          ctx(),
+          "push.test",
+          registered,
+          config,
+          f.send,
+        ),
+      ).toEqual({ accepted: true });
+    }
+    f.sent.length = 0;
+    await runReminders(f.store, config, f.send, due);
+    expect(f.sent.map(({ sub }) => sub.endpoint)).toEqual(
+      expect.arrayContaining(endpoints),
+    );
+    expect(f.sent).toHaveLength(3);
   });
   it("does not fake success without a private key, and accepts HTTPS subject", async () => {
     const f = await fixture(),
