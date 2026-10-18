@@ -1044,16 +1044,33 @@ test.describe("after a new deploy removes old lazy chunks", () => {
     await page.route(chunk, (route) =>
       route.fulfill({ status: 404, contentType: "text/plain", body: "" }),
     );
-    let loads = 0;
-    page.on("load", () => loads++);
-    // 重新打开页面：空闲预取拿不到日程文件，会自动刷新一次，且只刷新一次
-    await page.reload();
-    await expect.poll(() => loads, { timeout: 15000 }).toBe(2);
+    // 每次打开文档都记一次数（存在 sessionStorage，刷新后仍在），不依赖 load 事件
+    await page.addInitScript(() => {
+      const n = Number(sessionStorage.getItem("e2e-doc-loads") || 0);
+      sessionStorage.setItem("e2e-doc-loads", String(n + 1));
+    });
+    const loads = () =>
+      page
+        .evaluate(() => Number(sessionStorage.getItem("e2e-doc-loads") || 0))
+        .catch(() => -1);
+    // 重新打开页面：空闲预取拿不到日程文件，会自动刷新一次，且只刷新一次。
+    // 自动刷新会打断这次 reload，所以只等到开始提交即可
+    await page.reload({ waitUntil: "commit" });
+    await expect.poll(loads, { timeout: 20000 }).toBe(2);
+    await page.waitForLoadState("load");
     await expect(
       page.getByRole("heading", { name: "核心客户", exact: true }),
     ).toBeVisible();
+    await expect
+      .poll(() =>
+        page
+          .evaluate(() => sessionStorage.getItem("zhangyuge-chunk-reload-at"))
+          .catch(() => null),
+      )
+      .not.toBeNull();
+    // 再等一会儿，确认没有第二次自动刷新
     await page.waitForTimeout(2000);
-    expect(loads).toBe(2);
+    expect(await loads()).toBe(2);
     await page.goto("./#/calendar");
     const button = page.getByRole("button", {
       name: "页面有更新，点此刷新",
