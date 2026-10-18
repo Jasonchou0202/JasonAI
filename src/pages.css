@@ -289,8 +289,12 @@
   color: var(--text-1);
 }
 .detail-actions {
-  position: relative;
   z-index: 1;
+}
+@media (min-width: 601px) {
+  .detail-actions {
+    position: relative;
+  }
 }
 .row-menu {
   position: relative;
