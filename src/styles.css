@@ -2860,3 +2860,82 @@ label small,
     min-width: 515px;
   }
 }
+/* 记一笔：点商品 → 输客户 → 保存 */
+.field-label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 16px 0 8px;
+}
+.field-label-row label {
+  margin: 0;
+}
+.add-product-button {
+  font-size: var(--fs-2);
+  min-height: 40px;
+  gap: 4px;
+}
+.customer-field label {
+  margin-top: 20px;
+}
+.customer-field input {
+  width: 100%;
+}
+.date-field {
+  margin-top: 14px;
+}
+.date-field label {
+  margin-top: 0;
+}
+.date-field input {
+  max-width: 260px;
+}
+.date-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 40px;
+  padding: 8px 12px;
+  border-radius: 9px;
+  border: 1px solid var(--border);
+  background: #f7f9f4;
+  color: var(--text-2);
+  font-size: var(--fs-2);
+}
+.date-toggle strong {
+  color: var(--text-1);
+  font-weight: 600;
+}
+.date-toggle em {
+  font-style: normal;
+  color: var(--green);
+  font-weight: 600;
+}
+.date-toggle:hover {
+  background: var(--light);
+}
+@media (max-width: 680px) {
+  .entry-form .form-actions {
+    position: sticky;
+    bottom: calc(70px + env(safe-area-inset-bottom));
+    z-index: 20;
+    margin: 20px -18px -22px;
+    padding: 12px 18px 26px;
+    background: #fffffff7;
+    border-top: 1px solid var(--border);
+    box-shadow: 0 -8px 18px #233c330d;
+    border-radius: 0 0 12px 12px;
+  }
+  .entry-form .form-actions .button {
+    font-size: var(--fs-2);
+    min-height: 46px;
+  }
+  .customer-field input {
+    font-size: var(--fs-3);
+    height: 46px;
+  }
+  .date-field input {
+    max-width: 100%;
+  }
+}
