@@ -266,6 +266,7 @@ export function Settings({
           </button>
           <input
             ref={input}
+            aria-label="选择要导入的销售表格文件"
             type="file"
             accept=".csv,.xlsx,.xls"
             hidden
@@ -299,6 +300,7 @@ export function Settings({
           </button>
           <input
             ref={restoreInput}
+            aria-label="选择要恢复的备份文件"
             hidden
             type="file"
             accept=".json"

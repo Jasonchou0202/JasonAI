@@ -414,9 +414,9 @@ export function SaleForm({
             )}
           </div>
         </form>
-        <aside className="entry-aside">
+        <aside className="entry-aside" aria-label="本笔小票">
           <div className="paper-slip">
-            <span className="eyebrow">ZHANGYUGE · SALES NOTE</span>
+            <span className="eyebrow">章鱼哥 · 本笔小票</span>
             <h3>
               每一笔，
               <br />
