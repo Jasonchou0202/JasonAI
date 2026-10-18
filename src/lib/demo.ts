@@ -22,7 +22,7 @@ export function createDemo(): Api {
   } else seed();
   function seed() {
     const names = [
-      "Plus 代充",
+      "Plus 会员",
       "Plus 成品号",
       "Claude Pro",
       "AI 工具年卡",
