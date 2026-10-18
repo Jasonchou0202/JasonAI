@@ -66,6 +66,7 @@
   --page-pad-top: 32px;
   /* 页面标题：随屏宽平滑缩放，不超出字号阶梯 */
   --fs-title: clamp(var(--fs-4), 1rem + 1.6vw, var(--fs-5));
+  --fs-title-xl: clamp(var(--fs-5), 1rem + 2vw, var(--fs-6)); /* 页面主标题 */
 }
 @media (min-width: 1441px) {
   :root {

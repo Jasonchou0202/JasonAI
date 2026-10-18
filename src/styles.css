@@ -1955,103 +1955,6 @@ label small {
   margin: 0 0 0 auto;
   width: 100%;
 }
-.art-label {
-  font-size: var(--fs-1);
-  color: var(--text-3);
-  letter-spacing: 2px;
-  margin-bottom: 30px;
-}
-.art-receipt {
-  background: var(--bg);
-  width: 265px;
-  padding: 28px 30px;
-  box-shadow: 0 20px 30px #4e674220;
-  transform: rotate(-5deg);
-  position: relative;
-}
-.art-receipt:after {
-  content: "";
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: -8px;
-  height: 10px;
-  background:
-    linear-gradient(135deg, #fffef3 5px, transparent 0) 0 0/10px 10px,
-    linear-gradient(225deg, #fffef3 5px, transparent 0) 0 0/10px 10px;
-}
-.art-receipt img {
-  width: 38px;
-  height: 38px;
-  display: block;
-  margin: auto;
-}
-.art-receipt > span {
-  font-size: var(--fs-1);
-  color: var(--text-3);
-  display: block;
-  text-align: center;
-  margin-top: 17px;
-}
-.art-line {
-  border-top: 1px dashed #d5dfc4;
-  margin: 20px 0;
-}
-.art-receipt p {
-  font-size: var(--fs-5);
-  line-height: 1.7;
-  color: var(--text-2);
-  text-align: center;
-  font-weight: 500;
-}
-.art-chart {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 8px;
-  height: 130px;
-  margin-top: 22px;
-  border-bottom: 1px solid #dce4cf;
-  padding: 0 6px;
-}
-.art-chart i {
-  width: 17px;
-  display: block;
-  background: #bed0a9;
-  border-radius: 3px 3px 0 0;
-}
-.art-chart i:nth-child(2n) {
-  background: #a2bc89;
-}
-.art-chart i:last-child {
-  background: var(--green);
-}
-.art-bottom {
-  text-align: center;
-  font-size: var(--fs-1);
-  color: var(--text-3);
-  margin-top: 20px;
-  letter-spacing: 1px;
-}
-.art-stamp {
-  position: absolute;
-  border: 1px solid #89a576;
-  border-radius: 50%;
-  width: 90px;
-  height: 90px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--text-3);
-  font-size: var(--fs-1);
-  font-family: "Manrope", sans-serif;
-  font-weight: 600;
-  line-height: 1.6;
-  transform: rotate(13deg);
-  bottom: 12px;
-  right: 9px;
-  background: var(--line);
-}
 .welcome > footer {
   border-top: 1px solid var(--line);
   display: flex;
@@ -2237,13 +2140,6 @@ label small {
   }
   .welcome-benefits {
     gap: 12px;
-  }
-  .art-receipt {
-    width: 235px;
-  }
-  .art-label {
-    font-size: var(--fs-1);
-    white-space: nowrap;
   }
   .page-heading h1 {
     font-size: var(--fs-5);

@@ -98,6 +98,11 @@ function CustomerProfile({
     setHint("");
     setView(v);
   }
+  const allTotals = totals(allSales);
+  const latestSale = allSales.reduce(
+    (latest, s) => (s.date > latest ? s.date : latest),
+    "",
+  );
   const sales = allSales.filter((s) => inView(activeView, s));
   const viewTotals = totals(sales);
   const viewProducts = customerProducts(sales);
@@ -140,6 +145,27 @@ function CustomerProfile({
           <h1>{data ? displayCustomerName(data.customer.name) : "客户详情"}</h1>
           <p className="subtle">成交记录与每一次跟进，放在一起看。</p>
         </div>
+        {data && !loading && allSales.length > 0 && (
+          <dl className="hero-figures" aria-label="客户合计">
+            <div className="lead">
+              <dt>累计利润</dt>
+              <dd className={allTotals.profit < 0 ? "negative" : ""}>
+                ¥{money(allTotals.profit)}
+              </dd>
+            </div>
+            <div>
+              <dt>成交</dt>
+              <dd>
+                {allTotals.count}
+                <small> 笔</small>
+              </dd>
+            </div>
+            <div>
+              <dt>最近成交</dt>
+              <dd>{latestSale.replaceAll("-", ".")}</dd>
+            </div>
+          </dl>
+        )}
       </div>
       {error && (
         <>
