@@ -946,3 +946,39 @@ test("with a mouse, one click on a trend bar still opens the details", async ({
   await page.locator(".dash-chart .bar-column").last().click();
   await expect(page.getByRole("heading", { name: "销售明细" })).toBeVisible();
 });
+test.describe("after a new deploy removes old lazy chunks", () => {
+  test.use({ serviceWorkers: "block" });
+  test("a missing schedule chunk reloads once, then shows the update notice instead of a blank page", async ({
+    page,
+  }) => {
+    const chunk = /\/assets\/Calendar-[^/]+\.js(\?.*)?$/;
+    await page.route(chunk, (route) =>
+      route.fulfill({ status: 404, contentType: "text/plain", body: "" }),
+    );
+    let loads = 0;
+    page.on("load", () => loads++);
+    // 重新打开页面：空闲预取拿不到日程文件，会自动刷新一次，且只刷新一次
+    await page.reload();
+    await expect.poll(() => loads, { timeout: 15000 }).toBe(2);
+    await expect(
+      page.getByRole("heading", { name: "核心客户", exact: true }),
+    ).toBeVisible();
+    await page.waitForTimeout(2000);
+    expect(loads).toBe(2);
+    await page.goto("./#/calendar");
+    const button = page.getByRole("button", {
+      name: "页面有更新，点此刷新",
+      exact: true,
+    });
+    await expect(button).toBeVisible();
+    await expect(page.getByRole("alert")).toContainText("页面有更新");
+    await expect(page.locator("main h1")).toHaveCount(1);
+    await expect(page.locator(".app-shell")).toBeVisible();
+    // 新版本文件可以拿到后，点刷新就能正常打开
+    await page.unroute(chunk);
+    await button.click();
+    await expect(
+      page.getByRole("heading", { name: "跟进日历", level: 1 }),
+    ).toBeVisible();
+  });
+});

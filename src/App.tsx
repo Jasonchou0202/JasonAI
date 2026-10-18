@@ -18,6 +18,10 @@ import { Dashboard } from "./components/Dashboard";
 import { SaleForm } from "./components/SaleForm";
 import { Details } from "./components/Details";
 import { DailyReminders } from "./components/DailyReminders";
+import {
+  UpdateBoundary,
+  installPreloadRecovery,
+} from "./components/UpdateBoundary";
 import heroArt800 from "./assets/hero-octopus-800.webp";
 import { stopPush } from "./lib/notifications";
 import { Brand, ErrorNote, Loading, message } from "./components/ui";
@@ -104,6 +108,8 @@ export default function App() {
       window.removeEventListener("offline", net);
     };
   }, []);
+  // 新版本发布后按需文件拿不到：自动刷新一次（记一笔页面除外，免得打断输入）
+  useEffect(() => installPreloadRecovery(() => readRoute() !== "entry"), []);
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [page, mode]);
@@ -454,89 +460,91 @@ export default function App() {
           </div>
         )}
         <main className="main-content" id="main-content" tabIndex={-1}>
-          <Suspense fallback={<Loading />}>
-            {page === "dashboard" && (
-              <Dashboard
-                api={api}
-                version={version}
-                onNew={newSale}
-                onEdit={editSale}
-                onCustomer={customer}
-                onFilter={(f) => {
-                  setFilters(f);
-                  go("details", filterQuery(f));
-                }}
-              />
-            )}
-            {page === "entry" && editId && !edit && <Loading />}
-            {page === "entry" && editError && (
-              <ErrorNote>{editError}</ErrorNote>
-            )}
-            {page === "entry" && (!editId || edit?.id === editId) && (
-              <SaleForm
-                key={mode + (edit?.id || "new")}
-                api={api}
-                mode={mode}
-                edit={edit}
-                onProductSaved={() => changed("商品已保存，销售尚未保存")}
-                onBack={() => go("dashboard")}
-                onSaved={(s, stay) => {
-                  changed(s);
-                  if (!stay) {
-                    setEdit(undefined);
-                    go("dashboard");
-                  }
-                }}
-              />
-            )}
-            {page === "details" && (
-              <Details
-                api={api}
-                version={version}
-                filters={filters}
-                setFilters={updateFilters}
-                onEdit={editSale}
-                onNew={newSale}
-                onChange={changed}
-                onCustomer={customer}
-              />
-            )}
-            {page === "settings" && (
-              <Settings
-                api={api}
-                version={version}
-                demo={mode === "demo"}
-                onBack={() => go("dashboard")}
-                onChange={changed}
-                onLogout={() => void signOut()}
-                onCustomer={customer}
-              />
-            )}
-            {page === "calendar" && (
-              <Calendar
-                api={api}
-                version={version}
-                mode={mode}
-                onChange={changed}
-                onCustomer={customer}
-                taskId={routeParams().get("task") || undefined}
-              />
-            )}
-            {page === "customer" && (
-              <CustomerDetails
-                key={routeParams().get("id")}
-                api={api}
-                version={version}
-                mode={mode}
-                id={routeParams().get("id") || ""}
-                month={routeParams().get("month") || undefined}
-                onChange={changed}
-                onBack={() => go("dashboard")}
-                onCustomer={customer}
-                onEditSale={editSale}
-              />
-            )}
-          </Suspense>
+          <UpdateBoundary key={page}>
+            <Suspense fallback={<Loading />}>
+              {page === "dashboard" && (
+                <Dashboard
+                  api={api}
+                  version={version}
+                  onNew={newSale}
+                  onEdit={editSale}
+                  onCustomer={customer}
+                  onFilter={(f) => {
+                    setFilters(f);
+                    go("details", filterQuery(f));
+                  }}
+                />
+              )}
+              {page === "entry" && editId && !edit && <Loading />}
+              {page === "entry" && editError && (
+                <ErrorNote>{editError}</ErrorNote>
+              )}
+              {page === "entry" && (!editId || edit?.id === editId) && (
+                <SaleForm
+                  key={mode + (edit?.id || "new")}
+                  api={api}
+                  mode={mode}
+                  edit={edit}
+                  onProductSaved={() => changed("商品已保存，销售尚未保存")}
+                  onBack={() => go("dashboard")}
+                  onSaved={(s, stay) => {
+                    changed(s);
+                    if (!stay) {
+                      setEdit(undefined);
+                      go("dashboard");
+                    }
+                  }}
+                />
+              )}
+              {page === "details" && (
+                <Details
+                  api={api}
+                  version={version}
+                  filters={filters}
+                  setFilters={updateFilters}
+                  onEdit={editSale}
+                  onNew={newSale}
+                  onChange={changed}
+                  onCustomer={customer}
+                />
+              )}
+              {page === "settings" && (
+                <Settings
+                  api={api}
+                  version={version}
+                  demo={mode === "demo"}
+                  onBack={() => go("dashboard")}
+                  onChange={changed}
+                  onLogout={() => void signOut()}
+                  onCustomer={customer}
+                />
+              )}
+              {page === "calendar" && (
+                <Calendar
+                  api={api}
+                  version={version}
+                  mode={mode}
+                  onChange={changed}
+                  onCustomer={customer}
+                  taskId={routeParams().get("task") || undefined}
+                />
+              )}
+              {page === "customer" && (
+                <CustomerDetails
+                  key={routeParams().get("id")}
+                  api={api}
+                  version={version}
+                  mode={mode}
+                  id={routeParams().get("id") || ""}
+                  month={routeParams().get("month") || undefined}
+                  onChange={changed}
+                  onBack={() => go("dashboard")}
+                  onCustomer={customer}
+                  onEditSale={editSale}
+                />
+              )}
+            </Suspense>
+          </UpdateBoundary>
           <footer className="app-footer">
             <span>章鱼哥 AI 工作室</span>
             <span>认真记账，轻松经营。</span>
