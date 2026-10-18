@@ -925,3 +925,63 @@
     padding: 12px;
   }
 }
+/* 客户详情：本月 / 近 3 个月 / 全部，按月分组 */
+.customer-period-heading {
+  align-items: flex-start;
+  gap: 14px;
+}
+.customer-period-controls {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px 14px;
+}
+.customer-period button {
+  font-size: var(--fs-2);
+  min-height: 36px;
+  padding: 6px 14px;
+}
+.customer-month-group + .customer-month-group {
+  margin-top: 10px;
+}
+.customer-month-title {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  margin: 0;
+  padding: 12px 0 10px;
+  border-top: 1px solid var(--border);
+  font-size: var(--fs-2);
+  font-weight: 700;
+  color: var(--text-1);
+}
+.customer-month-title small {
+  font-size: var(--fs-1);
+  font-weight: 400;
+  color: var(--text-2);
+  font-variant-numeric: tabular-nums;
+}
+.customer-month-title b {
+  color: var(--green);
+  font-weight: 600;
+}
+.customer-month-title b.negative {
+  color: var(--red);
+}
+.customer-more {
+  width: 100%;
+  margin: 8px 0 4px;
+}
+@media (max-width: 680px) {
+  .customer-period-controls {
+    width: 100%;
+  }
+  .customer-period {
+    width: 100%;
+  }
+  .customer-period button {
+    flex: 1;
+  }
+}

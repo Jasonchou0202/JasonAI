@@ -345,7 +345,12 @@ test("all-time top twenty, sorting, expand, search and history link", async ({
   await expect(rows).toHaveCount(1);
   await rows.first().getByRole("button").click();
   await expect(page).toHaveURL(/month=all/);
-  await expect(page.getByText("全部历史", { exact: true })).toBeVisible();
+  const period = page.getByRole("group", { name: "成交时间范围" });
+  await expect(
+    period.getByRole("button", { name: "本月", exact: true }),
+  ).toHaveAttribute("aria-pressed", "true");
+  await period.getByRole("button", { name: "全部", exact: true }).click();
+  await expect(page.getByText(/^全部历史 · /)).toBeVisible();
   await expect(
     page.getByRole("heading", { name: "客户日程", exact: true }),
   ).toBeVisible();
@@ -659,6 +664,68 @@ test("mobile entry keeps the save bar visible above the bottom navigation", asyn
     page.getByRole("navigation", { name: "手机导航" }).boundingBox(),
   ]);
   expect(saveBox!.y + saveBox!.height).toBeLessThanOrEqual(navBox!.y);
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth,
+    ),
+  ).toBe(true);
+});
+test("customer detail defaults to this month, switches range, groups by month and pages 20 at a time", async ({
+  page,
+}) => {
+  // 先切到客户页再写入测试数据，避免演示账本的下一次保存覆盖它
+  await page.goto(`./#/customer?id=${hash("客户05")}`);
+  await expect(page.getByRole("heading", { name: "客户05" })).toBeVisible();
+  await page.evaluate(() => {
+    const data = JSON.parse(localStorage.getItem("zhangyuge-demo-v1")!);
+    const base = Object.values(data.sales).find(
+      (s: any) => s.customer === "客户05",
+    ) as any;
+    for (let i = 0; i < 45; i++) {
+      const month = ["2026-10", "2026-09", "2026-07"][i % 3];
+      const id = "paging-" + i;
+      data.sales[id] = {
+        ...base,
+        id,
+        date: `${month}-${String(1 + (i % 9)).padStart(2, "0")}`,
+        revenue: 1000,
+        cost: 400,
+      };
+    }
+    localStorage.setItem("zhangyuge-demo-v1", JSON.stringify(data));
+  });
+  await page.reload();
+  const period = page.getByRole("group", { name: "成交时间范围" });
+  const rows = page.locator(".customer-sales .customer-sale");
+  await expect(
+    period.getByRole("button", { name: "本月", exact: true }),
+  ).toHaveAttribute("aria-pressed", "true");
+  await expect(page.getByText(/^2026 年 10 月 · /)).toBeVisible();
+  await expect(page.locator(".customer-stats")).toContainText("16");
+  await expect(rows).toHaveCount(16);
+  await period.getByRole("button", { name: "近 3 个月", exact: true }).click();
+  await expect(rows).toHaveCount(20);
+  await expect(page.locator(".customer-month-title")).toHaveCount(2);
+  await expect(page.locator(".customer-month-title").nth(1)).toContainText(
+    "2026 年 9 月",
+  );
+  await expect(page.locator(".customer-month-title").nth(1)).toContainText(
+    "15 笔",
+  );
+  await page.getByRole("button", { name: /查看更多（还有 11 笔）/ }).click();
+  await expect(rows).toHaveCount(31);
+  await expect(page.getByRole("button", { name: /查看更多/ })).toHaveCount(0);
+  await period.getByRole("button", { name: "全部", exact: true }).click();
+  await expect(rows).toHaveCount(20);
+  await expect(page.locator(".customer-stats")).toContainText("46");
+  await page.getByRole("button", { name: "客户销售上个月" }).waitFor({
+    state: "detached",
+  });
+  await period.getByRole("button", { name: "本月", exact: true }).click();
+  await page.getByRole("button", { name: "客户销售上个月" }).click();
+  await expect(page.getByText(/^2026 年 9 月 · /)).toBeVisible();
+  await expect(rows).toHaveCount(15);
+  await page.setViewportSize({ width: 375, height: 812 });
   expect(
     await page.evaluate(
       () => document.documentElement.scrollWidth <= innerWidth,
