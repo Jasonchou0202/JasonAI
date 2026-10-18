@@ -841,3 +841,24 @@ test("customer detail without a month falls back with a hint and keeps the view 
     period.getByRole("button", { name: "全部", exact: true }),
   ).toHaveAttribute("aria-pressed", "true");
 });
+test("dashboard hero shows this month's profit, links to details, and the customer header shows total profit", async ({
+  page,
+}) => {
+  const hero = page.locator(".dash-hero");
+  await expect(hero.getByRole("heading", { name: /生意概览/ })).toBeVisible();
+  await expect(hero.locator("img")).toHaveAttribute("alt", "");
+  const stats = page.getByRole("region", { name: "本月账本" });
+  await expect(stats).toContainText("本月销售额");
+  await expect(stats).toContainText("本月成本");
+  await expect(stats).toContainText("本月成交");
+  await expect(page.locator(".bar-column.last .bar-tip")).toBeVisible();
+  const total = ranking(page).getByRole("button", { name: /^累计利润/ });
+  await expect(total).toBeVisible();
+  await hero.getByRole("button", { name: /^本月利润/ }).click();
+  await expect(page.getByRole("heading", { name: "销售明细" })).toBeVisible();
+  await page.goto("./#/dashboard");
+  await ranking(page)
+    .getByRole("button", { name: /^累计利润/ })
+    .click();
+  await expect(page.getByRole("heading", { name: "销售明细" })).toBeVisible();
+});
