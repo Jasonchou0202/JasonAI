@@ -249,3 +249,33 @@ export function useCustomerMutation(
   }
   return { run, busy, error, hasPending, pending: pending.current };
 }
+export type SalesView = "month" | "recent" | "all";
+/** 某笔成交是否在所选范围内。近 3 个月 = 本月和前两个月，不含未来月份。 */
+export function inSalesView(
+  view: SalesView,
+  date: string,
+  month: string,
+  thisMonth: string,
+): boolean {
+  const m = date.slice(0, 7);
+  if (view === "all") return true;
+  if (view === "recent")
+    return m >= shiftMonth(thisMonth, -2) && m <= thisMonth;
+  return m === month;
+}
+/** 没带月份进入客户详情时的默认范围：本月 → 近 3 个月 → 全部 */
+export function defaultSalesView(
+  sales: { date: string }[],
+  thisMonth: string,
+): SalesView {
+  if (sales.some((s) => inSalesView("month", s.date, thisMonth, thisMonth)))
+    return "month";
+  if (sales.some((s) => inSalesView("recent", s.date, thisMonth, thisMonth)))
+    return "recent";
+  return "all";
+}
+export function salesViewFallbackHint(view: SalesView): string {
+  if (view === "recent") return "本月暂无成交，已为你显示近 3 个月";
+  if (view === "all") return "本月和近 3 个月暂无成交，已为你显示全部";
+  return "";
+}

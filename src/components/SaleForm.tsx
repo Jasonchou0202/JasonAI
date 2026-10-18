@@ -1,5 +1,12 @@
 import { useEffect, useRef, useState } from "react";
-import { ArrowLeft, Check, Plus, Save, RotateCcw } from "lucide-react";
+import {
+  ArrowLeft,
+  CalendarDays,
+  Check,
+  Plus,
+  Save,
+  RotateCcw,
+} from "lucide-react";
 import type { Api, Product, Sale, SaleInput } from "../domain/model";
 import { today } from "../domain/dates";
 import { displayCustomerName } from "../domain/customers";
@@ -74,6 +81,34 @@ export function SaleForm({
   const productGroups = groupProducts(
     (catalog || products || []).filter((p) => p.active),
   );
+  // 只读：取最近 30 笔销售，用来把最近卖过的商品排在快捷标签前面
+  const { data: recentSales } = useQuery<{ items: Sale[] }>(
+    api,
+    "sales.list",
+    {},
+  );
+  const recentRank = new Map<string, number>();
+  recentSales?.items.forEach((s, i) => {
+    for (const k of [
+      s.productId && "id:" + s.productId,
+      "name:" + s.productName,
+    ])
+      if (k && !recentRank.has(k)) recentRank.set(k, i);
+  });
+  const rankOf = (p: Product) =>
+    Math.min(
+      recentRank.get("id:" + p.id) ?? Infinity,
+      recentRank.get("name:" + p.name) ?? Infinity,
+    );
+  const quickProducts = (products || [])
+    .filter((p) => p.active)
+    .map((p, i) => ({ p, i, r: rankOf(p) }))
+    .sort((a, b) => a.r - b.r || a.i - b.i)
+    .slice(0, 8)
+    .map((x) => x.p);
+  const [editingDate, setEditingDate] = useState(false);
+  const isToday = form.date === today();
+  const dateText = isToday ? "今天" : form.date.replaceAll("-", " / ");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [dirty, setDirty] = useState(false);
@@ -189,41 +224,19 @@ export function SaleForm({
               <span>01</span>
               <h2>卖了什么</h2>
             </div>
-            <label htmlFor="product-name">
-              商品名称<span className="required">*</span>
-            </label>
-            <select
-              aria-label="下拉选择商品"
-              value={
-                productGroups
-                  .flatMap((g) => g.items)
-                  .some((p) => p.name === form.productName)
-                  ? form.productName
-                  : ""
-              }
-              onChange={(e) => {
-                if (e.target.value === "__add_product__") {
-                  setAddingProduct(true);
-                  return;
-                }
-                const preset = productGroups
-                  .flatMap((g) => g.items)
-                  .find((p) => p.name === e.target.value);
-                if (preset) select(preset);
-              }}
-            >
-              <option value="">选择商品，或在下方手动输入</option>
-              <option value="__add_product__">＋增加商品</option>
-              {productGroups.map((g) => (
-                <optgroup key={g.category} label={g.category}>
-                  {g.items.map((p) => (
-                    <option key={p.name} value={p.name}>
-                      {p.name}
-                    </option>
-                  ))}
-                </optgroup>
-              ))}
-            </select>
+            <div className="field-label-row">
+              <label htmlFor="product-name">
+                商品名称<span className="required">*</span>
+              </label>
+              <button
+                type="button"
+                className="text-button add-product-button"
+                onClick={() => setAddingProduct(true)}
+              >
+                <Plus size={15} />
+                新增商品
+              </button>
+            </div>
             <input
               id="product-name"
               value={form.productName}
@@ -235,71 +248,90 @@ export function SaleForm({
                 if (preset) select(preset);
                 else setForm((f) => ({ ...f, productName: v, productId: "" }));
               }}
-              placeholder="选择常用商品，或直接输入"
+              placeholder="输入商品名搜索，或点下方常用商品"
               maxLength={200}
               required
               list="product-names"
+              autoComplete="off"
             />
             <datalist id="product-names">
-              {(catalog || products)
-                ?.filter((p) => p.active)
-                .map((p) => (
-                  <option key={p.name} value={p.name} />
-                ))}
+              {productGroups.flatMap((g) =>
+                g.items.map((p) => (
+                  <option key={p.name} value={p.name} label={g.category} />
+                )),
+              )}
             </datalist>
-            <div className="product-chips">
-              {products
-                ?.filter((p) => p.active)
-                .slice(0, 8)
-                .map((p) => (
+            {quickProducts.length > 0 && (
+              <div
+                className="product-chips"
+                role="group"
+                aria-label="常用商品，最近卖过的在前，点一下自动带出售价和成本"
+              >
+                {quickProducts.map((p) => (
                   <button
                     type="button"
                     className={form.productId === p.id ? "selected" : ""}
+                    aria-pressed={form.productId === p.id}
                     key={p.id}
                     onClick={() => select(p)}
                   >
                     {p.name}
                   </button>
                 ))}
-            </div>
+              </div>
+            )}
             {(productError || catalogError) && (
               <ErrorNote>{productError || catalogError}</ErrorNote>
             )}
-            <div className="field-grid">
-              <div>
-                <label htmlFor="customer">
-                  客户名称 <small>选填</small>
-                </label>
-                <input
-                  id="customer"
-                  value={form.customer}
-                  onChange={(e) => change("customer", e.target.value)}
-                  list="customers"
-                  placeholder="输入名字，找回熟悉的客户"
-                  maxLength={500}
-                />
-                <datalist id="customers">
-                  {[...new Set(customers?.map(displayCustomerName))].map(
-                    (c) => (
-                      <option key={c} value={c} />
-                    ),
-                  )}
-                </datalist>
-              </div>
-              <div>
-                <label htmlFor="sale-date">
-                  成交日期<span className="required">*</span>
-                </label>
-                <input
-                  id="sale-date"
-                  type="date"
-                  value={form.date}
-                  onChange={(e) => change("date", e.target.value)}
-                  min="1900-01-01"
-                  max="2199-12-31"
-                  required
-                />
-              </div>
+            <div className="customer-field">
+              <label htmlFor="customer">
+                客户名称 <small>选填</small>
+              </label>
+              <input
+                id="customer"
+                value={form.customer}
+                onChange={(e) => change("customer", e.target.value)}
+                list="customers"
+                placeholder="输入名字，找回熟悉的客户"
+                maxLength={500}
+              />
+              <datalist id="customers">
+                {[...new Set(customers?.map(displayCustomerName))].map((c) => (
+                  <option key={c} value={c} />
+                ))}
+              </datalist>
+            </div>
+            <div className="date-field">
+              {editingDate ? (
+                <>
+                  <label htmlFor="sale-date">
+                    成交日期<span className="required">*</span>
+                  </label>
+                  <input
+                    id="sale-date"
+                    type="date"
+                    value={form.date}
+                    onChange={(e) => change("date", e.target.value)}
+                    min="1900-01-01"
+                    max="2199-12-31"
+                    required
+                    autoFocus
+                  />
+                </>
+              ) : (
+                <button
+                  type="button"
+                  className="date-toggle"
+                  aria-label={`成交日期：${dateText}，点击修改`}
+                  onClick={() => setEditingDate(true)}
+                >
+                  <CalendarDays size={15} />
+                  <span>成交日期</span>
+                  <strong>{dateText}</strong>
+                  <span aria-hidden="true">·</span>
+                  <em>改</em>
+                </button>
+              )}
             </div>
           </section>
           <section>

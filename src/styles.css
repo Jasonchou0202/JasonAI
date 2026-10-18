@@ -1,25 +1,17 @@
 :root {
   font-family: "DM Sans", "Microsoft YaHei", "PingFang SC", sans-serif;
-  color: #243b34;
+  color: var(--text-1);
   background: #f5f6f3;
   font-synthesis: none;
   font-weight: 400;
-  --green: #166b55;
-  --green-dark: #124d3f;
-  --light: #eaf2ed;
-  --border: #e5e9e4;
-  --muted: #829088;
-  --ink: #243b34;
-  --cream: #f4efd9;
-  --red: #bf5648;
-  --shadow: 0 4px 20px #233c3304;
-  font-size: 14px;
+  font-size: 100%;
 }
 * {
   box-sizing: border-box;
 }
 body {
   margin: 0;
+  font-size: var(--fs-2);
 }
 button,
 input,
@@ -70,18 +62,18 @@ p {
   margin: 0;
 }
 h1 {
-  font-size: 29px;
+  font-size: var(--fs-5);
   letter-spacing: -0.8px;
   line-height: 1.5;
   font-weight: 700;
 }
 h2 {
-  font-size: 16px;
+  font-size: var(--fs-3);
   font-weight: 700;
   letter-spacing: 0.1px;
 }
 small {
-  font-size: 12px;
+  font-size: var(--fs-1);
 }
 svg {
   flex-shrink: 0;
@@ -103,7 +95,7 @@ textarea {
 }
 input::placeholder,
 textarea::placeholder {
-  color: #a2aba4;
+  color: var(--text-3);
 }
 textarea {
   resize: vertical;
@@ -111,7 +103,7 @@ textarea {
 }
 label {
   display: block;
-  font-size: 13px;
+  font-size: var(--fs-2);
   font-weight: 600;
   margin: 16px 0 8px;
 }
@@ -128,7 +120,7 @@ label small {
   padding: 12px 18px;
   border-radius: 9px;
   font-weight: 600;
-  font-size: 13px;
+  font-size: var(--fs-2);
   min-height: 44px;
   white-space: nowrap;
 }
@@ -143,7 +135,7 @@ label small {
 .button.secondary {
   background: #fff;
   border: 1px solid var(--border);
-  color: #42564b;
+  color: var(--text-2);
 }
 .button.secondary:hover {
   background: #f5f8f4;
@@ -159,7 +151,7 @@ label small {
   gap: 7px;
   background: transparent;
   color: var(--green);
-  font-size: 12px;
+  font-size: var(--fs-1);
   font-weight: 600;
   padding: 8px 0;
   white-space: nowrap;
@@ -169,7 +161,7 @@ label small {
   align-items: center;
   justify-content: center;
   background: transparent;
-  color: #849187;
+  color: var(--text-3);
   padding: 9px;
   border-radius: 8px;
   min-width: 34px;
@@ -181,7 +173,7 @@ label small {
 }
 .subtle {
   color: var(--muted);
-  font-size: 13px;
+  font-size: var(--fs-2);
   line-height: 1.8;
 }
 .muted {
@@ -213,13 +205,13 @@ label small {
   gap: 4px;
 }
 .brand strong {
-  font-size: 19px;
+  font-size: var(--fs-4);
   letter-spacing: 1px;
 }
 .brand span {
-  font-size: 9px;
-  color: #8b978d;
-  letter-spacing: 0.6px;
+  font-size: var(--fs-1);
+  color: var(--text-3);
+  letter-spacing: 0;
 }
 .app-shell {
   display: flex;
@@ -240,8 +232,8 @@ label small {
   padding-left: 5px;
 }
 .workspace-label {
-  font-size: 10px;
-  color: #a4ada5;
+  font-size: var(--fs-1);
+  color: var(--text-3);
   letter-spacing: 1px;
   margin: 51px 16px 16px;
 }
@@ -257,9 +249,9 @@ label small {
   text-align: left;
   padding: 13px 16px;
   background: transparent;
-  color: #7b897f;
+  color: var(--text-3);
   border-radius: 8px;
-  font-size: 13px;
+  font-size: var(--fs-2);
   font-weight: 500;
 }
 .sidebar nav button:hover {
@@ -285,26 +277,26 @@ label small {
 }
 .sidebar-note strong {
   display: block;
-  font-size: 11px;
+  font-size: var(--fs-1);
   margin: 10px 0 9px;
 }
 .sidebar-note p {
-  font-size: 10px;
-  color: #92a083;
+  font-size: var(--fs-1);
+  color: var(--text-3);
   line-height: 1.9;
 }
 .tiny-leaf {
-  font-size: 25px;
-  color: #8b9d6d;
+  font-size: var(--fs-5);
+  color: var(--text-3);
 }
 .sidebar-settings {
   display: flex;
   align-items: center;
   gap: 12px;
   background: transparent;
-  color: #859084;
+  color: var(--text-3);
   padding: 12px 14px;
-  font-size: 12px;
+  font-size: var(--fs-1);
   margin-bottom: 16px;
   width: 100%;
   border-radius: 8px;
@@ -328,8 +320,8 @@ label small {
   justify-content: center;
   border-radius: 50%;
   background: #e3e8d8;
-  color: #687858;
-  font-size: 13px;
+  color: var(--text-3);
+  font-size: var(--fs-2);
   width: 34px;
   height: 34px;
   font-weight: 600;
@@ -342,11 +334,11 @@ label small {
   flex: 1;
 }
 .account strong {
-  font-size: 11px;
+  font-size: var(--fs-1);
 }
 .account span {
-  font-size: 10px;
-  color: #9aa498;
+  font-size: var(--fs-1);
+  color: var(--text-3);
 }
 .main-shell {
   margin-left: 222px;
@@ -362,17 +354,17 @@ label small {
   background: #ffffff78;
 }
 .breadcrumb {
-  color: #96a096;
-  font-size: 11px;
+  color: var(--text-3);
+  font-size: var(--fs-1);
   display: flex;
   align-items: center;
   gap: 14px;
 }
 .breadcrumb span {
-  color: #c0c8bf;
+  color: var(--text-3);
 }
 .breadcrumb strong {
-  color: #526253;
+  color: var(--text-2);
   font-weight: 500;
 }
 .topbar-right {
@@ -389,10 +381,10 @@ label small {
   padding: 8px 11px;
   border: 1px solid #dce7df;
   border-radius: 10px;
-  color: #3b6655;
+  color: var(--text-2);
   background: #fff;
   font: inherit;
-  font-size: 11px;
+  font-size: var(--fs-1);
   white-space: nowrap;
   cursor: pointer;
 }
@@ -407,44 +399,44 @@ label small {
   border-radius: 99px;
   background: #dc4548;
   color: #fff;
-  font-size: 11px;
+  font-size: var(--fs-1);
   font-weight: 700;
 }
-.daily-reminder-count.neutral { background: #e8eeeb; color: #60766b; }
-.daily-reminder-summary { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: 12px; color: #6c7d73; }
-.daily-reminder-summary strong { color: #315f4f; }
+.daily-reminder-count.neutral { background: #e8eeeb; color: var(--text-3); }
+.daily-reminder-summary { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: var(--fs-1); color: var(--text-3); }
+.daily-reminder-summary strong { color: var(--text-2); }
 .daily-reminder-list { list-style: none; padding: 0; margin: 20px 0; max-height: 46vh; overflow-y: auto; }
 .daily-reminder-list li + li { border-top: 1px solid #edf0ed; }
 .daily-reminder-row { display: flex; align-items: center; gap: 12px; width: 100%; padding: 15px 0; border: 0; background: transparent; color: var(--ink); text-align: left; cursor: pointer; }
 .daily-reminder-row:hover { background: #f5f9f6; }
-.daily-reminder-row time { font-size: 13px; font-variant-numeric: tabular-nums; color: #526d61; }
+.daily-reminder-row time { font-size: var(--fs-2); font-variant-numeric: tabular-nums; color: var(--text-3); }
 .daily-reminder-copy { flex: 1; min-width: 0; }
-.daily-reminder-copy strong { display: block; font-size: 13px; overflow-wrap: anywhere; }
-.daily-reminder-copy small { display: block; margin-top: 5px; color: #87918a; font-size: 11px; overflow-wrap: anywhere; }
-.daily-reminder-state { padding: 5px 7px; border-radius: 6px; font-size: 10px; background: #fff2d8; color: #a46b15; white-space: nowrap; }
+.daily-reminder-copy strong { display: block; font-size: var(--fs-2); overflow-wrap: anywhere; }
+.daily-reminder-copy small { display: block; margin-top: 5px; color: var(--text-3); font-size: var(--fs-1); overflow-wrap: anywhere; }
+.daily-reminder-state { padding: 5px 7px; border-radius: 6px; font-size: var(--fs-1); background: #fff2d8; color: var(--text-warn); white-space: nowrap; }
 .daily-reminder-state.overdue { color: #bc3f40; background: #ffeded; }
-.daily-reminder-empty { display: grid; justify-items: center; gap: 8px; padding: 28px 10px; color: #6a8577; }
-.daily-reminder-empty strong { font-size: 14px; }
+.daily-reminder-empty { display: grid; justify-items: center; gap: 8px; padding: 28px 10px; color: var(--text-3); }
+.daily-reminder-empty strong { font-size: var(--fs-2); }
 .daily-reminder-empty p { margin: 0; }
 .daily-reminder-actions { border-top: 1px solid #edf0ed; padding-top: 16px; }
 @media (max-width: 680px) {
   .daily-reminder-label { display: none; }
   .daily-reminder-button { min-width: 37px; min-height: 37px; padding: 8px; margin-right: 7px; }
-  .daily-reminder-count { position: absolute; top: -4px; right: -8px; min-width: 19px; height: 19px; padding: 0 4px; border: 2px solid #fff; font-size: 10px; }
+  .daily-reminder-count { position: absolute; top: -4px; right: -8px; min-width: 19px; height: 19px; padding: 0 4px; border: 2px solid #fff; font-size: var(--fs-1); }
   .daily-reminder-row { gap: 8px; }
-  .daily-reminder-state { font-size: 9px; padding: 4px; }
+  .daily-reminder-state { font-size: var(--fs-1); padding: 4px; }
 }
 .privacy-label {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  color: #8a9789;
-  font-size: 10px;
+  color: var(--text-3);
+  font-size: var(--fs-1);
 }
 .mini-avatar {
   width: 30px;
   height: 30px;
-  font-size: 10px;
+  font-size: var(--fs-1);
 }
 .mobile-settings {
   display: none;
@@ -462,8 +454,8 @@ label small {
   gap: 14px;
 }
 .eyebrow {
-  color: #93a08b;
-  font-size: 10px;
+  color: var(--text-3);
+  font-size: var(--fs-1);
   letter-spacing: 1.3px;
   margin-bottom: 6px;
 }
@@ -477,7 +469,7 @@ label small {
   vertical-align: middle;
 }
 .page-heading .subtle {
-  font-size: 11px;
+  font-size: var(--fs-1);
   margin-top: 6px;
 }
 .heading-divider {
@@ -507,8 +499,8 @@ label small {
   transform: translateY(-2px);
 }
 .metric-label {
-  font-size: 12px;
-  color: #879487;
+  font-size: var(--fs-1);
+  color: var(--text-3);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -519,7 +511,7 @@ label small {
   border-radius: 8px;
   display: flex;
   padding: 8px;
-  color: #6e886c;
+  color: var(--text-3);
   margin: -5px -2px -5px 0;
 }
 .metric-card.hero {
@@ -542,22 +534,22 @@ label small {
   z-index: 1;
 }
 .big-money {
-  font-size: 38px;
+  font-size: var(--fs-6);
   font-weight: 650;
 }
 .big-money > span:first-child {
-  font-size: 19px;
+  font-size: var(--fs-4);
   font-weight: 400;
   color: #badac7;
 }
 .mid-money {
-  font-size: 31px;
+  font-size: var(--fs-5);
   font-weight: 650;
-  color: #2c4438;
+  color: var(--text-1);
 }
 .mid-money > span:first-child {
-  font-size: 17px;
-  color: #6d7e6e;
+  font-size: var(--fs-3);
+  color: var(--text-3);
   font-weight: 400;
 }
 .hero .negative {
@@ -567,8 +559,8 @@ label small {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-size: 9px;
-  color: #b9d4c3;
+  font-size: var(--fs-1);
+  color: #e6f0ea;
   margin-top: 23px;
   gap: 8px;
   position: relative;
@@ -599,8 +591,8 @@ label small {
 .metric-foot {
   display: flex;
   align-items: center;
-  font-size: 10px;
-  color: #93a08e;
+  font-size: var(--fs-1);
+  color: var(--text-3);
   border-top: 1px solid #eef1eb;
   padding-top: 13px;
   margin-top: 20px;
@@ -610,7 +602,7 @@ label small {
   margin-left: auto;
 }
 .metric-foot strong {
-  color: #5e745b;
+  color: var(--text-3);
   font-weight: 600;
 }
 .overview-strip {
@@ -618,8 +610,8 @@ label small {
   align-items: center;
   gap: 24px;
   padding: 18px 4px 24px;
-  color: #8c998a;
-  font-size: 10px;
+  color: var(--text-3);
+  font-size: var(--fs-1);
   white-space: nowrap;
 }
 .overview-strip > span {
@@ -640,9 +632,9 @@ label small {
   gap: 9px;
 }
 .overview-strip strong {
-  color: #617360;
+  color: var(--text-3);
   font-family: "Manrope", sans-serif;
-  font-size: 11px;
+  font-size: var(--fs-1);
   font-weight: 600;
 }
 .panel {
@@ -660,11 +652,11 @@ label small {
   padding: 24px 26px 17px;
 }
 .panel-heading h2 {
-  font-size: 14px;
+  font-size: var(--fs-2);
 }
 .panel-heading p {
-  font-size: 10px;
-  color: #9aa596;
+  font-size: var(--fs-1);
+  color: var(--text-3);
   margin-top: 7px;
   line-height: 1.6;
 }
@@ -677,11 +669,11 @@ label small {
   flex-shrink: 0;
 }
 .segmented button {
-  color: #92a08b;
+  color: var(--text-3);
   background: transparent;
   padding: 7px 16px;
   border-radius: 5px;
-  font-size: 10px;
+  font-size: var(--fs-1);
   min-height: 29px;
 }
 .segmented button.active {
@@ -695,8 +687,8 @@ label small {
   display: flex;
   align-items: baseline;
   gap: 13px;
-  color: #94a08d;
-  font-size: 10px;
+  color: var(--text-3);
+  font-size: var(--fs-1);
   flex-wrap: wrap;
 }
 .push-settings { margin-bottom: 24px; padding-bottom: 22px; }
@@ -705,8 +697,8 @@ label small {
 .push-settings > small { display: block; line-height: 1.8; }
 .push-guide { display: flex; gap: 14px; margin: 0 24px; padding: 18px; background: var(--light); border-radius: 12px; }
 .push-guide svg { flex-shrink: 0; color: var(--green); }
-.push-guide p { line-height: 1.8; font-size: 13px; margin: 6px 0 0; color: #617369; }
-.push-notice { color: var(--green); line-height: 1.8; font-size: 13px; }
+.push-guide p { line-height: 1.8; font-size: var(--fs-2); margin: 6px 0 0; color: var(--text-3); }
+.push-notice { color: var(--green); line-height: 1.8; font-size: var(--fs-2); }
 .push-settings .form-actions { flex-wrap: wrap; }
 @media (max-width: 680px) {
   .mobile-nav { grid-template-columns: repeat(4, 1fr); }
@@ -715,14 +707,14 @@ label small {
 }
 .chart-summary > strong {
   font-family: "Manrope", sans-serif;
-  font-size: 21px;
-  color: #344d3a;
+  font-size: var(--fs-4);
+  color: var(--text-1);
   letter-spacing: -0.5px;
 }
 .chart-detail {
   margin-left: auto;
-  font-size: 9px;
-  color: #a2ac9e;
+  font-size: var(--fs-1);
+  color: var(--text-3);
 }
 .bar-chart {
   height: 207px;
@@ -743,8 +735,8 @@ label small {
 }
 .chart-grid > span {
   border-bottom: 1px dashed #eaf0e6;
-  font-size: 8px;
-  color: #b0b8a9;
+  font-size: var(--fs-1);
+  color: var(--text-3);
   padding-bottom: 4px;
   line-height: 0;
   transform: translateY(4px);
@@ -758,6 +750,7 @@ label small {
   justify-content: space-around;
   gap: 20px;
   position: relative;
+  padding-left: 3.5rem; /* 给左侧金额刻度留位置，避免和柱子重叠 */
 }
 .bar-column {
   min-width: 0;
@@ -810,7 +803,7 @@ label small {
   color: #fff;
   padding: 5px 7px;
   white-space: nowrap;
-  font-size: 9px;
+  font-size: var(--fs-1);
   opacity: 0;
   pointer-events: none;
   z-index: 2;
@@ -822,8 +815,8 @@ label small {
 .bar-label {
   height: 32px;
   padding-top: 13px;
-  font-size: 9px;
-  color: #99a48f;
+  font-size: var(--fs-1);
+  color: var(--text-3);
   white-space: nowrap;
 }
 .bar-column.last .bar-label {
@@ -873,7 +866,7 @@ label small {
 }
 .product-mark {
   background: #eef2e9;
-  color: #718462;
+  color: var(--text-3);
   border: 1px solid #e7eddf;
   border-radius: 9px;
   height: 37px;
@@ -882,22 +875,22 @@ label small {
   align-items: center;
   justify-content: center;
   font-family: "Manrope", sans-serif;
-  font-size: 15px;
+  font-size: var(--fs-2);
   font-weight: 700;
   flex-shrink: 0;
 }
 .tone-1 {
   background: #eeefe9;
-  color: #747861;
+  color: var(--text-3);
 }
 .tone-2 {
   background: #f7eee5;
   border-color: #f0e6da;
-  color: #b69b7c;
+  color: var(--text-warn);
 }
 .tone-3 {
   background: #e8f0ee;
-  color: #83a097;
+  color: var(--text-3);
 }
 .sale-info {
   display: flex;
@@ -907,15 +900,15 @@ label small {
   flex: 1;
 }
 .sale-info > strong {
-  font-size: 11px;
+  font-size: var(--fs-1);
   font-weight: 600;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 .sale-info small {
-  font-size: 9px;
-  color: #a1ab99;
+  font-size: var(--fs-1);
+  color: var(--text-3);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -929,18 +922,18 @@ label small {
   flex-direction: column;
   align-items: flex-end;
   gap: 7px;
-  font-size: 12px;
+  font-size: var(--fs-1);
   font-weight: 650;
   color: var(--green);
   flex-shrink: 0;
 }
 .sale-profit small {
-  font-size: 9px;
+  font-size: var(--fs-1);
   font-weight: 400;
-  color: #a8b29e;
+  color: var(--text-3);
 }
 .row-arrow {
-  color: #b5beae;
+  color: var(--text-3);
 }
 .rank-row {
   display: flex;
@@ -950,8 +943,8 @@ label small {
 }
 .rank-index {
   font-family: "Manrope", sans-serif;
-  font-size: 11px;
-  color: #b8c2af;
+  font-size: var(--fs-1);
+  color: var(--text-3);
   margin-top: 2px;
 }
 .rank-row > div {
@@ -962,7 +955,7 @@ label small {
   display: flex;
   justify-content: space-between;
   gap: 8px;
-  font-size: 10px;
+  font-size: var(--fs-1);
 }
 .rank-top strong {
   font-weight: 500;
@@ -971,8 +964,8 @@ label small {
   white-space: nowrap;
 }
 .rank-top .money {
-  font-size: 11px;
-  color: #57724e;
+  font-size: var(--fs-1);
+  color: var(--text-3);
   font-weight: 600;
 }
 .rank-track {
@@ -992,8 +985,8 @@ label small {
   background: var(--green);
 }
 .rank-row small {
-  font-size: 9px;
-  color: #abb6a0;
+  font-size: var(--fs-1);
+  color: var(--text-3);
 }
 .quiet-note {
   border-top: 1px solid #eff2ea;
@@ -1001,16 +994,16 @@ label small {
   justify-content: center;
   align-items: center;
   gap: 7px;
-  font-size: 9px;
-  color: #a0ad96;
+  font-size: var(--fs-1);
+  color: var(--text-3);
   padding: 14px;
   margin-top: 18px;
 }
 .app-footer {
   display: flex;
   justify-content: space-between;
-  color: #b2bcaa;
-  font-size: 9px;
+  color: var(--text-3);
+  font-size: var(--fs-1);
   padding: 24px 2px 25px;
   letter-spacing: 0.4px;
 }
@@ -1019,8 +1012,8 @@ label small {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  font-size: 10px;
-  color: #8d815c;
+  font-size: var(--fs-1);
+  color: var(--text-3);
   background: #f5f0dc;
   padding: 8px 16px;
   line-height: 1.7;
@@ -1029,8 +1022,8 @@ label small {
   padding: 2px 0 2px 9px;
   white-space: nowrap;
   background: transparent;
-  color: #887640;
-  font-size: 10px;
+  color: var(--text-warn);
+  font-size: var(--fs-1);
   text-decoration: underline;
 }
 .offline-banner {
@@ -1040,8 +1033,8 @@ label small {
   gap: 8px;
   background: #fae9df;
   padding: 10px;
-  font-size: 12px;
-  color: #a26947;
+  font-size: var(--fs-1);
+  color: var(--text-warn);
 }
 .toast {
   position: fixed;
@@ -1057,7 +1050,7 @@ label small {
   border-radius: 10px;
   padding: 14px 23px;
   box-shadow: 0 8px 30px #183a3929;
-  font-size: 13px;
+  font-size: var(--fs-2);
   max-width: 90vw;
 }
 .mobile-nav {
@@ -1069,8 +1062,8 @@ label small {
   justify-content: center;
   gap: 10px;
   padding: 80px 15px;
-  color: #80917c;
-  font-size: 13px;
+  color: var(--text-3);
+  font-size: var(--fs-2);
 }
 .spin {
   animation: spin 1s linear infinite;
@@ -1083,16 +1076,16 @@ label small {
 .empty {
   text-align: center;
   padding: 45px 15px;
-  color: #a6b19b;
+  color: var(--text-3);
 }
 .empty h3 {
-  color: #819176;
-  font-size: 14px;
+  color: var(--text-3);
+  font-size: var(--fs-2);
   margin: 15px 0 8px;
   font-weight: 500;
 }
 .empty p {
-  font-size: 12px;
+  font-size: var(--fs-1);
   line-height: 1.8;
 }
 .error-note {
@@ -1102,8 +1095,8 @@ label small {
   padding: 14px 16px;
   background: #fdf0ed;
   border: 1px solid #f3d7cf;
-  color: #b56150;
-  font-size: 12px;
+  color: var(--text-danger);
+  font-size: var(--fs-1);
   line-height: 1.7;
   border-radius: 8px;
   margin: 12px 0;
@@ -1117,14 +1110,14 @@ label small {
   align-items: center;
   gap: 5px;
   background: transparent;
-  color: #8e9d86;
+  color: var(--text-3);
   padding: 0;
-  font-size: 11px;
+  font-size: var(--fs-1);
   margin-bottom: 10px;
 }
 .draft-state {
-  font-size: 10px;
-  color: #91a087;
+  font-size: var(--fs-1);
+  color: var(--text-3);
 }
 .entry-layout {
   display: grid;
@@ -1147,7 +1140,7 @@ label small {
   margin-bottom: 20px;
 }
 .form-section-title > span {
-  font-size: 10px;
+  font-size: var(--fs-1);
   font-family: "Manrope", sans-serif;
   border-radius: 50%;
   width: 25px;
@@ -1156,13 +1149,13 @@ label small {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #779267;
+  color: var(--text-3);
 }
 .form-section-title h2 {
-  font-size: 14px;
+  font-size: var(--fs-2);
 }
 .required {
-  color: #a8b79a;
+  color: var(--text-3);
   font-weight: 400;
   margin-left: 5px;
 }
@@ -1173,9 +1166,9 @@ label small {
   margin-top: 12px;
 }
 .product-chips button {
-  font-size: 10px;
+  font-size: var(--fs-1);
   background: #f7f9f4;
-  color: #8b9b7e;
+  color: var(--text-3);
   padding: 7px 10px;
   border-radius: 6px;
   border: 1px solid #e8eddf;
@@ -1198,12 +1191,12 @@ label small {
   position: absolute;
   left: 14px;
   top: 13px;
-  color: #9aa890;
-  font-size: 20px;
+  color: var(--text-3);
+  font-size: var(--fs-4);
 }
 .currency-input input {
   font-family: "Manrope", sans-serif;
-  font-size: 23px;
+  font-size: var(--fs-4);
   padding: 10px 13px 10px 36px;
 }
 .profit-preview {
@@ -1215,12 +1208,12 @@ label small {
   background: #f2f7ed;
   border-radius: 9px;
   margin-top: 18px;
-  color: #799568;
-  font-size: 12px;
+  color: var(--text-3);
+  font-size: var(--fs-1);
 }
 .profit-preview strong {
   font-family: "Manrope", sans-serif;
-  font-size: 25px;
+  font-size: var(--fs-5);
   font-weight: 650;
   color: var(--green);
 }
@@ -1253,15 +1246,15 @@ label small {
     linear-gradient(225deg, #eeeede 5px, transparent 0) 0 0/10px 10px;
 }
 .paper-slip .eyebrow {
-  font-size: 8px;
+  font-size: var(--fs-1);
   letter-spacing: 1px;
-  color: #9ea786;
+  color: var(--text-3);
 }
 .paper-slip h3 {
-  font-size: 23px;
+  font-size: var(--fs-4);
   line-height: 1.7;
   margin-top: 24px;
-  color: #66764d;
+  color: var(--text-3);
   font-weight: 500;
   letter-spacing: 1px;
 }
@@ -1274,14 +1267,14 @@ label small {
   display: flex;
   justify-content: space-between;
   margin: 18px 0;
-  font-size: 11px;
-  color: #96a180;
+  font-size: var(--fs-1);
+  color: var(--text-3);
   gap: 9px;
   overflow-wrap: anywhere;
 }
 .paper-slip strong {
-  color: #7d8e68;
-  font-size: 14px;
+  color: var(--text-3);
+  font-size: var(--fs-2);
   font-family: "Manrope", sans-serif;
 }
 .paper-slip .slip-total {
@@ -1290,11 +1283,11 @@ label small {
   margin-top: 25px !important;
 }
 .slip-total strong {
-  font-size: 22px;
+  font-size: var(--fs-4);
 }
 .paper-slip > p {
-  font-size: 9px;
-  color: #a1aa8e;
+  font-size: var(--fs-1);
+  color: var(--text-3);
   letter-spacing: 1px;
   margin-top: 38px;
 }
@@ -1302,12 +1295,12 @@ label small {
   display: flex;
   gap: 10px;
   margin: 35px 10px;
-  font-size: 10px;
+  font-size: var(--fs-1);
   line-height: 1.9;
-  color: #9faa92;
+  color: var(--text-3);
 }
 .entry-tip svg {
-  color: #acb99f;
+  color: var(--text-3);
 }
 .detail-panel {
   padding: 23px 26px;
@@ -1326,12 +1319,12 @@ label small {
   position: absolute;
   top: 13px;
   left: 13px;
-  color: #a6b09d;
+  color: var(--text-3);
 }
 .search-input input {
   padding-left: 41px;
   background: #fafcf8;
-  font-size: 12px;
+  font-size: var(--fs-1);
   height: 44px;
 }
 .filters {
@@ -1346,17 +1339,17 @@ label small {
   align-items: center;
   gap: 7px;
   margin: 0;
-  color: #91a082;
+  color: var(--text-3);
   font-weight: 400;
-  font-size: 11px;
+  font-size: var(--fs-1);
 }
 .filters input {
-  font-size: 11px;
+  font-size: var(--fs-1);
   padding: 8px;
   width: 126px;
 }
 .filters select {
-  font-size: 11px;
+  font-size: var(--fs-1);
   padding: 8px;
   max-width: 160px;
 }
@@ -1367,8 +1360,8 @@ label small {
 .quick-filters button {
   background: #f3f6ef;
   padding: 7px 10px;
-  font-size: 10px;
-  color: #8a9c78;
+  font-size: var(--fs-1);
+  color: var(--text-3);
 }
 .quick-filters button:first-child {
   border-radius: 6px 0 0 6px;
@@ -1380,14 +1373,14 @@ label small {
   display: flex;
   align-items: center;
   gap: 5px;
-  font-size: 10px;
-  color: #a3ad98;
+  font-size: var(--fs-1);
+  color: var(--text-3);
   background: transparent;
   margin-left: auto;
   padding: 7px 0;
 }
 .recycle-toggle.selected {
-  color: #ba7a57;
+  color: var(--text-warn);
 }
 .list-summary {
   display: flex;
@@ -1395,20 +1388,20 @@ label small {
   gap: 20px;
   padding: 19px 0;
   border-bottom: 1px solid #e8ede1;
-  font-size: 11px;
-  color: #97a48b;
+  font-size: var(--fs-1);
+  color: var(--text-3);
   flex-wrap: wrap;
 }
 .list-summary > span:first-child {
   margin-right: auto;
 }
 .list-summary strong {
-  color: #526f44;
+  color: var(--text-3);
 }
 .date-group {
   font-family: "Manrope", sans-serif;
-  font-size: 11px;
-  color: #8a9c7c;
+  font-size: var(--fs-1);
+  color: var(--text-3);
   letter-spacing: 0.3px;
   padding: 17px 0 10px;
 }
@@ -1427,18 +1420,18 @@ label small {
   gap: 7px;
 }
 .detail-main > strong {
-  font-size: 12px;
+  font-size: var(--fs-1);
   font-weight: 600;
   overflow-wrap: anywhere;
 }
 .detail-main > span {
-  font-size: 11px;
-  color: #94a184;
+  font-size: var(--fs-1);
+  color: var(--text-3);
   overflow-wrap: anywhere;
 }
 .detail-main > small {
-  font-size: 10px;
-  color: #a9b39b;
+  font-size: var(--fs-1);
+  color: var(--text-3);
   white-space: pre-line;
   overflow-wrap: anywhere;
 }
@@ -1450,14 +1443,14 @@ label small {
   display: flex;
   flex-direction: column;
   gap: 7px;
-  font-size: 9px;
-  color: #a5b198;
+  font-size: var(--fs-1);
+  color: var(--text-3);
   align-items: flex-end;
 }
 .detail-numbers strong {
   font-family: "Manrope", sans-serif;
-  font-size: 12px;
-  color: #647957;
+  font-size: var(--fs-1);
+  color: var(--text-3);
 }
 .detail-actions {
   display: flex;
@@ -1469,11 +1462,11 @@ label small {
   justify-content: center;
   gap: 20px;
   margin-top: 22px;
-  font-size: 11px;
-  color: #99a68b;
+  font-size: var(--fs-1);
+  color: var(--text-3);
 }
 .pagination .button {
-  font-size: 10px;
+  font-size: var(--fs-1);
   min-height: 36px;
   padding: 8px 12px;
 }
@@ -1490,13 +1483,13 @@ label small {
   gap: 15px;
   align-items: center;
   padding: 12px 0;
-  font-size: 12px;
+  font-size: var(--fs-1);
   border-top: 1px solid #edf1e6;
 }
 .product-table-head {
   background: #f9fbf6;
-  color: #a7b098;
-  font-size: 10px;
+  color: var(--text-3);
+  font-size: var(--fs-1);
   padding: 11px 8px;
   border: 0;
 }
@@ -1505,17 +1498,17 @@ label small {
 }
 .product-table-row strong {
   font-family: "Manrope", sans-serif;
-  color: #677e58;
-  font-size: 12px;
+  color: var(--text-3);
+  font-size: var(--fs-1);
   font-weight: 600;
 }
 .product-table-row > span:nth-child(3) {
-  color: #9aa58c;
+  color: var(--text-3);
 }
 .product-table-row small {
   margin-left: 8px;
-  font-size: 9px;
-  color: #ada08c;
+  font-size: var(--fs-1);
+  color: var(--text-3);
 }
 .empty-products {
   padding: 20px 0;
@@ -1539,23 +1532,23 @@ label small {
   width: 46px;
   height: 46px;
   background: #edf3e5;
-  color: #849c6c;
+  color: var(--text-3);
   border-radius: 11px;
   margin-bottom: 20px;
 }
 .settings-action h2 {
-  font-size: 15px;
+  font-size: var(--fs-2);
 }
 .settings-action p {
-  font-size: 12px;
+  font-size: var(--fs-1);
   line-height: 1.9;
-  color: #98a48b;
+  color: var(--text-3);
   margin: 12px 0 20px;
   max-width: 390px;
 }
 .settings-action > small {
-  font-size: 10px;
-  color: #aaaf9d;
+  font-size: var(--fs-1);
+  color: var(--text-3);
   margin-top: 12px;
 }
 .restore-link {
@@ -1567,17 +1560,17 @@ label small {
   gap: 20px;
   margin-top: 22px;
   padding: 23px 26px;
-  color: #97a883;
+  color: var(--text-3);
 }
 .settings-note strong {
-  font-size: 12px;
+  font-size: var(--fs-1);
   font-weight: 500;
-  color: #6e8758;
+  color: var(--text-3);
 }
 .settings-note p {
-  font-size: 11px;
+  font-size: var(--fs-1);
   line-height: 1.9;
-  color: #9ca88e;
+  color: var(--text-3);
   margin-top: 6px;
 }
 .modal {
@@ -1604,18 +1597,18 @@ label small {
   margin-bottom: 22px;
 }
 .modal h2 {
-  font-size: 18px;
+  font-size: var(--fs-3);
 }
 .modal p {
   line-height: 1.9;
-  font-size: 12px;
+  font-size: var(--fs-1);
   margin: 10px 0;
 }
 .checkbox-label {
   display: flex;
   align-items: center;
   gap: 9px;
-  font-size: 12px;
+  font-size: var(--fs-1);
   font-weight: 400;
 }
 .checkbox-label input {
@@ -1636,17 +1629,17 @@ label small {
   display: flex;
   flex-direction: column;
   gap: 9px;
-  font-size: 10px;
-  color: #91a47a;
+  font-size: var(--fs-1);
+  color: var(--text-3);
 }
 .import-totals strong {
-  font-size: 17px;
+  font-size: var(--fs-3);
   font-family: "Manrope", sans-serif;
-  color: #3f643a;
+  color: var(--text-2);
 }
 .file-name {
   overflow-wrap: anywhere;
-  color: #8e9d80;
+  color: var(--text-3);
 }
 .import-issues {
   background: #fff0eb;
@@ -1654,15 +1647,15 @@ label small {
   max-height: 160px;
   overflow: auto;
   border-radius: 8px;
-  color: #b76a55;
+  color: var(--text-danger);
 }
 .import-issues p {
-  font-size: 11px;
+  font-size: var(--fs-1);
 }
 .warning-note {
-  color: #a38244;
+  color: var(--text-warn);
   background: #fff7df;
-  font-size: 11px;
+  font-size: var(--fs-1);
   line-height: 1.8;
   padding: 14px;
   border-radius: 8px;
@@ -1676,12 +1669,12 @@ label small {
   display: flex;
   justify-content: space-between;
   padding: 12px 0;
-  font-size: 11px;
+  font-size: var(--fs-1);
   border-bottom: 1px solid var(--border);
-  color: #8a9e75;
+  color: var(--text-3);
 }
 .import-months strong {
-  color: #617e4d;
+  color: var(--text-3);
 }
 .boot {
   min-height: 100vh;
@@ -1705,9 +1698,9 @@ label small {
   align-items: center;
 }
 .welcome > header > span {
-  font-size: 9px;
+  font-size: var(--fs-1);
   letter-spacing: 2px;
-  color: #a1af92;
+  color: var(--text-3);
 }
 .welcome main {
   flex: 1;
@@ -1719,8 +1712,8 @@ label small {
   padding: 65px 0 70px;
 }
 .welcome-kicker {
-  font-size: 11px;
-  color: #8d9d7c;
+  font-size: var(--fs-1);
+  color: var(--text-3);
   display: flex;
   align-items: center;
   gap: 8px;
@@ -1733,7 +1726,7 @@ label small {
   border-radius: 50%;
 }
 .welcome h1 {
-  font-size: 48px;
+  font-size: var(--fs-6);
   line-height: 1.55;
   font-weight: 600;
   letter-spacing: -1px;
@@ -1743,8 +1736,8 @@ label small {
   color: var(--green);
 }
 .welcome-copy > p {
-  color: #92a182;
-  font-size: 14px;
+  color: var(--text-3);
+  font-size: var(--fs-2);
   line-height: 2.1;
 }
 .welcome-benefits {
@@ -1752,8 +1745,8 @@ label small {
   flex-wrap: wrap;
   gap: 20px;
   margin: 33px 0;
-  color: #738969;
-  font-size: 10px;
+  color: var(--text-3);
+  font-size: var(--fs-1);
 }
 .welcome-benefits span {
   display: flex;
@@ -1761,7 +1754,7 @@ label small {
   gap: 6px;
 }
 .welcome-benefits svg {
-  color: #87a678;
+  color: var(--text-3);
   width: 15px;
 }
 .welcome-actions {
@@ -1773,17 +1766,17 @@ label small {
 .welcome-actions .button {
   min-height: 48px;
   padding: 13px 20px;
-  font-size: 13px;
+  font-size: var(--fs-2);
 }
 .demo-enter {
-  font-size: 12px;
+  font-size: var(--fs-1);
 }
 .welcome-privacy {
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 9px;
-  color: #a7b298;
+  font-size: var(--fs-1);
+  color: var(--text-3);
   margin-top: 28px;
 }
 .setup-status {
@@ -1794,16 +1787,16 @@ label small {
   background: #eef3e7;
   padding: 16px 19px;
   border-radius: 10px;
-  color: #799365;
+  color: var(--text-3);
 }
 .setup-status strong {
-  font-size: 12px;
-  color: #638452;
+  font-size: var(--fs-1);
+  color: var(--text-3);
 }
 .setup-status p {
-  font-size: 10px;
+  font-size: var(--fs-1);
   margin-top: 6px;
-  color: #a0ad92;
+  color: var(--text-3);
 }
 .welcome-art {
   background: #e7ebdc;
@@ -1819,8 +1812,8 @@ label small {
   width: 100%;
 }
 .art-label {
-  font-size: 8px;
-  color: #a1ae8b;
+  font-size: var(--fs-1);
+  color: var(--text-3);
   letter-spacing: 2px;
   margin-bottom: 30px;
 }
@@ -1850,8 +1843,8 @@ label small {
   margin: auto;
 }
 .art-receipt > span {
-  font-size: 10px;
-  color: #8b9d75;
+  font-size: var(--fs-1);
+  color: var(--text-3);
   display: block;
   text-align: center;
   margin-top: 17px;
@@ -1861,9 +1854,9 @@ label small {
   margin: 20px 0;
 }
 .art-receipt p {
-  font-size: 27px;
+  font-size: var(--fs-5);
   line-height: 1.7;
-  color: #496a3f;
+  color: var(--text-2);
   text-align: center;
   font-weight: 500;
 }
@@ -1891,8 +1884,8 @@ label small {
 }
 .art-bottom {
   text-align: center;
-  font-size: 8px;
-  color: #a8b396;
+  font-size: var(--fs-1);
+  color: var(--text-3);
   margin-top: 20px;
   letter-spacing: 1px;
 }
@@ -1905,8 +1898,8 @@ label small {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #6c8b56;
-  font-size: 12px;
+  color: var(--text-3);
+  font-size: var(--fs-1);
   font-family: "Manrope", sans-serif;
   font-weight: 600;
   line-height: 1.6;
@@ -1920,8 +1913,8 @@ label small {
   display: flex;
   justify-content: space-between;
   padding: 25px 0;
-  font-size: 10px;
-  color: #a8b499;
+  font-size: var(--fs-1);
+  color: var(--text-3);
   letter-spacing: 0.6px;
 }
 @media (min-width: 1500px) {
@@ -1929,10 +1922,10 @@ label small {
     padding: 29px 28px 24px;
   }
   .big-money {
-    font-size: 46px;
+    font-size: var(--fs-6);
   }
   .mid-money {
-    font-size: 38px;
+    font-size: var(--fs-6);
   }
   .bar-chart {
     height: 238px;
@@ -1967,13 +1960,13 @@ label small {
     padding: 21px 18px 18px;
   }
   .big-money {
-    font-size: 31px;
+    font-size: var(--fs-5);
   }
   .mid-money {
-    font-size: 26px;
+    font-size: var(--fs-5);
   }
   .hero-bottom {
-    font-size: 8px;
+    font-size: var(--fs-1);
   }
   .hero-bottom > span:first-child {
     max-width: 125px;
@@ -2000,7 +1993,7 @@ label small {
     padding: 30px 40px 0;
   }
   .welcome h1 {
-    font-size: 39px;
+    font-size: var(--fs-6);
   }
   .welcome main {
     gap: 30px;
@@ -2027,10 +2020,10 @@ label small {
     height: 37px;
   }
   .sidebar .brand strong {
-    font-size: 16px;
+    font-size: var(--fs-3);
   }
   .sidebar .brand span {
-    font-size: 8px;
+    font-size: var(--fs-1);
   }
   .main-shell {
     margin-left: 172px;
@@ -2052,7 +2045,7 @@ label small {
     max-width: none;
   }
   .big-money {
-    font-size: 36px;
+    font-size: var(--fs-6);
   }
   .metric-label {
     margin-bottom: 18px;
@@ -2102,7 +2095,7 @@ label small {
     gap: 15px;
   }
   .welcome h1 {
-    font-size: 33px;
+    font-size: var(--fs-5);
   }
   .welcome-art {
     min-height: 450px;
@@ -2114,14 +2107,14 @@ label small {
     width: 235px;
   }
   .art-label {
-    font-size: 7px;
+    font-size: var(--fs-1);
     white-space: nowrap;
   }
   .page-heading h1 {
-    font-size: 25px;
+    font-size: var(--fs-5);
   }
   .heading-add {
-    font-size: 11px;
+    font-size: var(--fs-1);
     padding: 11px 13px;
   }
   .list-summary {
@@ -2135,9 +2128,6 @@ label small {
   }
 }
 @media (max-width: 680px) {
-  :root {
-    font-size: 14px;
-  }
   .sidebar {
     display: none;
   }
@@ -2150,7 +2140,7 @@ label small {
     padding: 0 20px;
   }
   .breadcrumb {
-    font-size: 10px;
+    font-size: var(--fs-1);
     gap: 9px;
   }
   .topbar-right {
@@ -2162,7 +2152,7 @@ label small {
   .mini-avatar {
     width: 26px;
     height: 26px;
-    font-size: 10px;
+    font-size: var(--fs-1);
   }
   .mobile-settings {
     display: flex;
@@ -2175,14 +2165,14 @@ label small {
     margin-bottom: 23px;
   }
   .page-heading h1 {
-    font-size: 27px;
+    font-size: var(--fs-5);
   }
   .page-heading .subtle {
-    font-size: 10px;
+    font-size: var(--fs-1);
     line-height: 1.7;
   }
   .eyebrow {
-    font-size: 9px;
+    font-size: var(--fs-1);
   }
   .heading-add {
     display: none;
@@ -2198,13 +2188,13 @@ label small {
     padding: 25px 23px 22px;
   }
   .big-money {
-    font-size: 41px;
+    font-size: var(--fs-6);
   }
   .mid-money {
-    font-size: 27px;
+    font-size: var(--fs-5);
   }
   .metric-label {
-    font-size: 11px;
+    font-size: var(--fs-1);
     margin-bottom: 22px;
   }
   .metric-icon {
@@ -2216,7 +2206,7 @@ label small {
     height: 15px;
   }
   .metric-foot {
-    font-size: 9px;
+    font-size: var(--fs-1);
     padding-top: 12px;
     margin-top: 20px;
     line-height: 1.5;
@@ -2225,12 +2215,12 @@ label small {
     width: 12px;
   }
   .hero-bottom {
-    font-size: 10px;
+    font-size: var(--fs-1);
     margin-top: 22px;
   }
   .hero .metric-label {
     margin-bottom: 17px;
-    font-size: 12px;
+    font-size: var(--fs-1);
   }
   .overview-strip {
     padding: 17px 1px 24px;
@@ -2238,29 +2228,29 @@ label small {
     justify-content: space-between;
   }
   .overview-strip > span {
-    font-size: 9px;
+    font-size: var(--fs-1);
   }
   .overview-strip > div {
     flex-direction: column;
     gap: 7px;
     margin: 0;
-    font-size: 9px;
+    font-size: var(--fs-1);
   }
   .overview-strip strong {
-    font-size: 12px;
+    font-size: var(--fs-1);
   }
   .panel-heading {
     padding: 20px 18px 17px;
     align-items: center;
   }
   .panel-heading h2 {
-    font-size: 14px;
+    font-size: var(--fs-2);
   }
   .panel-heading p {
-    font-size: 9px;
+    font-size: var(--fs-1);
   }
   .segmented button {
-    font-size: 9px;
+    font-size: var(--fs-1);
     padding: 7px 10px;
   }
   .chart-summary {
@@ -2269,7 +2259,7 @@ label small {
     gap: 9px;
   }
   .chart-summary strong {
-    font-size: 20px;
+    font-size: var(--fs-4);
   }
   .bar-chart {
     height: 175px;
@@ -2284,10 +2274,10 @@ label small {
     border-radius: 4px 4px 0 0;
   }
   .bar-label {
-    font-size: 8px;
+    font-size: var(--fs-1);
   }
   .chart-grid > span {
-    font-size: 7px;
+    font-size: var(--fs-1);
   }
   .dashboard-bottom {
     gap: 18px;
@@ -2301,43 +2291,43 @@ label small {
     padding: 16px 0;
   }
   .sale-info > strong {
-    font-size: 12px;
+    font-size: var(--fs-1);
   }
   .sale-info small {
-    font-size: 10px;
+    font-size: var(--fs-1);
   }
   .sale-profit {
-    font-size: 13px;
+    font-size: var(--fs-2);
   }
   .sale-profit small {
-    font-size: 9px;
+    font-size: var(--fs-1);
   }
   .rank-row {
     margin: 18px 20px 0;
   }
   .rank-top {
-    font-size: 11px;
+    font-size: var(--fs-1);
   }
   .rank-top .money {
-    font-size: 12px;
+    font-size: var(--fs-1);
   }
   .rank-index {
-    font-size: 12px;
+    font-size: var(--fs-1);
   }
   .rank-track {
     margin: 11px 0 7px;
     height: 5px;
   }
   .rank-row small {
-    font-size: 10px;
+    font-size: var(--fs-1);
   }
   .quiet-note {
-    font-size: 10px;
+    font-size: var(--fs-1);
     margin-top: 21px;
   }
   .demo-banner {
     align-items: flex-start;
-    font-size: 9px;
+    font-size: var(--fs-1);
     padding: 7px 17px;
     gap: 6px;
     justify-content: space-between;
@@ -2347,15 +2337,15 @@ label small {
     width: 13px;
   }
   .demo-banner button {
-    font-size: 9px;
+    font-size: var(--fs-1);
   }
   .offline-banner {
-    font-size: 10px;
+    font-size: var(--fs-1);
     padding: 10px 17px;
     align-items: flex-start;
   }
   .app-footer {
-    font-size: 8px;
+    font-size: var(--fs-1);
     padding: 23px 0 10px;
   }
   .mobile-nav {
@@ -2379,8 +2369,8 @@ label small {
     gap: 5px;
     flex: 1;
     background: transparent;
-    color: #9aa992;
-    font-size: 9px;
+    color: var(--text-3);
+    font-size: var(--fs-1);
     padding: 4px;
     min-height: 44px;
   }
@@ -2404,7 +2394,7 @@ label small {
     border: 3px solid #fafbf6;
   }
   .mobile-add small {
-    font-size: 9px;
+    font-size: var(--fs-1);
   }
   .draft-state {
     display: none;
@@ -2416,49 +2406,49 @@ label small {
     gap: 12px;
   }
   .field-grid label {
-    font-size: 11px;
+    font-size: var(--fs-1);
     line-height: 1.5;
   }
   .field-grid label small {
-    font-size: 9px;
+    font-size: var(--fs-1);
   }
   .entry-form input,
   .entry-form textarea {
-    font-size: 16px;
+    font-size: var(--fs-3);
   }
   .entry-form input[type="date"] {
-    font-size: 13px;
+    font-size: var(--fs-2);
     padding: 12px 8px;
     min-height: 44px;
     max-width: 100%;
   }
   .entry-form #customer {
-    font-size: 13px;
+    font-size: var(--fs-2);
     height: 44px;
   }
   .product-chips button {
-    font-size: 11px;
+    font-size: var(--fs-1);
     padding: 8px 10px;
     min-height: 36px;
   }
   .currency-input input {
-    font-size: 22px;
+    font-size: var(--fs-4);
     padding-left: 30px;
   }
   .currency-input > span {
-    font-size: 17px;
+    font-size: var(--fs-3);
     top: 15px;
     left: 12px;
   }
   .profit-preview strong {
-    font-size: 23px;
+    font-size: var(--fs-4);
   }
   .entry-form .form-actions {
     flex-wrap: nowrap;
   }
   .entry-form .form-actions .button {
     flex: 1;
-    font-size: 11px;
+    font-size: var(--fs-1);
     padding: 12px 10px;
   }
   .detail-panel {
@@ -2469,11 +2459,11 @@ label small {
   }
   .filter-top .button {
     padding: 11px 10px;
-    font-size: 10px;
+    font-size: var(--fs-1);
     gap: 5px;
   }
   .search-input input {
-    font-size: 12px;
+    font-size: var(--fs-1);
     padding-left: 33px;
   }
   .search-input svg {
@@ -2486,12 +2476,12 @@ label small {
   }
   .filters input {
     width: 117px;
-    font-size: 11px;
+    font-size: var(--fs-1);
     padding: 7px;
   }
   .filters select {
     width: 125px;
-    font-size: 11px;
+    font-size: var(--fs-1);
     padding: 9px;
     max-width: 125px;
   }
@@ -2499,10 +2489,10 @@ label small {
     padding: 8px 9px;
   }
   .recycle-toggle {
-    font-size: 10px;
+    font-size: var(--fs-1);
   }
   .list-summary {
-    font-size: 9px;
+    font-size: var(--fs-1);
     gap: 9px;
     justify-content: space-between;
     line-height: 1.5;
@@ -2521,13 +2511,13 @@ label small {
     padding-right: 65px;
   }
   .detail-main > strong {
-    font-size: 12px;
+    font-size: var(--fs-1);
   }
   .detail-main > span {
-    font-size: 11px;
+    font-size: var(--fs-1);
   }
   .detail-main > small {
-    font-size: 10px;
+    font-size: var(--fs-1);
   }
   .detail-actions {
     position: absolute;
@@ -2545,19 +2535,19 @@ label small {
   .detail-numbers > span {
     align-items: flex-start;
     gap: 5px;
-    font-size: 9px;
+    font-size: var(--fs-1);
   }
   .detail-numbers > span:last-child {
     align-items: flex-end;
   }
   .detail-numbers strong {
-    font-size: 12px;
+    font-size: var(--fs-1);
   }
   .date-group {
-    font-size: 11px;
+    font-size: var(--fs-1);
   }
   .page-heading > .button {
-    font-size: 11px;
+    font-size: var(--fs-1);
     padding: 10px 13px;
   }
   .settings-panel .panel-heading {
@@ -2570,7 +2560,7 @@ label small {
   }
   .settings-panel .button {
     padding: 8px 10px;
-    font-size: 10px;
+    font-size: var(--fs-1);
     min-height: 35px;
     gap: 5px;
   }
@@ -2581,14 +2571,14 @@ label small {
   .product-table-row {
     grid-template-columns: minmax(0, 1fr) 66px 63px 30px;
     gap: 5px;
-    font-size: 10px;
+    font-size: var(--fs-1);
   }
   .product-table-row strong {
-    font-size: 10px;
+    font-size: var(--fs-1);
   }
   .product-table-head {
     padding-left: 4px;
-    font-size: 9px;
+    font-size: var(--fs-1);
   }
   .settings-grid {
     grid-template-columns: 1fr;
@@ -2596,7 +2586,7 @@ label small {
     margin-top: 18px;
   }
   .settings-action p {
-    font-size: 12px;
+    font-size: var(--fs-1);
   }
   .settings-note {
     padding: 20px 18px;
@@ -2604,7 +2594,7 @@ label small {
     gap: 12px;
   }
   .settings-note p {
-    font-size: 10px;
+    font-size: var(--fs-1);
   }
   .settings-note svg {
     width: 19px;
@@ -2616,13 +2606,13 @@ label small {
     padding: 22px 18px;
   }
   .modal input {
-    font-size: 16px;
+    font-size: var(--fs-3);
   }
   .modal p {
-    font-size: 12px;
+    font-size: var(--fs-1);
   }
   .modal h2 {
-    font-size: 17px;
+    font-size: var(--fs-3);
   }
   .modal {
     max-height: 88dvh;
@@ -2631,7 +2621,7 @@ label small {
     top: 14px;
     min-width: 230px;
     justify-content: center;
-    font-size: 11px;
+    font-size: var(--fs-1);
     padding: 13px 16px;
   }
   .welcome {
@@ -2639,7 +2629,7 @@ label small {
     min-height: 100dvh;
   }
   .welcome > header > span {
-    font-size: 7px;
+    font-size: var(--fs-1);
     letter-spacing: 1px;
   }
   .welcome .brand img {
@@ -2647,10 +2637,10 @@ label small {
     height: 38px;
   }
   .welcome .brand strong {
-    font-size: 17px;
+    font-size: var(--fs-3);
   }
   .welcome .brand span {
-    font-size: 8px;
+    font-size: var(--fs-1);
   }
   .welcome main {
     grid-template-columns: 1fr;
@@ -2659,18 +2649,18 @@ label small {
     gap: 45px;
   }
   .welcome h1 {
-    font-size: 37px;
+    font-size: var(--fs-6);
     margin-top: 21px;
   }
   .welcome-copy > p {
-    font-size: 13px;
+    font-size: var(--fs-2);
   }
   .welcome-kicker {
-    font-size: 10px;
+    font-size: var(--fs-1);
   }
   .welcome-benefits {
     gap: 15px;
-    font-size: 9px;
+    font-size: var(--fs-1);
     margin: 25px 0;
   }
   .welcome-art {
@@ -2678,22 +2668,22 @@ label small {
   }
   .welcome-actions .button {
     width: 100%;
-    font-size: 12px;
+    font-size: var(--fs-1);
   }
   .setup-status {
     width: 100%;
   }
   .welcome-privacy {
-    font-size: 9px;
+    font-size: var(--fs-1);
     line-height: 1.8;
   }
   .welcome > footer {
-    font-size: 8px;
+    font-size: var(--fs-1);
     margin-top: auto;
     padding: 23px 0;
   }
   .back-link {
-    font-size: 10px;
+    font-size: var(--fs-1);
   }
 }
 @media (prefers-reduced-motion: reduce) {
@@ -2707,8 +2697,8 @@ label small {
   align-items: center;
   gap: 9px;
   background: transparent;
-  color: #647568;
-  font-size: 12px;
+  color: var(--text-3);
+  font-size: var(--fs-1);
   padding: 0;
   min-height: 36px;
 }
@@ -2732,7 +2722,7 @@ label small {
 .overview-strip,
 .chart-summary > span,
 .chart-detail {
-  color: #637568;
+  color: var(--text-3);
 }
 .chart-grid > span,
 .bar-label,
@@ -2749,7 +2739,7 @@ label small {
 .list-summary,
 .settings-action p,
 .settings-note p {
-  color: #677868;
+  color: var(--text-3);
 }
 .entry-tip,
 .draft-state,
@@ -2757,19 +2747,19 @@ label small {
 label small,
 .entry-form input::placeholder,
 .entry-form textarea::placeholder {
-  color: #6b7d6e;
+  color: var(--text-3);
 }
 .entry-tip {
-  font-size: 12px;
+  font-size: var(--fs-1);
 }
 .product-chips button {
   min-height: 40px;
 }
 .draft-state {
-  font-size: 12px;
+  font-size: var(--fs-1);
 }
 .chart-detail {
-  font-size: 12px;
+  font-size: var(--fs-1);
 }
 @media (max-width: 680px) {
   .page-heading .subtle,
@@ -2780,21 +2770,21 @@ label small,
   .list-summary,
   .settings-note p,
   .bar-label {
-    font-size: 11px;
+    font-size: var(--fs-1);
   }
   .metric-label {
-    font-size: 12px;
+    font-size: var(--fs-1);
   }
   .mobile-nav > button,
   .mobile-add small {
-    font-size: 11px;
+    font-size: var(--fs-1);
   }
   .mid-money {
     font-size: clamp(18px, 5.6vw, 25px);
   }
   .overview-strip > div,
   .overview-strip > .total-link {
-    font-size: 11px;
+    font-size: var(--fs-1);
     gap: 5px;
   }
   .overview-strip > .total-link {
@@ -2805,18 +2795,18 @@ label small,
     display: none;
   }
   .overview-strip strong {
-    font-size: 12px;
+    font-size: var(--fs-1);
   }
   .chart-grid > span {
-    font-size: 9px;
+    font-size: var(--fs-1);
   }
   .segmented button {
-    font-size: 11px;
+    font-size: var(--fs-1);
     min-height: 36px;
   }
   .demo-banner,
   .demo-banner button {
-    font-size: 10px;
+    font-size: var(--fs-1);
   }
   .filters .quick-filters button {
     min-height: 38px;
@@ -2824,7 +2814,7 @@ label small,
   .draft-state {
     display: block;
     max-width: 110px;
-    font-size: 10px;
+    font-size: var(--fs-1);
     text-align: right;
     line-height: 1.6;
   }
@@ -2832,17 +2822,17 @@ label small,
     min-height: 40px;
   }
   .sale-info small {
-    font-size: 11px;
+    font-size: var(--fs-1);
   }
   .field-grid label,
   .field-grid label small {
-    font-size: 12px;
+    font-size: var(--fs-1);
   }
   .entry-form #customer {
-    font-size: 16px;
+    font-size: var(--fs-3);
   }
   .entry-form .form-actions .button {
-    font-size: 12px;
+    font-size: var(--fs-1);
   }
 }
 .chart-summary {
@@ -2855,7 +2845,7 @@ label small,
   .chart-detail {
     width: 100%;
     margin: 3px 0 0;
-    font-size: 11px;
+    font-size: var(--fs-1);
     line-height: 1.8;
   }
   .bar-chart.period-month {
@@ -2868,5 +2858,94 @@ label small,
     right: auto;
     width: 100%;
     min-width: 515px;
+  }
+}
+/* 记一笔：点商品 → 输客户 → 保存 */
+.field-label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 16px 0 8px;
+}
+.field-label-row label {
+  margin: 0;
+}
+.add-product-button {
+  font-size: var(--fs-2);
+  min-height: 40px;
+  gap: 4px;
+}
+.customer-field label {
+  margin-top: 20px;
+}
+.customer-field input {
+  width: 100%;
+}
+.date-field {
+  margin-top: 14px;
+}
+.date-field label {
+  margin-top: 0;
+}
+.date-field input {
+  max-width: 260px;
+}
+.date-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 40px;
+  padding: 8px 12px;
+  border-radius: 9px;
+  border: 1px solid var(--border);
+  background: #f7f9f4;
+  color: var(--text-2);
+  font-size: var(--fs-2);
+}
+.date-toggle strong {
+  color: var(--text-1);
+  font-weight: 600;
+}
+.date-toggle em {
+  font-style: normal;
+  color: var(--green);
+  font-weight: 600;
+}
+.date-toggle:hover {
+  background: var(--light);
+}
+@media (max-width: 680px) {
+  .entry-form .form-actions {
+    position: sticky;
+    bottom: calc(70px + env(safe-area-inset-bottom));
+    z-index: 20;
+    margin: 20px -18px -22px;
+    padding: 12px 18px 26px;
+    background: #fffffff7;
+    border-top: 1px solid var(--border);
+    box-shadow: 0 -8px 18px #233c330d;
+    border-radius: 0 0 12px 12px;
+  }
+  .entry-form .form-actions .button {
+    font-size: var(--fs-2);
+    min-height: 46px;
+  }
+  .customer-field input {
+    font-size: var(--fs-3);
+    height: 46px;
+  }
+  .date-field input {
+    max-width: 100%;
+  }
+  /* 输入框获得焦点、自动滚动时，留出固定保存栏和底部导航的高度，最后一个输入框不会被挡住 */
+  .entry-form input,
+  .entry-form textarea,
+  .entry-form select,
+  .entry-form .date-toggle {
+    scroll-margin-bottom: calc(176px + env(safe-area-inset-bottom));
+  }
+  .entry-form > section:last-of-type {
+    padding-bottom: 12px;
   }
 }
