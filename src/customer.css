@@ -13,7 +13,7 @@
   gap: 8px;
 }
 .customer-ui h3 {
-  font-size: 14px;
+  font-size: var(--fs-2);
   line-height: 1.6;
   overflow-wrap: anywhere;
 }
@@ -65,7 +65,7 @@
   padding: 13px 24px;
   background: #f6f8f4;
   color: var(--text-3);
-  font-size: 12px;
+  font-size: var(--fs-1);
 }
 .customer-summary strong {
   color: var(--green);
@@ -94,7 +94,7 @@
   color: var(--green);
 }
 .customer-rank-number {
-  font-size: 12px;
+  font-size: var(--fs-1);
   color: var(--text-3);
   min-width: 26px;
   font-variant-numeric: tabular-nums;
@@ -113,7 +113,7 @@
 }
 .customer-rank-name small {
   color: var(--text-3);
-  font-size: 11px;
+  font-size: var(--fs-1);
 }
 .customer-name-with-badge {
   display: flex;
@@ -134,7 +134,7 @@
   border-radius: 50%;
   background: #d73535;
   color: white;
-  font-size: 10px;
+  font-size: var(--fs-1);
   line-height: 1;
   font-weight: 700;
   transform: translateY(-4px);
@@ -157,14 +157,14 @@
   font-weight: 700;
 }
 .customer-rank-profit small {
-  font-size: 10px;
+  font-size: var(--fs-1);
   color: var(--text-3);
 }
 .customer-rank-action {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  font-size: 11px;
+  font-size: var(--fs-1);
   color: var(--green);
 }
 .customer-products {
@@ -186,11 +186,11 @@
   max-width: 100%;
 }
 .customer-products strong {
-  font-size: 11px;
+  font-size: var(--fs-1);
   font-weight: 500;
 }
 .customer-products small {
-  font-size: 10px;
+  font-size: var(--fs-1);
 }
 .customer-expand {
   margin: 8px 24px;
@@ -224,7 +224,7 @@
   max-width: 360px;
 }
 .customer-calendar-filter .subtle {
-  font-size: 11px;
+  font-size: var(--fs-1);
 }
 .customer-legend {
   display: flex;
@@ -232,12 +232,12 @@
   align-items: center;
   gap: 14px;
   padding: 0 24px 16px;
-  font-size: 11px;
+  font-size: var(--fs-1);
 }
 .customer-legend small {
   margin-left: auto;
   color: var(--text-3);
-  font-size: 10px;
+  font-size: var(--fs-1);
 }
 .task-complete {
   --task-color: #166b55;
@@ -265,7 +265,7 @@
   padding: 8px 0 10px;
   text-align: center;
   color: var(--text-3);
-  font-size: 11px;
+  font-size: var(--fs-1);
 }
 .customer-day {
   display: flex;
@@ -303,7 +303,7 @@
   display: flex;
   align-items: center;
   gap: 5px;
-  font-size: 13px;
+  font-size: var(--fs-2);
   font-weight: 600;
   font-variant-numeric: tabular-nums;
 }
@@ -326,7 +326,7 @@
   display: inline-flex;
   align-items: center;
   gap: 3px;
-  font-size: 11px;
+  font-size: var(--fs-1);
   font-variant-numeric: tabular-nums;
 }
 .customer-day-counts i {
@@ -339,7 +339,7 @@
 .customer-day-total {
   align-self: flex-end;
   color: var(--text-3);
-  font-size: 10px;
+  font-size: var(--fs-1);
   font-variant-numeric: tabular-nums;
 }
 .customer-task-list {
@@ -368,7 +368,7 @@
   align-items: center;
   gap: 6px;
   margin-bottom: 9px;
-  font-size: 11px;
+  font-size: var(--fs-1);
 }
 .customer-task-top time {
   color: var(--text-3);
@@ -381,12 +381,12 @@
 }
 .customer-task-customer {
   margin: 2px 0;
-  font-size: 11px;
+  font-size: var(--fs-1);
 }
 .customer-task-text {
   white-space: pre-wrap;
   overflow-wrap: anywhere;
-  font-size: 12px;
+  font-size: var(--fs-1);
   line-height: 1.8;
   padding-bottom: 8px;
   color: var(--text-2);
@@ -394,7 +394,7 @@
 .customer-task-text strong {
   display: block;
   color: var(--text-3);
-  font-size: 10px;
+  font-size: var(--fs-1);
   font-weight: 500;
 }
 .customer-task-actions {
@@ -405,7 +405,7 @@
   border-top: 1px solid #edf0e9;
 }
 .customer-task-actions .text-button {
-  font-size: 11px;
+  font-size: var(--fs-1);
 }
 .customer-agenda {
   display: grid;
@@ -445,7 +445,7 @@
 }
 .customer-draft-note {
   color: var(--text-3);
-  font-size: 11px;
+  font-size: var(--fs-1);
   line-height: 1.7;
   margin: 16px 0 0;
 }
@@ -458,7 +458,7 @@
   background: #eaf2e9;
   border-radius: 6px;
   padding: 6px 10px;
-  font-size: 12px;
+  font-size: var(--fs-1);
   color: var(--text-3);
   overflow-wrap: anywhere;
 }
@@ -489,10 +489,10 @@
 }
 .customer-stats small {
   color: var(--text-3);
-  font-size: 11px;
+  font-size: var(--fs-1);
 }
 .customer-stats strong {
-  font-size: 17px;
+  font-size: var(--fs-3);
   font-variant-numeric: tabular-nums;
 }
 .customer-detail-products {
@@ -524,7 +524,7 @@
 .customer-sale-info small,
 .customer-sale-profit small {
   color: var(--text-3);
-  font-size: 10px;
+  font-size: var(--fs-1);
   line-height: 1.6;
 }
 .customer-sale-profit {
@@ -535,7 +535,7 @@
 }
 .customer-sale-profit .money {
   color: var(--green);
-  font-size: 15px;
+  font-size: var(--fs-2);
   font-weight: 600;
 }
 .customer-sale-note {
@@ -579,15 +579,15 @@
   padding: 14px;
   border-radius: 8px;
   overflow-wrap: anywhere;
-  font-size: 12px;
+  font-size: var(--fs-1);
 }
 .customer-merge-totals small {
   color: var(--text-3);
-  font-size: 10px;
+  font-size: var(--fs-1);
 }
 .customer-merge-result {
   color: var(--green);
-  font-size: 12px;
+  font-size: var(--fs-1);
   line-height: 1.8;
   margin-bottom: 10px;
 }
@@ -597,7 +597,7 @@
   align-items: center;
   margin: 12px 0;
   min-height: 40px;
-  font-size: 12px;
+  font-size: var(--fs-1);
 }
 .customer-confirm input {
   width: 18px;
@@ -640,7 +640,7 @@
 }
 .customer-alias-list small {
   color: var(--text-3);
-  font-size: 11px;
+  font-size: var(--fs-1);
 }
 .customer-alias-list .text-button {
   flex-shrink: 0;
@@ -698,7 +698,7 @@
     max-width: 44%;
   }
   .customer-rank-profit .money {
-    font-size: 14px;
+    font-size: var(--fs-2);
     overflow-wrap: anywhere;
   }
   .customer-calendar-grid {
@@ -711,10 +711,10 @@
     border-radius: 6px;
   }
   .customer-day-number {
-    font-size: 12px;
+    font-size: var(--fs-1);
   }
   .customer-day-counts > span {
-    font-size: 9px;
+    font-size: var(--fs-1);
     gap: 1px;
   }
   .customer-day-counts i {
@@ -722,12 +722,12 @@
     height: 3px;
   }
   .customer-day-total {
-    font-size: 9px;
+    font-size: var(--fs-1);
   }
   .customer-legend {
     padding: 0 12px 12px;
     gap: 10px;
-    font-size: 10px;
+    font-size: var(--fs-1);
   }
   .customer-legend small {
     margin-left: 0;
@@ -750,7 +750,7 @@
     gap: 18px;
   }
   .customer-stats strong {
-    font-size: 16px;
+    font-size: var(--fs-3);
   }
   .customer-detail-products {
     margin: 0 16px 16px;
@@ -817,7 +817,7 @@
   gap: 4px;
 }
 .ranking-period-label {
-  font-size: 13px;
+  font-size: var(--fs-2);
 }
 .ranking-search {
   flex: 1;
@@ -855,7 +855,7 @@
 .catalog-product-group h3,
 .product-category-heading {
   padding: 12px 0;
-  font-size: 14px;
+  font-size: var(--fs-2);
   color: var(--green);
   background: var(--green-soft);
 }
