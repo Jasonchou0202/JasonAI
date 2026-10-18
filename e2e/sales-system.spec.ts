@@ -665,6 +665,23 @@ test("mobile entry keeps the save bar visible above the bottom navigation", asyn
     page.getByRole("navigation", { name: "手机导航" }).boundingBox(),
   ]);
   expect(saveBox!.y + saveBox!.height).toBeLessThanOrEqual(navBox!.y);
+  // 最后一个输入框（备注）获得焦点时，不能被固定保存栏挡住
+  const bar = page.locator(".entry-form .form-actions");
+  for (const field of ["#note", "#cost", "#customer"]) {
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await page.locator(field).focus();
+    const [fieldBox, barBox] = await Promise.all([
+      page.locator(field).boundingBox(),
+      bar.boundingBox(),
+    ]);
+    expect(fieldBox!.y + fieldBox!.height).toBeLessThanOrEqual(barBox!.y);
+  }
+  await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+  const [noteBox, barEnd] = await Promise.all([
+    page.locator("#note").boundingBox(),
+    bar.boundingBox(),
+  ]);
+  expect(noteBox!.y + noteBox!.height).toBeLessThanOrEqual(barEnd!.y);
   expect(
     await page.evaluate(
       () => document.documentElement.scrollWidth <= innerWidth,
