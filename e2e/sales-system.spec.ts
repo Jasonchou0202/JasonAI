@@ -862,3 +862,87 @@ test("dashboard hero shows this month's profit, links to details, and the custom
     .click();
   await expect(page.getByRole("heading", { name: "销售明细" })).toBeVisible();
 });
+test("sales rows open the editor and keep schedule, edit and delete in a ⋯ menu", async ({
+  page,
+}) => {
+  await page.goto("./#/details");
+  const first = page.locator(".detail-row").first();
+  const menu = first.getByRole("button", { name: /^更多操作/ });
+  await expect(menu).toHaveAttribute("aria-expanded", "false");
+  await menu.click();
+  await expect(menu).toHaveAttribute("aria-expanded", "true");
+  const items = first.getByRole("menuitem");
+  await expect(items.first()).toBeFocused();
+  await expect(first.getByRole("menuitem", { name: /^编辑/ })).toBeVisible();
+  await expect(first.getByRole("menuitem", { name: /^删除/ })).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(first.getByRole("menu")).toHaveCount(0);
+  await expect(menu).toBeFocused();
+  await menu.click();
+  await first.getByRole("menuitem", { name: /^删除/ }).click();
+  await expect(page.getByRole("dialog")).toContainText("移入回收站？");
+  await page.getByRole("button", { name: "取消", exact: true }).click();
+  await first.locator(".detail-open").click();
+  await expect(page.getByRole("heading", { name: "编辑销售" })).toBeVisible();
+});
+test("skip link, demo notice landmark and a single h1 on every page", async ({
+  page,
+}) => {
+  const notice = page.getByRole("complementary", { name: "演示提示" });
+  await expect(notice).toContainText("演示数据");
+  await expect(
+    notice.getByRole("button", { name: "退出演示", exact: true }),
+  ).toBeVisible();
+  await page.keyboard.press("Tab");
+  const skip = page.getByRole("button", { name: "跳到主要内容" });
+  await expect(skip).toBeFocused();
+  await skip.press("Enter");
+  await expect(page.locator("#main-content")).toBeFocused();
+  for (const route of [
+    "dashboard",
+    "entry",
+    "details",
+    "calendar",
+    "settings",
+  ]) {
+    await page.goto(`./#/${route}`);
+    await expect(page.locator("main h1")).toHaveCount(1);
+  }
+  await page.goto("./#/dashboard");
+  await ranking(page).locator(".customer-rank-link").first().click();
+  await expect(page.getByRole("heading", { name: "客户日程" })).toBeVisible();
+  await expect(page.locator("h1")).toHaveCount(1);
+  await expect(page.getByRole("definition").first()).toBeVisible();
+  await expect(page.locator(".hero-figures")).toContainText("累计利润");
+});
+test.describe("touch screens", () => {
+  test.use({
+    viewport: { width: 390, height: 844 },
+    isMobile: true,
+    hasTouch: true,
+  });
+  test("tapping a trend bar shows its amount first, the second tap opens the details", async ({
+    page,
+  }) => {
+    const bars = page.locator(".dash-chart .bar-column");
+    const target = bars.nth((await bars.count()) - 2);
+    const label = (await target.getAttribute("aria-label"))!;
+    const from = label.slice(0, 10);
+    await target.tap();
+    await expect(page).toHaveURL(/#\/dashboard|\/JasonAI\/$/);
+    await expect(page.locator(".chart-summary")).toContainText(from);
+    await expect(target).toHaveClass(/armed/);
+    await expect(
+      page.getByRole("button", { name: "查看这段明细" }),
+    ).toBeVisible();
+    await target.tap();
+    await expect(page.getByRole("heading", { name: "销售明细" })).toBeVisible();
+    await expect(page).toHaveURL(new RegExp(`from=${from}`));
+  });
+});
+test("with a mouse, one click on a trend bar still opens the details", async ({
+  page,
+}) => {
+  await page.locator(".dash-chart .bar-column").last().click();
+  await expect(page.getByRole("heading", { name: "销售明细" })).toBeVisible();
+});
