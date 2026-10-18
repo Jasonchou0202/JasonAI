@@ -495,17 +495,28 @@
   }
 }
 @media (max-width: 600px) {
+  /* 手机页头收紧：插画更小、去掉小字眉标，让第一笔记录尽量在首屏 */
   .page-heading {
     min-height: 0;
-    padding: var(--space-6) var(--page-pad-x) var(--space-5);
-    margin-bottom: var(--space-5);
+    padding: var(--space-5) var(--page-pad-x) var(--space-4);
+    margin-bottom: var(--space-4);
     flex-wrap: wrap;
   }
   .page-heading::after {
-    width: 150px;
+    width: 120px;
     right: 0;
     top: 4px;
-    opacity: 0.45;
+    opacity: 0.4;
+  }
+  .page-heading .eyebrow {
+    display: none;
+  }
+  .page-heading .subtle {
+    margin-top: var(--space-2);
+  }
+  /* 底部导航已有「记一笔」，明细页头不再重复 */
+  .page-heading > .heading-new {
+    display: none;
   }
   .demo-banner {
     justify-content: center;
@@ -551,7 +562,8 @@
   }
   .list-summary.figures {
     grid-template-columns: repeat(2, 1fr);
-    row-gap: var(--space-4);
+    row-gap: var(--space-3);
+    padding: var(--space-4) 0;
   }
   .list-summary.figures > div:nth-child(3) {
     padding-left: 0;

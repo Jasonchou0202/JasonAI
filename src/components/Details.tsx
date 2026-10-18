@@ -146,7 +146,7 @@ export function Details({
           <h1>{filters.deleted ? "回收站" : "销售明细"}</h1>
           <p className="subtle">找到记录，核对收入，把生意理清楚。</p>
         </div>
-        <button className="button primary" onClick={onNew}>
+        <button className="button primary heading-new" onClick={onNew}>
           <Plus size={17} />
           记一笔
         </button>

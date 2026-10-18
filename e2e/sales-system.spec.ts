@@ -1071,3 +1071,33 @@ test.describe("after a new deploy removes old lazy chunks", () => {
     ).toBeVisible();
   });
 });
+test.describe("first screen on a 1280×800 laptop", () => {
+  test.use({ viewport: { width: 1280, height: 800 } });
+  test("the profit trend chart is visible without scrolling", async ({
+    page,
+  }) => {
+    const chart = page.locator(".dash-chart");
+    await expect(chart).toBeVisible();
+    const box = (await chart.boundingBox())!;
+    expect(box.y + box.height).toBeLessThanOrEqual(800);
+  });
+});
+test.describe("first screen on a phone", () => {
+  test.use({
+    viewport: { width: 390, height: 844 },
+    isMobile: true,
+    hasTouch: true,
+  });
+  test("the first sale on the details page is visible above the bottom navigation", async ({
+    page,
+  }) => {
+    await page.goto("./#/details");
+    const row = page.locator(".detail-row").first();
+    await expect(row).toBeVisible();
+    const nav = (await page
+      .getByRole("navigation", { name: "手机导航" })
+      .boundingBox())!;
+    const box = (await row.boundingBox())!;
+    expect(box.y + box.height).toBeLessThanOrEqual(nav.y);
+  });
+});
