@@ -1,34 +1,4 @@
 /* 生意概览：留白 + 细分隔线的首屏样式（只作用于 .dash-page 内） */
-.dash-page {
-  --accent: #0b6e5a; /* 唯一强调色：增长 */
-  --accent-soft: #dff5ec;
-  --page-pad-x: 40px;
-  --page-pad-top: 32px;
-}
-@media (min-width: 1500px) {
-  .dash-page {
-    --page-pad-top: 40px;
-  }
-}
-@media (max-width: 1180px) {
-  .dash-page {
-    --page-pad-x: 25px;
-    --page-pad-top: 26px;
-  }
-}
-@media (max-width: 900px) {
-  .dash-page {
-    --page-pad-x: 20px;
-    --page-pad-top: 23px;
-  }
-}
-@media (max-width: 680px) {
-  .dash-page {
-    --page-pad-x: 17px;
-    --page-pad-top: 24px;
-  }
-}
-
 /* ---------- 首屏 ---------- */
 .dash-hero {
   position: relative;
@@ -80,7 +50,7 @@
   align-items: center;
   gap: 10px;
   padding: 6px 20px;
-  border-radius: 20px;
+  border-radius: var(--radius-xl);
   background: transparent;
   color: var(--text-1);
 }
@@ -132,7 +102,7 @@
   align-items: center;
   gap: 5px;
   padding: 4px 11px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   font-weight: 600;
   font-variant-numeric: tabular-nums;
 }
@@ -158,9 +128,9 @@
   gap: 6px;
   min-height: 44px;
   padding: 0 22px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: var(--green);
-  color: #fff;
+  color: var(--surface);
   font-size: var(--fs-2);
   font-weight: 600;
   box-shadow: 0 6px 18px #166b5526;
@@ -252,11 +222,11 @@
 }
 .dash-page .segmented {
   border: 0;
-  background: #e9eee9;
-  border-radius: 999px;
+  background: var(--mint-soft);
+  border-radius: var(--radius-pill);
 }
 .dash-page .segmented button {
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
 }
 .dash-page .sale-rows {
   padding: 0 0 10px;
@@ -295,7 +265,7 @@
 .dash-chart .bar-column:nth-child(2n) .bar {
   max-width: 52px;
   border-radius: 12px 12px 6px 6px;
-  background: linear-gradient(180deg, #c3e5d7 0%, #e4f3ec 100%);
+  background: linear-gradient(180deg, #c3e5d7 0%, var(--accent-soft) 100%);
   transition:
     height 0.35s,
     filter 0.18s;
@@ -306,13 +276,13 @@
   background: linear-gradient(180deg, #1f8f73 0%, #8fd3bb 100%);
 }
 .dash-chart .bar-column.loss .bar {
-  background: linear-gradient(0deg, #e2a99c 0%, #f6e1db 100%);
+  background: linear-gradient(0deg, #e2a99c 0%, var(--cream) 100%);
 }
 .dash-chart .bar-tip {
   top: -34px;
   padding: 4px 10px;
-  border-radius: 999px;
-  background: #fff;
+  border-radius: var(--radius-pill);
+  background: var(--surface);
   color: var(--text-1);
   font-weight: 700;
   font-family: "Manrope", sans-serif;
@@ -383,7 +353,7 @@
 }
 .dash-page .customer-ranks > li {
   padding: 0 0 14px;
-  border-bottom-color: #edf0ec;
+  border-bottom-color: var(--line-soft);
 }
 .dash-page .customer-rank-link {
   padding: 16px 0 6px;
@@ -404,7 +374,7 @@
 }
 
 /* ---------- 手机 ---------- */
-@media (max-width: 680px) {
+@media (max-width: 600px) {
   .dash-hero {
     padding-top: 40px;
     padding-bottom: 180px;
