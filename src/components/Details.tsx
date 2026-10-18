@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import {
   Download,
   Plus,
@@ -9,6 +9,7 @@ import {
   ChevronRight,
   Pencil,
   CalendarDays,
+  MoreHorizontal,
 } from "lucide-react";
 import type {
   Api,
@@ -243,20 +244,30 @@ export function Details({
         )}
         {(error || opError) && <ErrorNote>{error || opError}</ErrorNote>}
         {data && (
-          <div className="list-summary">
-            <span>
-              共 <strong>{data.total}</strong> 笔
-            </span>
-            <span>销售额 ¥{money(data.totals.revenue)}</span>
-            <span>成本 ¥{money(data.totals.cost)}</span>
-            <span>
-              利润{" "}
+          <div className="list-summary figures" aria-label="筛选结果合计">
+            <div>
+              <span>笔数</span>
+              <strong>
+                {data.total}
+                <small> 笔</small>
+              </strong>
+            </div>
+            <div>
+              <span>销售额</span>
+              <strong>¥{money(data.totals.revenue)}</strong>
+            </div>
+            <div>
+              <span>成本</span>
+              <strong>¥{money(data.totals.cost)}</strong>
+            </div>
+            <div>
+              <span>利润</span>
               <strong
                 className={data.totals.profit < 0 ? "negative" : "positive"}
               >
                 ¥{money(data.totals.profit)}
               </strong>
-            </span>
+            </div>
           </div>
         )}
         {loading ? (
@@ -274,16 +285,35 @@ export function Details({
                     {r.date.replaceAll("-", " / ")}
                   </div>
                 )}
-                <div className="detail-row">
-                  <div className="detail-main">
-                    <strong>{r.productName}</strong>
-                    <span>
-                      {r.customer
-                        ? displayCustomerName(r.customer)
-                        : "未填写客户"}
-                    </span>
-                    {r.note && <small>{r.note}</small>}
-                  </div>
+                <div
+                  className={`detail-row ${filters.deleted ? "" : "clickable"}`}
+                >
+                  {filters.deleted ? (
+                    <div className="detail-main">
+                      <strong>{r.productName}</strong>
+                      <span>
+                        {r.customer
+                          ? displayCustomerName(r.customer)
+                          : "未填写客户"}
+                      </span>
+                      {r.note && <small>{r.note}</small>}
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      className="detail-main detail-open"
+                      title="点按编辑这笔销售"
+                      onClick={() => onEdit(r)}
+                    >
+                      <strong>{r.productName}</strong>
+                      <span>
+                        {r.customer
+                          ? displayCustomerName(r.customer)
+                          : "未填写客户"}
+                      </span>
+                      {r.note && <small>{r.note}</small>}
+                    </button>
+                  )}
                   <div className="detail-numbers">
                     <span>
                       收入<strong>¥{money(r.revenue)}</strong>
@@ -303,18 +333,6 @@ export function Details({
                     </span>
                   </div>
                   <div className="detail-actions">
-                    {customerFor(r.customer) && (
-                      <button
-                        className="text-button"
-                        aria-label={`${displayCustomerName(r.customer)}日程管理`}
-                        onClick={() =>
-                          onCustomer(customerFor(r.customer)!.id, "all")
-                        }
-                      >
-                        <CalendarDays size={15} />
-                        日程管理
-                      </button>
-                    )}
                     {filters.deleted ? (
                       <>
                         <button
@@ -344,22 +362,50 @@ export function Details({
                         )}
                       </>
                     ) : (
-                      <>
-                        <button
-                          className="icon-button"
-                          aria-label={`编辑${r.productName} ${displayCustomerName(r.customer)}`}
-                          onClick={() => onEdit(r)}
-                        >
-                          <Pencil size={16} />
-                        </button>
-                        <button
-                          className="icon-button"
-                          aria-label={`删除${r.productName} ${displayCustomerName(r.customer)}`}
-                          onClick={() => setConfirm(r)}
-                        >
-                          <Trash2 size={16} />
-                        </button>
-                      </>
+                      <RowMenu
+                        label={`更多操作：${r.productName} ${displayCustomerName(r.customer)}`}
+                        items={[
+                          ...(customerFor(r.customer)
+                            ? [
+                                {
+                                  label: "日程管理",
+                                  aria: `${displayCustomerName(r.customer)}日程管理`,
+                                  icon: <CalendarDays size={15} />,
+                                  onSelect: () =>
+                                    onCustomer(
+                                      customerFor(r.customer)!.id,
+                                      "all",
+                                    ),
+                                },
+                              ]
+                            : []),
+                          {
+                            label: "编辑",
+                            aria: `编辑${r.productName} ${displayCustomerName(r.customer)}`,
+                            icon: <Pencil size={15} />,
+                            onSelect: () => onEdit(r),
+                          },
+                          {
+                            label: "删除",
+                            aria: `删除${r.productName} ${displayCustomerName(r.customer)}`,
+                            icon: <Trash2 size={15} />,
+                            danger: true,
+                            onSelect: () => setConfirm(r),
+                          },
+                        ]}
+                      />
+                    )}
+                    {filters.deleted && customerFor(r.customer) && (
+                      <button
+                        className="text-button"
+                        aria-label={`${displayCustomerName(r.customer)}日程管理`}
+                        onClick={() =>
+                          onCustomer(customerFor(r.customer)!.id, "all")
+                        }
+                      >
+                        <CalendarDays size={15} />
+                        日程管理
+                      </button>
                     )}
                   </div>
                 </div>
@@ -429,5 +475,95 @@ export function Details({
         </Modal>
       )}
     </>
+  );
+}
+
+type MenuItem = {
+  label: string;
+  aria?: string;
+  icon: ReactNode;
+  danger?: boolean;
+  onSelect: () => void;
+};
+// 行尾“⋯”菜单：收起日程管理、编辑、删除，减少每行的按钮数量
+function RowMenu({ label, items }: { label: string; items: MenuItem[] }) {
+  const [open, setOpen] = useState(false);
+  const box = useRef<HTMLDivElement>(null);
+  const trigger = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    const outside = (e: PointerEvent) => {
+      if (!box.current?.contains(e.target as Node)) setOpen(false);
+    };
+    const key = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setOpen(false);
+        trigger.current?.focus();
+      }
+    };
+    document.addEventListener("pointerdown", outside);
+    document.addEventListener("keydown", key);
+    box.current?.querySelector<HTMLButtonElement>('[role="menuitem"]')?.focus();
+    return () => {
+      document.removeEventListener("pointerdown", outside);
+      document.removeEventListener("keydown", key);
+    };
+  }, [open]);
+  function move(e: React.KeyboardEvent<HTMLDivElement>) {
+    if (!["ArrowDown", "ArrowUp", "Home", "End"].includes(e.key)) return;
+    e.preventDefault();
+    const list = [
+      ...e.currentTarget.querySelectorAll<HTMLButtonElement>(
+        '[role="menuitem"]',
+      ),
+    ];
+    const at = list.indexOf(document.activeElement as HTMLButtonElement);
+    const next =
+      e.key === "Home"
+        ? 0
+        : e.key === "End"
+          ? list.length - 1
+          : (at + (e.key === "ArrowDown" ? 1 : -1) + list.length) % list.length;
+    list[next]?.focus();
+  }
+  return (
+    <div className="row-menu" ref={box}>
+      <button
+        ref={trigger}
+        type="button"
+        className="icon-button"
+        aria-label={label}
+        aria-haspopup="menu"
+        aria-expanded={open}
+        onClick={() => setOpen((v) => !v)}
+      >
+        <MoreHorizontal size={18} />
+      </button>
+      {open && (
+        <div
+          className="row-menu-list"
+          role="menu"
+          aria-label={label}
+          onKeyDown={move}
+        >
+          {items.map((item) => (
+            <button
+              key={item.label}
+              type="button"
+              role="menuitem"
+              className={item.danger ? "danger" : ""}
+              aria-label={item.aria}
+              onClick={() => {
+                setOpen(false);
+                item.onSelect();
+              }}
+            >
+              {item.icon}
+              {item.label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
