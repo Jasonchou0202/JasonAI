@@ -21,7 +21,7 @@
   margin: 12px 0;
 }
 .customer-ui .subtle {
-  color: #69796f;
+  color: var(--text-3);
 }
 .customer-ui fieldset {
   padding: 0;
@@ -64,7 +64,7 @@
   gap: 8px;
   padding: 13px 24px;
   background: #f6f8f4;
-  color: #67766b;
+  color: var(--text-3);
   font-size: 12px;
 }
 .customer-summary strong {
@@ -95,7 +95,7 @@
 }
 .customer-rank-number {
   font-size: 12px;
-  color: #7d8980;
+  color: var(--text-3);
   min-width: 26px;
   font-variant-numeric: tabular-nums;
 }
@@ -112,7 +112,7 @@
   overflow-wrap: anywhere;
 }
 .customer-rank-name small {
-  color: #6e7c71;
+  color: var(--text-3);
   font-size: 11px;
 }
 .customer-name-with-badge {
@@ -158,7 +158,7 @@
 }
 .customer-rank-profit small {
   font-size: 10px;
-  color: #6e7c71;
+  color: var(--text-3);
 }
 .customer-rank-action {
   display: inline-flex;
@@ -180,7 +180,7 @@
   padding: 6px 9px;
   background: #f4f7f2;
   border-radius: 7px;
-  color: #5f7264;
+  color: var(--text-3);
   line-height: 1.6;
   overflow-wrap: anywhere;
   max-width: 100%;
@@ -236,7 +236,7 @@
 }
 .customer-legend small {
   margin-left: auto;
-  color: #6c7b70;
+  color: var(--text-3);
   font-size: 10px;
 }
 .task-complete {
@@ -244,11 +244,11 @@
   --task-bg: #eaf3ec;
 }
 .task-urgent {
-  --task-color: #a76814;
+  --task-color: #8a5610;
   --task-bg: #fbf1df;
 }
 .task-pending {
-  --task-color: #b84e43;
+  --task-color: #a2443a;
   --task-bg: #fcf0ec;
 }
 .customer-legend > span,
@@ -264,7 +264,7 @@
 .customer-weekday {
   padding: 8px 0 10px;
   text-align: center;
-  color: #6a7d6e;
+  color: var(--text-3);
   font-size: 11px;
 }
 .customer-day {
@@ -285,13 +285,14 @@
 }
 .customer-day.outside {
   background: #fbfcfa;
-  color: #6f7c71;
+  color: var(--text-3);
 }
 .customer-day.empty-day {
   background: #f8f9f7;
 }
 .customer-day.outside .customer-day-number {
-  opacity: 0.6;
+  color: var(--text-3);
+  font-weight: 400;
 }
 .customer-day.selected {
   border-color: var(--green);
@@ -337,7 +338,7 @@
 }
 .customer-day-total {
   align-self: flex-end;
-  color: #5f7465;
+  color: var(--text-3);
   font-size: 10px;
   font-variant-numeric: tabular-nums;
 }
@@ -370,7 +371,7 @@
   font-size: 11px;
 }
 .customer-task-top time {
-  color: #687b6d;
+  color: var(--text-3);
 }
 .customer-task-status {
   padding: 3px 7px;
@@ -388,11 +389,11 @@
   font-size: 12px;
   line-height: 1.8;
   padding-bottom: 8px;
-  color: #52675a;
+  color: var(--text-2);
 }
 .customer-task-text strong {
   display: block;
-  color: #758479;
+  color: var(--text-3);
   font-size: 10px;
   font-weight: 500;
 }
@@ -443,7 +444,7 @@
   padding-top: 12px;
 }
 .customer-draft-note {
-  color: #69796f;
+  color: var(--text-3);
   font-size: 11px;
   line-height: 1.7;
   margin: 16px 0 0;
@@ -458,7 +459,7 @@
   border-radius: 6px;
   padding: 6px 10px;
   font-size: 12px;
-  color: #57705e;
+  color: var(--text-3);
   overflow-wrap: anywhere;
 }
 .customer-merged {
@@ -487,7 +488,7 @@
   overflow-wrap: anywhere;
 }
 .customer-stats small {
-  color: #748278;
+  color: var(--text-3);
   font-size: 11px;
 }
 .customer-stats strong {
@@ -522,7 +523,7 @@
 }
 .customer-sale-info small,
 .customer-sale-profit small {
-  color: #6c7e70;
+  color: var(--text-3);
   font-size: 10px;
   line-height: 1.6;
 }
@@ -551,7 +552,7 @@
 }
 .customer-merge-arrow {
   margin-bottom: 12px;
-  color: #7e9384;
+  color: var(--text-3);
 }
 .customer-preview-button {
   margin-top: 16px;
@@ -581,7 +582,7 @@
   font-size: 12px;
 }
 .customer-merge-totals small {
-  color: #6f7f74;
+  color: var(--text-3);
   font-size: 10px;
 }
 .customer-merge-result {
@@ -638,7 +639,7 @@
   min-width: 0;
 }
 .customer-alias-list small {
-  color: #6b7d71;
+  color: var(--text-3);
   font-size: 11px;
 }
 .customer-alias-list .text-button {
@@ -901,7 +902,7 @@
 }
 .suggestion-members small {
   display: block;
-  color: #65756f;
+  color: var(--text-3);
   margin-top: 4px;
 }
 @media (max-width: 600px) {

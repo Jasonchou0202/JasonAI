@@ -1,0 +1,22 @@
+/* 设计变量（tokens）：颜色与文字层级集中在这里维护 */
+:root {
+  /* 品牌色 */
+  --green: #166b55;
+  --green-dark: #124d3f;
+  --light: #eaf2ed;
+  --border: #e5e9e4;
+  --cream: #f4efd9;
+  /* 文字颜色三层：在白底、页面底色、米色和浅绿底上对比度均 ≥ 4.5:1 */
+  --text-1: #243b34; /* 主文字、标题、金额 */
+  --text-2: #4a5c54; /* 次要文字、说明 */
+  --text-3: #5b6a62; /* 辅助文字、标签、提示（最浅，不再使用更浅的文字颜色） */
+  /* 语义文字色 */
+  --text-success: #496a3f;
+  --text-warn: #7a6630;
+  --text-danger: #a24a3e;
+  /* 兼容旧变量名 */
+  --ink: var(--text-1);
+  --muted: var(--text-3);
+  --red: #ac4a3e;
+  --shadow: 0 4px 20px #233c3304;
+}

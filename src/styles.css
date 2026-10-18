@@ -1,18 +1,9 @@
 :root {
   font-family: "DM Sans", "Microsoft YaHei", "PingFang SC", sans-serif;
-  color: #243b34;
+  color: var(--text-1);
   background: #f5f6f3;
   font-synthesis: none;
   font-weight: 400;
-  --green: #166b55;
-  --green-dark: #124d3f;
-  --light: #eaf2ed;
-  --border: #e5e9e4;
-  --muted: #829088;
-  --ink: #243b34;
-  --cream: #f4efd9;
-  --red: #bf5648;
-  --shadow: 0 4px 20px #233c3304;
   font-size: 14px;
 }
 * {
@@ -103,7 +94,7 @@ textarea {
 }
 input::placeholder,
 textarea::placeholder {
-  color: #a2aba4;
+  color: var(--text-3);
 }
 textarea {
   resize: vertical;
@@ -143,7 +134,7 @@ label small {
 .button.secondary {
   background: #fff;
   border: 1px solid var(--border);
-  color: #42564b;
+  color: var(--text-2);
 }
 .button.secondary:hover {
   background: #f5f8f4;
@@ -169,7 +160,7 @@ label small {
   align-items: center;
   justify-content: center;
   background: transparent;
-  color: #849187;
+  color: var(--text-3);
   padding: 9px;
   border-radius: 8px;
   min-width: 34px;
@@ -218,7 +209,7 @@ label small {
 }
 .brand span {
   font-size: 9px;
-  color: #8b978d;
+  color: var(--text-3);
   letter-spacing: 0.6px;
 }
 .app-shell {
@@ -241,7 +232,7 @@ label small {
 }
 .workspace-label {
   font-size: 10px;
-  color: #a4ada5;
+  color: var(--text-3);
   letter-spacing: 1px;
   margin: 51px 16px 16px;
 }
@@ -257,7 +248,7 @@ label small {
   text-align: left;
   padding: 13px 16px;
   background: transparent;
-  color: #7b897f;
+  color: var(--text-3);
   border-radius: 8px;
   font-size: 13px;
   font-weight: 500;
@@ -290,19 +281,19 @@ label small {
 }
 .sidebar-note p {
   font-size: 10px;
-  color: #92a083;
+  color: var(--text-3);
   line-height: 1.9;
 }
 .tiny-leaf {
   font-size: 25px;
-  color: #8b9d6d;
+  color: var(--text-3);
 }
 .sidebar-settings {
   display: flex;
   align-items: center;
   gap: 12px;
   background: transparent;
-  color: #859084;
+  color: var(--text-3);
   padding: 12px 14px;
   font-size: 12px;
   margin-bottom: 16px;
@@ -328,7 +319,7 @@ label small {
   justify-content: center;
   border-radius: 50%;
   background: #e3e8d8;
-  color: #687858;
+  color: var(--text-3);
   font-size: 13px;
   width: 34px;
   height: 34px;
@@ -346,7 +337,7 @@ label small {
 }
 .account span {
   font-size: 10px;
-  color: #9aa498;
+  color: var(--text-3);
 }
 .main-shell {
   margin-left: 222px;
@@ -362,17 +353,17 @@ label small {
   background: #ffffff78;
 }
 .breadcrumb {
-  color: #96a096;
+  color: var(--text-3);
   font-size: 11px;
   display: flex;
   align-items: center;
   gap: 14px;
 }
 .breadcrumb span {
-  color: #c0c8bf;
+  color: var(--text-3);
 }
 .breadcrumb strong {
-  color: #526253;
+  color: var(--text-2);
   font-weight: 500;
 }
 .topbar-right {
@@ -389,7 +380,7 @@ label small {
   padding: 8px 11px;
   border: 1px solid #dce7df;
   border-radius: 10px;
-  color: #3b6655;
+  color: var(--text-2);
   background: #fff;
   font: inherit;
   font-size: 11px;
@@ -410,20 +401,20 @@ label small {
   font-size: 11px;
   font-weight: 700;
 }
-.daily-reminder-count.neutral { background: #e8eeeb; color: #60766b; }
-.daily-reminder-summary { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: 12px; color: #6c7d73; }
-.daily-reminder-summary strong { color: #315f4f; }
+.daily-reminder-count.neutral { background: #e8eeeb; color: var(--text-3); }
+.daily-reminder-summary { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: 12px; color: var(--text-3); }
+.daily-reminder-summary strong { color: var(--text-2); }
 .daily-reminder-list { list-style: none; padding: 0; margin: 20px 0; max-height: 46vh; overflow-y: auto; }
 .daily-reminder-list li + li { border-top: 1px solid #edf0ed; }
 .daily-reminder-row { display: flex; align-items: center; gap: 12px; width: 100%; padding: 15px 0; border: 0; background: transparent; color: var(--ink); text-align: left; cursor: pointer; }
 .daily-reminder-row:hover { background: #f5f9f6; }
-.daily-reminder-row time { font-size: 13px; font-variant-numeric: tabular-nums; color: #526d61; }
+.daily-reminder-row time { font-size: 13px; font-variant-numeric: tabular-nums; color: var(--text-3); }
 .daily-reminder-copy { flex: 1; min-width: 0; }
 .daily-reminder-copy strong { display: block; font-size: 13px; overflow-wrap: anywhere; }
-.daily-reminder-copy small { display: block; margin-top: 5px; color: #87918a; font-size: 11px; overflow-wrap: anywhere; }
-.daily-reminder-state { padding: 5px 7px; border-radius: 6px; font-size: 10px; background: #fff2d8; color: #a46b15; white-space: nowrap; }
+.daily-reminder-copy small { display: block; margin-top: 5px; color: var(--text-3); font-size: 11px; overflow-wrap: anywhere; }
+.daily-reminder-state { padding: 5px 7px; border-radius: 6px; font-size: 10px; background: #fff2d8; color: var(--text-warn); white-space: nowrap; }
 .daily-reminder-state.overdue { color: #bc3f40; background: #ffeded; }
-.daily-reminder-empty { display: grid; justify-items: center; gap: 8px; padding: 28px 10px; color: #6a8577; }
+.daily-reminder-empty { display: grid; justify-items: center; gap: 8px; padding: 28px 10px; color: var(--text-3); }
 .daily-reminder-empty strong { font-size: 14px; }
 .daily-reminder-empty p { margin: 0; }
 .daily-reminder-actions { border-top: 1px solid #edf0ed; padding-top: 16px; }
@@ -438,7 +429,7 @@ label small {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  color: #8a9789;
+  color: var(--text-3);
   font-size: 10px;
 }
 .mini-avatar {
@@ -462,7 +453,7 @@ label small {
   gap: 14px;
 }
 .eyebrow {
-  color: #93a08b;
+  color: var(--text-3);
   font-size: 10px;
   letter-spacing: 1.3px;
   margin-bottom: 6px;
@@ -508,7 +499,7 @@ label small {
 }
 .metric-label {
   font-size: 12px;
-  color: #879487;
+  color: var(--text-3);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -519,7 +510,7 @@ label small {
   border-radius: 8px;
   display: flex;
   padding: 8px;
-  color: #6e886c;
+  color: var(--text-3);
   margin: -5px -2px -5px 0;
 }
 .metric-card.hero {
@@ -553,11 +544,11 @@ label small {
 .mid-money {
   font-size: 31px;
   font-weight: 650;
-  color: #2c4438;
+  color: var(--text-1);
 }
 .mid-money > span:first-child {
   font-size: 17px;
-  color: #6d7e6e;
+  color: var(--text-3);
   font-weight: 400;
 }
 .hero .negative {
@@ -568,7 +559,7 @@ label small {
   justify-content: space-between;
   align-items: center;
   font-size: 9px;
-  color: #b9d4c3;
+  color: #e6f0ea;
   margin-top: 23px;
   gap: 8px;
   position: relative;
@@ -600,7 +591,7 @@ label small {
   display: flex;
   align-items: center;
   font-size: 10px;
-  color: #93a08e;
+  color: var(--text-3);
   border-top: 1px solid #eef1eb;
   padding-top: 13px;
   margin-top: 20px;
@@ -610,7 +601,7 @@ label small {
   margin-left: auto;
 }
 .metric-foot strong {
-  color: #5e745b;
+  color: var(--text-3);
   font-weight: 600;
 }
 .overview-strip {
@@ -618,7 +609,7 @@ label small {
   align-items: center;
   gap: 24px;
   padding: 18px 4px 24px;
-  color: #8c998a;
+  color: var(--text-3);
   font-size: 10px;
   white-space: nowrap;
 }
@@ -640,7 +631,7 @@ label small {
   gap: 9px;
 }
 .overview-strip strong {
-  color: #617360;
+  color: var(--text-3);
   font-family: "Manrope", sans-serif;
   font-size: 11px;
   font-weight: 600;
@@ -664,7 +655,7 @@ label small {
 }
 .panel-heading p {
   font-size: 10px;
-  color: #9aa596;
+  color: var(--text-3);
   margin-top: 7px;
   line-height: 1.6;
 }
@@ -677,7 +668,7 @@ label small {
   flex-shrink: 0;
 }
 .segmented button {
-  color: #92a08b;
+  color: var(--text-3);
   background: transparent;
   padding: 7px 16px;
   border-radius: 5px;
@@ -695,7 +686,7 @@ label small {
   display: flex;
   align-items: baseline;
   gap: 13px;
-  color: #94a08d;
+  color: var(--text-3);
   font-size: 10px;
   flex-wrap: wrap;
 }
@@ -705,7 +696,7 @@ label small {
 .push-settings > small { display: block; line-height: 1.8; }
 .push-guide { display: flex; gap: 14px; margin: 0 24px; padding: 18px; background: var(--light); border-radius: 12px; }
 .push-guide svg { flex-shrink: 0; color: var(--green); }
-.push-guide p { line-height: 1.8; font-size: 13px; margin: 6px 0 0; color: #617369; }
+.push-guide p { line-height: 1.8; font-size: 13px; margin: 6px 0 0; color: var(--text-3); }
 .push-notice { color: var(--green); line-height: 1.8; font-size: 13px; }
 .push-settings .form-actions { flex-wrap: wrap; }
 @media (max-width: 680px) {
@@ -716,13 +707,13 @@ label small {
 .chart-summary > strong {
   font-family: "Manrope", sans-serif;
   font-size: 21px;
-  color: #344d3a;
+  color: var(--text-1);
   letter-spacing: -0.5px;
 }
 .chart-detail {
   margin-left: auto;
   font-size: 9px;
-  color: #a2ac9e;
+  color: var(--text-3);
 }
 .bar-chart {
   height: 207px;
@@ -744,7 +735,7 @@ label small {
 .chart-grid > span {
   border-bottom: 1px dashed #eaf0e6;
   font-size: 8px;
-  color: #b0b8a9;
+  color: var(--text-3);
   padding-bottom: 4px;
   line-height: 0;
   transform: translateY(4px);
@@ -823,7 +814,7 @@ label small {
   height: 32px;
   padding-top: 13px;
   font-size: 9px;
-  color: #99a48f;
+  color: var(--text-3);
   white-space: nowrap;
 }
 .bar-column.last .bar-label {
@@ -873,7 +864,7 @@ label small {
 }
 .product-mark {
   background: #eef2e9;
-  color: #718462;
+  color: var(--text-3);
   border: 1px solid #e7eddf;
   border-radius: 9px;
   height: 37px;
@@ -888,16 +879,16 @@ label small {
 }
 .tone-1 {
   background: #eeefe9;
-  color: #747861;
+  color: var(--text-3);
 }
 .tone-2 {
   background: #f7eee5;
   border-color: #f0e6da;
-  color: #b69b7c;
+  color: var(--text-warn);
 }
 .tone-3 {
   background: #e8f0ee;
-  color: #83a097;
+  color: var(--text-3);
 }
 .sale-info {
   display: flex;
@@ -915,7 +906,7 @@ label small {
 }
 .sale-info small {
   font-size: 9px;
-  color: #a1ab99;
+  color: var(--text-3);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -937,10 +928,10 @@ label small {
 .sale-profit small {
   font-size: 9px;
   font-weight: 400;
-  color: #a8b29e;
+  color: var(--text-3);
 }
 .row-arrow {
-  color: #b5beae;
+  color: var(--text-3);
 }
 .rank-row {
   display: flex;
@@ -951,7 +942,7 @@ label small {
 .rank-index {
   font-family: "Manrope", sans-serif;
   font-size: 11px;
-  color: #b8c2af;
+  color: var(--text-3);
   margin-top: 2px;
 }
 .rank-row > div {
@@ -972,7 +963,7 @@ label small {
 }
 .rank-top .money {
   font-size: 11px;
-  color: #57724e;
+  color: var(--text-3);
   font-weight: 600;
 }
 .rank-track {
@@ -993,7 +984,7 @@ label small {
 }
 .rank-row small {
   font-size: 9px;
-  color: #abb6a0;
+  color: var(--text-3);
 }
 .quiet-note {
   border-top: 1px solid #eff2ea;
@@ -1002,14 +993,14 @@ label small {
   align-items: center;
   gap: 7px;
   font-size: 9px;
-  color: #a0ad96;
+  color: var(--text-3);
   padding: 14px;
   margin-top: 18px;
 }
 .app-footer {
   display: flex;
   justify-content: space-between;
-  color: #b2bcaa;
+  color: var(--text-3);
   font-size: 9px;
   padding: 24px 2px 25px;
   letter-spacing: 0.4px;
@@ -1020,7 +1011,7 @@ label small {
   justify-content: center;
   gap: 8px;
   font-size: 10px;
-  color: #8d815c;
+  color: var(--text-3);
   background: #f5f0dc;
   padding: 8px 16px;
   line-height: 1.7;
@@ -1029,7 +1020,7 @@ label small {
   padding: 2px 0 2px 9px;
   white-space: nowrap;
   background: transparent;
-  color: #887640;
+  color: var(--text-warn);
   font-size: 10px;
   text-decoration: underline;
 }
@@ -1041,7 +1032,7 @@ label small {
   background: #fae9df;
   padding: 10px;
   font-size: 12px;
-  color: #a26947;
+  color: var(--text-warn);
 }
 .toast {
   position: fixed;
@@ -1069,7 +1060,7 @@ label small {
   justify-content: center;
   gap: 10px;
   padding: 80px 15px;
-  color: #80917c;
+  color: var(--text-3);
   font-size: 13px;
 }
 .spin {
@@ -1083,10 +1074,10 @@ label small {
 .empty {
   text-align: center;
   padding: 45px 15px;
-  color: #a6b19b;
+  color: var(--text-3);
 }
 .empty h3 {
-  color: #819176;
+  color: var(--text-3);
   font-size: 14px;
   margin: 15px 0 8px;
   font-weight: 500;
@@ -1102,7 +1093,7 @@ label small {
   padding: 14px 16px;
   background: #fdf0ed;
   border: 1px solid #f3d7cf;
-  color: #b56150;
+  color: var(--text-danger);
   font-size: 12px;
   line-height: 1.7;
   border-radius: 8px;
@@ -1117,14 +1108,14 @@ label small {
   align-items: center;
   gap: 5px;
   background: transparent;
-  color: #8e9d86;
+  color: var(--text-3);
   padding: 0;
   font-size: 11px;
   margin-bottom: 10px;
 }
 .draft-state {
   font-size: 10px;
-  color: #91a087;
+  color: var(--text-3);
 }
 .entry-layout {
   display: grid;
@@ -1156,13 +1147,13 @@ label small {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #779267;
+  color: var(--text-3);
 }
 .form-section-title h2 {
   font-size: 14px;
 }
 .required {
-  color: #a8b79a;
+  color: var(--text-3);
   font-weight: 400;
   margin-left: 5px;
 }
@@ -1175,7 +1166,7 @@ label small {
 .product-chips button {
   font-size: 10px;
   background: #f7f9f4;
-  color: #8b9b7e;
+  color: var(--text-3);
   padding: 7px 10px;
   border-radius: 6px;
   border: 1px solid #e8eddf;
@@ -1198,7 +1189,7 @@ label small {
   position: absolute;
   left: 14px;
   top: 13px;
-  color: #9aa890;
+  color: var(--text-3);
   font-size: 20px;
 }
 .currency-input input {
@@ -1215,7 +1206,7 @@ label small {
   background: #f2f7ed;
   border-radius: 9px;
   margin-top: 18px;
-  color: #799568;
+  color: var(--text-3);
   font-size: 12px;
 }
 .profit-preview strong {
@@ -1255,13 +1246,13 @@ label small {
 .paper-slip .eyebrow {
   font-size: 8px;
   letter-spacing: 1px;
-  color: #9ea786;
+  color: var(--text-3);
 }
 .paper-slip h3 {
   font-size: 23px;
   line-height: 1.7;
   margin-top: 24px;
-  color: #66764d;
+  color: var(--text-3);
   font-weight: 500;
   letter-spacing: 1px;
 }
@@ -1275,12 +1266,12 @@ label small {
   justify-content: space-between;
   margin: 18px 0;
   font-size: 11px;
-  color: #96a180;
+  color: var(--text-3);
   gap: 9px;
   overflow-wrap: anywhere;
 }
 .paper-slip strong {
-  color: #7d8e68;
+  color: var(--text-3);
   font-size: 14px;
   font-family: "Manrope", sans-serif;
 }
@@ -1294,7 +1285,7 @@ label small {
 }
 .paper-slip > p {
   font-size: 9px;
-  color: #a1aa8e;
+  color: var(--text-3);
   letter-spacing: 1px;
   margin-top: 38px;
 }
@@ -1304,10 +1295,10 @@ label small {
   margin: 35px 10px;
   font-size: 10px;
   line-height: 1.9;
-  color: #9faa92;
+  color: var(--text-3);
 }
 .entry-tip svg {
-  color: #acb99f;
+  color: var(--text-3);
 }
 .detail-panel {
   padding: 23px 26px;
@@ -1326,7 +1317,7 @@ label small {
   position: absolute;
   top: 13px;
   left: 13px;
-  color: #a6b09d;
+  color: var(--text-3);
 }
 .search-input input {
   padding-left: 41px;
@@ -1346,7 +1337,7 @@ label small {
   align-items: center;
   gap: 7px;
   margin: 0;
-  color: #91a082;
+  color: var(--text-3);
   font-weight: 400;
   font-size: 11px;
 }
@@ -1368,7 +1359,7 @@ label small {
   background: #f3f6ef;
   padding: 7px 10px;
   font-size: 10px;
-  color: #8a9c78;
+  color: var(--text-3);
 }
 .quick-filters button:first-child {
   border-radius: 6px 0 0 6px;
@@ -1381,13 +1372,13 @@ label small {
   align-items: center;
   gap: 5px;
   font-size: 10px;
-  color: #a3ad98;
+  color: var(--text-3);
   background: transparent;
   margin-left: auto;
   padding: 7px 0;
 }
 .recycle-toggle.selected {
-  color: #ba7a57;
+  color: var(--text-warn);
 }
 .list-summary {
   display: flex;
@@ -1396,19 +1387,19 @@ label small {
   padding: 19px 0;
   border-bottom: 1px solid #e8ede1;
   font-size: 11px;
-  color: #97a48b;
+  color: var(--text-3);
   flex-wrap: wrap;
 }
 .list-summary > span:first-child {
   margin-right: auto;
 }
 .list-summary strong {
-  color: #526f44;
+  color: var(--text-3);
 }
 .date-group {
   font-family: "Manrope", sans-serif;
   font-size: 11px;
-  color: #8a9c7c;
+  color: var(--text-3);
   letter-spacing: 0.3px;
   padding: 17px 0 10px;
 }
@@ -1433,12 +1424,12 @@ label small {
 }
 .detail-main > span {
   font-size: 11px;
-  color: #94a184;
+  color: var(--text-3);
   overflow-wrap: anywhere;
 }
 .detail-main > small {
   font-size: 10px;
-  color: #a9b39b;
+  color: var(--text-3);
   white-space: pre-line;
   overflow-wrap: anywhere;
 }
@@ -1451,13 +1442,13 @@ label small {
   flex-direction: column;
   gap: 7px;
   font-size: 9px;
-  color: #a5b198;
+  color: var(--text-3);
   align-items: flex-end;
 }
 .detail-numbers strong {
   font-family: "Manrope", sans-serif;
   font-size: 12px;
-  color: #647957;
+  color: var(--text-3);
 }
 .detail-actions {
   display: flex;
@@ -1470,7 +1461,7 @@ label small {
   gap: 20px;
   margin-top: 22px;
   font-size: 11px;
-  color: #99a68b;
+  color: var(--text-3);
 }
 .pagination .button {
   font-size: 10px;
@@ -1495,7 +1486,7 @@ label small {
 }
 .product-table-head {
   background: #f9fbf6;
-  color: #a7b098;
+  color: var(--text-3);
   font-size: 10px;
   padding: 11px 8px;
   border: 0;
@@ -1505,17 +1496,17 @@ label small {
 }
 .product-table-row strong {
   font-family: "Manrope", sans-serif;
-  color: #677e58;
+  color: var(--text-3);
   font-size: 12px;
   font-weight: 600;
 }
 .product-table-row > span:nth-child(3) {
-  color: #9aa58c;
+  color: var(--text-3);
 }
 .product-table-row small {
   margin-left: 8px;
   font-size: 9px;
-  color: #ada08c;
+  color: var(--text-3);
 }
 .empty-products {
   padding: 20px 0;
@@ -1539,7 +1530,7 @@ label small {
   width: 46px;
   height: 46px;
   background: #edf3e5;
-  color: #849c6c;
+  color: var(--text-3);
   border-radius: 11px;
   margin-bottom: 20px;
 }
@@ -1549,13 +1540,13 @@ label small {
 .settings-action p {
   font-size: 12px;
   line-height: 1.9;
-  color: #98a48b;
+  color: var(--text-3);
   margin: 12px 0 20px;
   max-width: 390px;
 }
 .settings-action > small {
   font-size: 10px;
-  color: #aaaf9d;
+  color: var(--text-3);
   margin-top: 12px;
 }
 .restore-link {
@@ -1567,17 +1558,17 @@ label small {
   gap: 20px;
   margin-top: 22px;
   padding: 23px 26px;
-  color: #97a883;
+  color: var(--text-3);
 }
 .settings-note strong {
   font-size: 12px;
   font-weight: 500;
-  color: #6e8758;
+  color: var(--text-3);
 }
 .settings-note p {
   font-size: 11px;
   line-height: 1.9;
-  color: #9ca88e;
+  color: var(--text-3);
   margin-top: 6px;
 }
 .modal {
@@ -1637,16 +1628,16 @@ label small {
   flex-direction: column;
   gap: 9px;
   font-size: 10px;
-  color: #91a47a;
+  color: var(--text-3);
 }
 .import-totals strong {
   font-size: 17px;
   font-family: "Manrope", sans-serif;
-  color: #3f643a;
+  color: var(--text-2);
 }
 .file-name {
   overflow-wrap: anywhere;
-  color: #8e9d80;
+  color: var(--text-3);
 }
 .import-issues {
   background: #fff0eb;
@@ -1654,13 +1645,13 @@ label small {
   max-height: 160px;
   overflow: auto;
   border-radius: 8px;
-  color: #b76a55;
+  color: var(--text-danger);
 }
 .import-issues p {
   font-size: 11px;
 }
 .warning-note {
-  color: #a38244;
+  color: var(--text-warn);
   background: #fff7df;
   font-size: 11px;
   line-height: 1.8;
@@ -1678,10 +1669,10 @@ label small {
   padding: 12px 0;
   font-size: 11px;
   border-bottom: 1px solid var(--border);
-  color: #8a9e75;
+  color: var(--text-3);
 }
 .import-months strong {
-  color: #617e4d;
+  color: var(--text-3);
 }
 .boot {
   min-height: 100vh;
@@ -1707,7 +1698,7 @@ label small {
 .welcome > header > span {
   font-size: 9px;
   letter-spacing: 2px;
-  color: #a1af92;
+  color: var(--text-3);
 }
 .welcome main {
   flex: 1;
@@ -1720,7 +1711,7 @@ label small {
 }
 .welcome-kicker {
   font-size: 11px;
-  color: #8d9d7c;
+  color: var(--text-3);
   display: flex;
   align-items: center;
   gap: 8px;
@@ -1743,7 +1734,7 @@ label small {
   color: var(--green);
 }
 .welcome-copy > p {
-  color: #92a182;
+  color: var(--text-3);
   font-size: 14px;
   line-height: 2.1;
 }
@@ -1752,7 +1743,7 @@ label small {
   flex-wrap: wrap;
   gap: 20px;
   margin: 33px 0;
-  color: #738969;
+  color: var(--text-3);
   font-size: 10px;
 }
 .welcome-benefits span {
@@ -1761,7 +1752,7 @@ label small {
   gap: 6px;
 }
 .welcome-benefits svg {
-  color: #87a678;
+  color: var(--text-3);
   width: 15px;
 }
 .welcome-actions {
@@ -1783,7 +1774,7 @@ label small {
   align-items: center;
   gap: 6px;
   font-size: 9px;
-  color: #a7b298;
+  color: var(--text-3);
   margin-top: 28px;
 }
 .setup-status {
@@ -1794,16 +1785,16 @@ label small {
   background: #eef3e7;
   padding: 16px 19px;
   border-radius: 10px;
-  color: #799365;
+  color: var(--text-3);
 }
 .setup-status strong {
   font-size: 12px;
-  color: #638452;
+  color: var(--text-3);
 }
 .setup-status p {
   font-size: 10px;
   margin-top: 6px;
-  color: #a0ad92;
+  color: var(--text-3);
 }
 .welcome-art {
   background: #e7ebdc;
@@ -1820,7 +1811,7 @@ label small {
 }
 .art-label {
   font-size: 8px;
-  color: #a1ae8b;
+  color: var(--text-3);
   letter-spacing: 2px;
   margin-bottom: 30px;
 }
@@ -1851,7 +1842,7 @@ label small {
 }
 .art-receipt > span {
   font-size: 10px;
-  color: #8b9d75;
+  color: var(--text-3);
   display: block;
   text-align: center;
   margin-top: 17px;
@@ -1863,7 +1854,7 @@ label small {
 .art-receipt p {
   font-size: 27px;
   line-height: 1.7;
-  color: #496a3f;
+  color: var(--text-2);
   text-align: center;
   font-weight: 500;
 }
@@ -1892,7 +1883,7 @@ label small {
 .art-bottom {
   text-align: center;
   font-size: 8px;
-  color: #a8b396;
+  color: var(--text-3);
   margin-top: 20px;
   letter-spacing: 1px;
 }
@@ -1905,7 +1896,7 @@ label small {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #6c8b56;
+  color: var(--text-3);
   font-size: 12px;
   font-family: "Manrope", sans-serif;
   font-weight: 600;
@@ -1921,7 +1912,7 @@ label small {
   justify-content: space-between;
   padding: 25px 0;
   font-size: 10px;
-  color: #a8b499;
+  color: var(--text-3);
   letter-spacing: 0.6px;
 }
 @media (min-width: 1500px) {
@@ -2379,7 +2370,7 @@ label small {
     gap: 5px;
     flex: 1;
     background: transparent;
-    color: #9aa992;
+    color: var(--text-3);
     font-size: 9px;
     padding: 4px;
     min-height: 44px;
@@ -2707,7 +2698,7 @@ label small {
   align-items: center;
   gap: 9px;
   background: transparent;
-  color: #647568;
+  color: var(--text-3);
   font-size: 12px;
   padding: 0;
   min-height: 36px;
@@ -2732,7 +2723,7 @@ label small {
 .overview-strip,
 .chart-summary > span,
 .chart-detail {
-  color: #637568;
+  color: var(--text-3);
 }
 .chart-grid > span,
 .bar-label,
@@ -2749,7 +2740,7 @@ label small {
 .list-summary,
 .settings-action p,
 .settings-note p {
-  color: #677868;
+  color: var(--text-3);
 }
 .entry-tip,
 .draft-state,
@@ -2757,7 +2748,7 @@ label small {
 label small,
 .entry-form input::placeholder,
 .entry-form textarea::placeholder {
-  color: #6b7d6e;
+  color: var(--text-3);
 }
 .entry-tip {
   font-size: 12px;
