@@ -44,6 +44,8 @@ export function Dashboard({
   );
   const [period, setPeriod] = useState<Period>("day");
   const [hover, setHover] = useState<Bucket | null>(null);
+  // 触屏：第一次点柱形先看金额，再点一次（或点“查看这段明细”）才进入明细
+  const [armed, setArmed] = useState<string | null>(null);
   if (error) return <ErrorNote>{error}</ErrorNote>;
   if (!data || loading) return <Loading />;
   const chart =
@@ -52,6 +54,10 @@ export function Dashboard({
     ...totals(chart),
     count: chart.reduce((n, b) => n + b.count, 0),
   };
+  const armedBucket = chart.find((b) => b.key === armed) || null;
+  const shown = hover ?? armedBucket;
+  const touchOnly = () =>
+    typeof matchMedia === "function" && matchMedia("(hover: none)").matches;
   const peak = Math.max(...chart.map((b) => Math.abs(b.profit)), 100);
   const anyNegative = chart.some((b) => b.profit < 0);
   const go = (p: Period) => onFilter(periodRange(today(), p));
@@ -154,7 +160,9 @@ export function Dashboard({
                 : period === "week"
                   ? "最近 8 周"
                   : "最近 12 个月"}{" "}
-              · 指向柱形看金额，点击查看明细
+              ·{" "}
+              <span className="hint-pointer">指向柱形看金额，点击查看明细</span>
+              <span className="hint-touch">点柱形看金额，再点一次看明细</span>
             </p>
           </div>
           <div className="segmented" aria-label="趋势周期">
@@ -166,6 +174,7 @@ export function Dashboard({
                 onClick={() => {
                   setPeriod(p);
                   setHover(null);
+                  setArmed(null);
                 }}
               >
                 {["每日", "每周", "每月"][i]}
@@ -174,13 +183,25 @@ export function Dashboard({
           </div>
         </div>
         <div className="chart-summary">
-          <span>{hover ? `${hover.from} 至 ${hover.to}` : "所选时段利润"}</span>
-          <strong>¥{money(hover?.profit ?? chartTotal.profit)}</strong>
+          <span>{shown ? `${shown.from} 至 ${shown.to}` : "所选时段利润"}</span>
+          <strong>¥{money(shown?.profit ?? chartTotal.profit)}</strong>
           <span className="chart-detail">
-            {hover ? hover.count : chartTotal.count} 笔 · 收入 ¥
-            {money(hover?.revenue ?? chartTotal.revenue)} · 成本 ¥
-            {money(hover?.cost ?? chartTotal.cost)}
+            {shown ? shown.count : chartTotal.count} 笔 · 收入 ¥
+            {money(shown?.revenue ?? chartTotal.revenue)} · 成本 ¥
+            {money(shown?.cost ?? chartTotal.cost)}
           </span>
+          {armedBucket && (
+            <button
+              type="button"
+              className="chart-open"
+              onClick={() =>
+                onFilter({ from: armedBucket.from, to: armedBucket.to })
+              }
+            >
+              查看这段明细
+              <ChevronRight size={15} aria-hidden="true" />
+            </button>
+          )}
         </div>
         <div
           className={`bar-chart dash-chart period-${period} ${anyNegative ? "has-negative" : ""}`}
@@ -191,13 +212,19 @@ export function Dashboard({
             {chart.map((b, i) => (
               <button
                 key={b.key}
-                className={`bar-column ${b.profit < 0 ? "loss" : ""} ${i === chart.length - 1 ? "last" : ""}`}
+                className={`bar-column ${b.profit < 0 ? "loss" : ""} ${i === chart.length - 1 ? "last" : ""} ${armed === b.key ? "armed" : ""}`}
                 aria-label={`${b.from}至${b.to} 利润${money(b.profit)}元，查看明细`}
                 onMouseEnter={() => setHover(b)}
                 onFocus={() => setHover(b)}
                 onMouseLeave={() => setHover(null)}
                 onBlur={() => setHover(null)}
-                onClick={() => onFilter({ from: b.from, to: b.to })}
+                onClick={() => {
+                  if (touchOnly() && armed !== b.key) {
+                    setArmed(b.key);
+                    return;
+                  }
+                  onFilter({ from: b.from, to: b.to });
+                }}
               >
                 <div className="bar-track">
                   <span
