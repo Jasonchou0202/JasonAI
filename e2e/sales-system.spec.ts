@@ -841,3 +841,283 @@ test("customer detail without a month falls back with a hint and keeps the view 
     period.getByRole("button", { name: "全部", exact: true }),
   ).toHaveAttribute("aria-pressed", "true");
 });
+test("dashboard hero shows this month's profit, links to details, and the customer header shows total profit", async ({
+  page,
+}) => {
+  const hero = page.locator(".dash-hero");
+  await expect(hero.getByRole("heading", { name: /生意概览/ })).toBeVisible();
+  await expect(hero.locator("img")).toHaveAttribute("alt", "");
+  const stats = page.getByRole("region", { name: "本月账本" });
+  await expect(stats).toContainText("本月销售额");
+  await expect(stats).toContainText("本月成本");
+  await expect(stats).toContainText("本月成交");
+  await expect(page.locator(".bar-column.last .bar-tip")).toBeVisible();
+  const total = ranking(page).getByRole("button", { name: /^累计利润/ });
+  await expect(total).toBeVisible();
+  await hero.getByRole("button", { name: /^本月利润/ }).click();
+  await expect(page.getByRole("heading", { name: "销售明细" })).toBeVisible();
+  await page.goto("./#/dashboard");
+  await ranking(page)
+    .getByRole("button", { name: /^累计利润/ })
+    .click();
+  await expect(page.getByRole("heading", { name: "销售明细" })).toBeVisible();
+});
+test("sales rows open the editor and keep schedule, edit and delete in a ⋯ menu", async ({
+  page,
+}) => {
+  await page.goto("./#/details");
+  const first = page.locator(".detail-row").first();
+  const menu = first.getByRole("button", { name: /^更多操作/ });
+  await expect(menu).toHaveAttribute("aria-expanded", "false");
+  await menu.click();
+  await expect(menu).toHaveAttribute("aria-expanded", "true");
+  const items = first.getByRole("menuitem");
+  await expect(items.first()).toBeFocused();
+  await expect(first.getByRole("menuitem", { name: /^编辑/ })).toBeVisible();
+  await expect(first.getByRole("menuitem", { name: /^删除/ })).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(first.getByRole("menu")).toHaveCount(0);
+  await expect(menu).toBeFocused();
+  await menu.click();
+  await first.getByRole("menuitem", { name: /^删除/ }).click();
+  await expect(page.getByRole("dialog")).toContainText("移入回收站？");
+  await page.getByRole("button", { name: "取消", exact: true }).click();
+  await first.locator(".detail-open").click();
+  await expect(page.getByRole("heading", { name: "编辑销售" })).toBeVisible();
+});
+test("the hero compares this month with the same days of last month", async ({
+  page,
+}) => {
+  await expect(page.locator(".dash-growth")).toHaveCount(0);
+  await page.evaluate(() => {
+    const data = JSON.parse(localStorage.getItem("zhangyuge-demo-v1")!);
+    const add = (id: string, date: string, profit: number) => {
+      data.sales[id] = {
+        ...data.sales["fixture-sale-0"],
+        id,
+        customer: "客户01",
+        date,
+        revenue: profit + 100,
+        cost: 100,
+      };
+    };
+    add("same-period", "2026-09-10", 100000);
+    add("after-same-day", "2026-09-20", 99900000);
+    localStorage.setItem("zhangyuge-demo-v1", JSON.stringify(data));
+  });
+  await page.reload();
+  const label = await page
+    .locator(".dash-hero-number")
+    .getAttribute("aria-label");
+  const month = Math.round(
+    Number(/本月利润 ([\d,.\-−]+) 元/.exec(label!)![1].replace(/[,]/g, "")) *
+      100,
+  );
+  const pct = Math.round(((month - 100000) / 100000) * 100);
+  await expect(page.locator(".dash-growth")).toHaveText(
+    `比上月同期 ${pct >= 0 ? "+" : "−"}${Math.abs(pct)}%`,
+  );
+});
+test("the ⋯ menu stays on top, closes when Tab leaves it and returns focus sensibly", async ({
+  page,
+}) => {
+  await page.goto("./#/details");
+  const first = page.locator(".detail-row").first();
+  const menu = first.getByRole("button", { name: /^更多操作/ });
+  await menu.click();
+  const list = first.getByRole("menu");
+  await list.scrollIntoViewIfNeeded();
+  // 菜单下沿不被下一行盖住
+  const onTop = await list.evaluate((el) => {
+    const r = el.getBoundingClientRect();
+    const hit = document.elementFromPoint(r.right - 12, r.bottom - 3);
+    return !!hit && el.contains(hit);
+  });
+  expect(onTop).toBe(true);
+  // Tab 离开菜单后收起
+  await first.getByRole("menuitem").last().focus();
+  await page.keyboard.press("Tab");
+  await expect(first.getByRole("menu")).toHaveCount(0);
+  await expect(menu).toHaveAttribute("aria-expanded", "false");
+  // 选「删除」后取消：焦点回到 ⋯
+  await menu.click();
+  await first.getByRole("menuitem", { name: /^删除/ }).press("Enter");
+  await expect(page.getByRole("dialog")).toContainText("移入回收站？");
+  await page.keyboard.press("Escape");
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await expect(menu).toBeFocused();
+  // 选「编辑」：焦点交给编辑页标题
+  await menu.click();
+  await first.getByRole("menuitem", { name: /^编辑/ }).press("Enter");
+  await expect(page.getByRole("heading", { name: "编辑销售" })).toBeFocused();
+});
+test("skip link, demo notice landmark and a single h1 on every page", async ({
+  page,
+}) => {
+  const notice = page.getByRole("complementary", { name: "演示提示" });
+  await expect(notice).toHaveText(
+    /^演示数据，只存本机，请勿录入真实客户\s*·\s*退出$/,
+  );
+  await expect(
+    notice.getByRole("button", { name: "退出演示", exact: true }),
+  ).toBeVisible();
+  await page.keyboard.press("Tab");
+  const skip = page.getByRole("button", { name: "跳到主要内容" });
+  await expect(skip).toBeFocused();
+  await skip.press("Enter");
+  await expect(page.locator("#main-content")).toBeFocused();
+  for (const route of [
+    "dashboard",
+    "entry",
+    "details",
+    "calendar",
+    "settings",
+  ]) {
+    await page.goto(`./#/${route}`);
+    await expect(page.locator("main h1")).toHaveCount(1);
+  }
+  await page.goto("./#/dashboard");
+  await ranking(page).locator(".customer-rank-link").first().click();
+  await expect(page.getByRole("heading", { name: "客户日程" })).toBeVisible();
+  await expect(page.locator("h1")).toHaveCount(1);
+  await expect(page.getByRole("definition").first()).toBeVisible();
+  await expect(page.locator(".hero-figures")).toContainText("累计利润");
+});
+test.describe("small phones", () => {
+  test.use({ viewport: { width: 375, height: 667 }, isMobile: true });
+  test("the demo notice shows the full warning without hover and fits the screen", async ({
+    page,
+  }) => {
+    const notice = page.getByRole("complementary", { name: "演示提示" });
+    const text = notice.getByText("演示数据，只存本机，请勿录入真实客户", {
+      exact: true,
+    });
+    await expect(text).toBeVisible();
+    await expect(
+      notice.getByRole("button", { name: "退出演示", exact: true }),
+    ).toBeVisible();
+    const box = (await notice.boundingBox())!;
+    expect(box.x).toBeGreaterThanOrEqual(0);
+    expect(box.x + box.width).toBeLessThanOrEqual(375);
+    expect(
+      await notice.evaluate((el) => el.scrollWidth <= el.clientWidth),
+    ).toBe(true);
+  });
+});
+test.describe("touch screens", () => {
+  test.use({
+    viewport: { width: 390, height: 844 },
+    isMobile: true,
+    hasTouch: true,
+  });
+  test("tapping a trend bar shows its amount first, the second tap opens the details", async ({
+    page,
+  }) => {
+    const bars = page.locator(".dash-chart .bar-column");
+    const target = bars.nth((await bars.count()) - 2);
+    const label = (await target.getAttribute("aria-label"))!;
+    const from = label.slice(0, 10);
+    await target.tap();
+    await expect(page).toHaveURL(/#\/dashboard|\/JasonAI\/$/);
+    await expect(page.locator(".chart-summary")).toContainText(from);
+    await expect(target).toHaveClass(/armed/);
+    await expect(
+      page.getByRole("button", { name: "查看这段明细" }),
+    ).toBeVisible();
+    await target.tap();
+    await expect(page.getByRole("heading", { name: "销售明细" })).toBeVisible();
+    await expect(page).toHaveURL(new RegExp(`from=${from}`));
+  });
+});
+test("with a mouse, one click on a trend bar still opens the details", async ({
+  page,
+}) => {
+  await page.locator(".dash-chart .bar-column").last().click();
+  await expect(page.getByRole("heading", { name: "销售明细" })).toBeVisible();
+});
+test.describe("after a new deploy removes old lazy chunks", () => {
+  test.use({ serviceWorkers: "block" });
+  test("a missing schedule chunk reloads once, then shows the update notice instead of a blank page", async ({
+    page,
+  }) => {
+    const chunk = /\/assets\/Calendar-[^/]+\.js(\?.*)?$/;
+    // 先离开 beforeEach 打开的页面：它的空闲预取若在拦截生效后才发出，也会触发自动刷新，和下面的打开抢跑
+    await page.goto("about:blank");
+    await page.route(chunk, (route) =>
+      route.fulfill({ status: 404, contentType: "text/plain", body: "" }),
+    );
+    // 每次打开文档都记一次数（存在 sessionStorage，刷新后仍在），不依赖 load 事件
+    await page.addInitScript(() => {
+      if (location.protocol !== "http:") return;
+      const n = Number(sessionStorage.getItem("e2e-doc-loads") || 0);
+      sessionStorage.setItem("e2e-doc-loads", String(n + 1));
+    });
+    const loads = () =>
+      page
+        .evaluate(() => Number(sessionStorage.getItem("e2e-doc-loads") || 0))
+        .catch(() => -1);
+    // 重新打开页面：空闲预取拿不到日程文件，会自动刷新一次，且只刷新一次。
+    // 自动刷新可能打断这次打开，所以只等到开始提交即可
+    await page.goto("./#/dashboard", { waitUntil: "commit" });
+    await expect.poll(loads, { timeout: 20000 }).toBe(2);
+    await page.waitForLoadState("load");
+    await expect(
+      page.getByRole("heading", { name: "核心客户", exact: true }),
+    ).toBeVisible();
+    await expect
+      .poll(() =>
+        page
+          .evaluate(() => sessionStorage.getItem("zhangyuge-chunk-reload-at"))
+          .catch(() => null),
+      )
+      .not.toBeNull();
+    // 再等一会儿，确认没有第二次自动刷新
+    await page.waitForTimeout(2000);
+    expect(await loads()).toBe(2);
+    await page.goto("./#/calendar");
+    const button = page.getByRole("button", {
+      name: "页面有更新，点此刷新",
+      exact: true,
+    });
+    await expect(button).toBeVisible();
+    await expect(page.getByRole("alert")).toContainText("页面有更新");
+    await expect(page.locator("main h1")).toHaveCount(1);
+    await expect(page.locator(".app-shell")).toBeVisible();
+    // 新版本文件可以拿到后，点刷新就能正常打开
+    await page.unroute(chunk);
+    await button.click();
+    await expect(
+      page.getByRole("heading", { name: "跟进日历", level: 1 }),
+    ).toBeVisible();
+  });
+});
+test.describe("first screen on a 1280×800 laptop", () => {
+  test.use({ viewport: { width: 1280, height: 800 } });
+  test("the profit trend chart is visible without scrolling", async ({
+    page,
+  }) => {
+    const chart = page.locator(".dash-chart");
+    await expect(chart).toBeVisible();
+    const box = (await chart.boundingBox())!;
+    expect(box.y + box.height).toBeLessThanOrEqual(800);
+  });
+});
+test.describe("first screen on a phone", () => {
+  test.use({
+    viewport: { width: 390, height: 844 },
+    isMobile: true,
+    hasTouch: true,
+  });
+  test("the first sale on the details page is visible above the bottom navigation", async ({
+    page,
+  }) => {
+    await page.goto("./#/details");
+    const row = page.locator(".detail-row").first();
+    await expect(row).toBeVisible();
+    const nav = (await page
+      .getByRole("navigation", { name: "手机导航" })
+      .boundingBox())!;
+    const box = (await row.boundingBox())!;
+    expect(box.y + box.height).toBeLessThanOrEqual(nav.y);
+  });
+});

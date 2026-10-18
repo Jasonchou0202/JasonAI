@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 import {
   LayoutDashboard,
   Plus,
@@ -17,16 +17,31 @@ import {
 import { Dashboard } from "./components/Dashboard";
 import { SaleForm } from "./components/SaleForm";
 import { Details } from "./components/Details";
-import { Settings } from "./components/Settings";
-import { Calendar } from "./components/Calendar";
 import { DailyReminders } from "./components/DailyReminders";
-import { CustomerDetails } from "./components/CustomerDetails";
+import {
+  UpdateBoundary,
+  installPreloadRecovery,
+} from "./components/UpdateBoundary";
+import heroArt800 from "./assets/hero-octopus-800.webp";
 import { stopPush } from "./lib/notifications";
 import { Brand, ErrorNote, Loading, message } from "./components/ui";
 import type { Filters, Sale } from "./domain/model";
 import { cloudApi, configured, session, login, logout } from "./lib/cloud";
 import { createDemo } from "./lib/demo";
 import { routeParams, readFilters, filterQuery } from "./lib/routes";
+// 日程、客户详情、设置按需加载；进入工作台后空闲时预取，断网时也能打开
+const loadSettings = () => import("./components/Settings");
+const loadCalendar = () => import("./components/Calendar");
+const loadCustomer = () => import("./components/CustomerDetails");
+const Settings = lazy(() =>
+  loadSettings().then((m) => ({ default: m.Settings })),
+);
+const Calendar = lazy(() =>
+  loadCalendar().then((m) => ({ default: m.Calendar })),
+);
+const CustomerDetails = lazy(() =>
+  loadCustomer().then((m) => ({ default: m.CustomerDetails })),
+);
 type Page =
   "dashboard" | "entry" | "details" | "settings" | "calendar" | "customer";
 function readRoute(): Page {
@@ -93,6 +108,8 @@ export default function App() {
       window.removeEventListener("offline", net);
     };
   }, []);
+  // 新版本发布后按需文件拿不到：自动刷新一次（记一笔页面除外，免得打断输入）
+  useEffect(() => installPreloadRecovery(() => readRoute() !== "entry"), []);
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [page, mode]);
@@ -101,6 +118,19 @@ export default function App() {
     const t = setTimeout(() => setToast(""), 3500);
     return () => clearTimeout(t);
   }, [toast]);
+  useEffect(() => {
+    if (mode !== "cloud" && mode !== "demo") return;
+    const run = () => {
+      void loadCalendar().catch(() => {});
+      void loadCustomer().catch(() => {});
+      void loadSettings().catch(() => {});
+    };
+    const idle = (
+      window as { requestIdleCallback?: (cb: () => void) => number }
+    ).requestIdleCallback;
+    if (idle) idle(run);
+    else setTimeout(run, 1500);
+  }, [mode]);
   const api = useMemo(
     () => (mode === "demo" ? createDemo() : cloudApi),
     [mode],
@@ -188,7 +218,7 @@ export default function App() {
       <div className="welcome">
         <header>
           <Brand />
-          <span>PRIVATE WORKSPACE</span>
+          <span>私人工作台</span>
         </header>
         <main>
           <div className="welcome-copy">
@@ -263,31 +293,18 @@ export default function App() {
               仅本人可访问，销售数据独立保存在云端。
             </small>
           </div>
-          <div className="welcome-art">
-            <div className="art-label">THE SMALL BUSINESS JOURNAL</div>
-            <div className="art-receipt">
-              <img
-                src={`${import.meta.env.BASE_URL}octopus.svg`}
-                alt="章鱼哥标志"
-              />
-              <span>一 笔 好 生 意</span>
-              <div className="art-line" />
-              <p>
-                今日的认真
-                <br />
-                明日的收获
-              </p>
-              <div className="art-chart">
-                {[40, 58, 32, 74, 59, 93, 115].map((h, i) => (
-                  <i key={i} style={{ height: h }} />
-                ))}
-              </div>
-              <div className="art-bottom">记下每一笔，日子有回响。</div>
-            </div>
-            <div className="art-stamp">
-              KEEP
-              <br />
-              GROWING ↗
+          <div className="welcome-art" aria-hidden="true">
+            <img
+              src={heroArt800}
+              width={800}
+              height={400}
+              alt=""
+              decoding="async"
+            />
+            <div className="welcome-art-card">
+              <span>生意手账</span>
+              <strong>每一笔，心中有数</strong>
+              <small>利润 = 销售额 − 成本</small>
             </div>
           </div>
         </main>
@@ -298,7 +315,14 @@ export default function App() {
     );
   return (
     <div className="app-shell">
-      <aside className="sidebar">
+      <button
+        type="button"
+        className="skip-link"
+        onClick={() => document.getElementById("main-content")?.focus()}
+      >
+        跳到主要内容
+      </button>
+      <aside className="sidebar" aria-label="侧边栏">
         <Brand />
         <div className="workspace-label">我的工作台</div>
         <nav aria-label="主要导航">
@@ -418,13 +442,18 @@ export default function App() {
           </div>
         </header>
         {mode === "demo" && (
-          <div className="demo-banner">
-            <Sparkles size={15} />
-            <span>
-              演示账本 · 以下为虚构数据，仅保存在本机，请勿录入真实客户。
+          <aside className="demo-banner" aria-label="演示提示">
+            <Sparkles size={14} aria-hidden="true" />
+            <span className="demo-text">
+              演示数据，只存本机，请勿录入真实客户
             </span>
-            <button onClick={() => void signOut()}>退出演示</button>
-          </div>
+            <span className="demo-exit">
+              <span aria-hidden="true">·</span>
+              <button aria-label="退出演示" onClick={() => void signOut()}>
+                退出
+              </button>
+            </span>
+          </aside>
         )}
         {!online && (
           <div className="offline-banner" role="status">
@@ -432,86 +461,92 @@ export default function App() {
             网络已断开，输入内容会保留为草稿，联网后再保存。
           </div>
         )}
-        <main className="main-content">
-          {page === "dashboard" && (
-            <Dashboard
-              api={api}
-              version={version}
-              onNew={newSale}
-              onEdit={editSale}
-              onCustomer={customer}
-              onFilter={(f) => {
-                setFilters(f);
-                go("details", filterQuery(f));
-              }}
-            />
-          )}
-          {page === "entry" && editId && !edit && <Loading />}
-          {page === "entry" && editError && <ErrorNote>{editError}</ErrorNote>}
-          {page === "entry" && (!editId || edit?.id === editId) && (
-            <SaleForm
-              key={mode + (edit?.id || "new")}
-              api={api}
-              mode={mode}
-              edit={edit}
-              onProductSaved={() => changed("商品已保存，销售尚未保存")}
-              onBack={() => go("dashboard")}
-              onSaved={(s, stay) => {
-                changed(s);
-                if (!stay) {
-                  setEdit(undefined);
-                  go("dashboard");
-                }
-              }}
-            />
-          )}
-          {page === "details" && (
-            <Details
-              api={api}
-              version={version}
-              filters={filters}
-              setFilters={updateFilters}
-              onEdit={editSale}
-              onNew={newSale}
-              onChange={changed}
-              onCustomer={customer}
-            />
-          )}
-          {page === "settings" && (
-            <Settings
-              api={api}
-              version={version}
-              demo={mode === "demo"}
-              onBack={() => go("dashboard")}
-              onChange={changed}
-              onLogout={() => void signOut()}
-              onCustomer={customer}
-            />
-          )}
-          {page === "calendar" && (
-            <Calendar
-              api={api}
-              version={version}
-              mode={mode}
-              onChange={changed}
-              onCustomer={customer}
-              taskId={routeParams().get("task") || undefined}
-            />
-          )}
-          {page === "customer" && (
-            <CustomerDetails
-              key={routeParams().get("id")}
-              api={api}
-              version={version}
-              mode={mode}
-              id={routeParams().get("id") || ""}
-              month={routeParams().get("month") || undefined}
-              onChange={changed}
-              onBack={() => go("dashboard")}
-              onCustomer={customer}
-              onEditSale={editSale}
-            />
-          )}
+        <main className="main-content" id="main-content" tabIndex={-1}>
+          <UpdateBoundary key={page}>
+            <Suspense fallback={<Loading />}>
+              {page === "dashboard" && (
+                <Dashboard
+                  api={api}
+                  version={version}
+                  onNew={newSale}
+                  onEdit={editSale}
+                  onCustomer={customer}
+                  onFilter={(f) => {
+                    setFilters(f);
+                    go("details", filterQuery(f));
+                  }}
+                />
+              )}
+              {page === "entry" && editId && !edit && <Loading />}
+              {page === "entry" && editError && (
+                <ErrorNote>{editError}</ErrorNote>
+              )}
+              {page === "entry" && (!editId || edit?.id === editId) && (
+                <SaleForm
+                  key={mode + (edit?.id || "new")}
+                  api={api}
+                  mode={mode}
+                  edit={edit}
+                  onProductSaved={() => changed("商品已保存，销售尚未保存")}
+                  onBack={() => go("dashboard")}
+                  onSaved={(s, stay) => {
+                    changed(s);
+                    if (!stay) {
+                      setEdit(undefined);
+                      go("dashboard");
+                    }
+                  }}
+                />
+              )}
+              {page === "details" && (
+                <Details
+                  api={api}
+                  version={version}
+                  filters={filters}
+                  setFilters={updateFilters}
+                  onEdit={editSale}
+                  onNew={newSale}
+                  onChange={changed}
+                  onCustomer={customer}
+                />
+              )}
+              {page === "settings" && (
+                <Settings
+                  api={api}
+                  version={version}
+                  demo={mode === "demo"}
+                  onBack={() => go("dashboard")}
+                  onChange={changed}
+                  onLogout={() => void signOut()}
+                  onCustomer={customer}
+                />
+              )}
+              {page === "calendar" && (
+                <Calendar
+                  api={api}
+                  version={version}
+                  mode={mode}
+                  onChange={changed}
+                  onCustomer={customer}
+                  taskId={routeParams().get("task") || undefined}
+                />
+              )}
+              {page === "customer" && (
+                <CustomerDetails
+                  key={routeParams().get("id")}
+                  api={api}
+                  version={version}
+                  mode={mode}
+                  id={routeParams().get("id") || ""}
+                  month={routeParams().get("month") || undefined}
+                  onChange={changed}
+                  onBack={() => go("dashboard")}
+                  onCustomer={customer}
+                  onEditSale={editSale}
+                />
+              )}
+            </Suspense>
+          </UpdateBoundary>
           <footer className="app-footer">
             <span>章鱼哥 AI 工作室</span>
             <span>认真记账，轻松经营。</span>

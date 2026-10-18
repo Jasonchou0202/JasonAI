@@ -1,15 +1,10 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import {
-  AlertCircle,
-  ArrowUpRight,
-  Inbox,
-  LoaderCircle,
-  X,
-} from "lucide-react";
+import { AlertCircle, ArrowUpRight, LoaderCircle, X } from "lucide-react";
 import type { Api, Sale } from "../domain/model";
 import { money } from "../domain/finance";
 import { dateLabel } from "../domain/dates";
 import { displayCustomerName } from "../domain/customers";
+import emptyArt from "../assets/hero-octopus-800.webp";
 export function message(e: unknown) {
   const text = e instanceof Error ? e.message : "";
   if (/fetch|network|timeout|timed out/i.test(text))
@@ -72,7 +67,15 @@ export function Empty({
 }) {
   return (
     <div className="empty">
-      <Inbox size={34} />
+      <img
+        className="empty-art"
+        src={emptyArt}
+        width={160}
+        height={80}
+        alt=""
+        loading="lazy"
+        decoding="async"
+      />
       <h3>{title}</h3>
       {children && <p>{children}</p>}
     </div>
@@ -146,8 +149,13 @@ export function Modal({
   const ref = useRef<HTMLDialogElement>(null);
   useEffect(() => {
     const d = ref.current;
+    // 关闭后把焦点还给打开它的按钮（如果那个按钮还在页面上）
+    const before = document.activeElement as HTMLElement | null;
     d?.showModal();
-    return () => d?.close();
+    return () => {
+      d?.close();
+      if (before?.isConnected) before.focus({ preventScroll: true });
+    };
   }, []);
   return (
     <dialog

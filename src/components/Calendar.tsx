@@ -231,12 +231,25 @@ function CustomerCalendar({
     : [];
   return (
     <div className="customer-ui customer-calendar-page">
-      <div className="page-heading customer-heading">
+      <div
+        className={`${customerId ? "section-heading" : "page-heading"} customer-heading`}
+      >
         <div>
           <p className="eyebrow">记下约定，及时跟进</p>
-          <h1>{customerId ? "客户日程" : "跟进日历"}</h1>
+          {customerId ? <h2>客户日程</h2> : <h1>跟进日历</h1>}
           <p className="subtle">北京时间 · 一次沟通，一次记录</p>
         </div>
+        {!customerId && (
+          <dl className="hero-figures" aria-label="今日跟进">
+            <div className="lead">
+              <dt>今日跟进</dt>
+              <dd>
+                {(grouped.get(today) || []).length}
+                <small> 次</small>
+              </dd>
+            </div>
+          </dl>
+        )}
         <button
           className="button primary"
           onClick={() =>

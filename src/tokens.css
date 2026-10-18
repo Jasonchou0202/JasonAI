@@ -18,7 +18,7 @@
   --ink: var(--text-1);
   --muted: var(--text-3);
   --red: #ac4a3e;
-  --shadow: 0 4px 20px #233c3304;
+  --shadow: none; /* 旧变量：区块不再用阴影 */
   /* 字号阶梯（6 级，rem 跟随浏览器字号设置；根字号 16px 时分别为 12/14/16/20/28/40px）
      辅助文字最小 --fs-1（12px），正文最小 --fs-2（14px） */
   --fs-1: 0.75rem; /* 辅助：标签、时间、角标 */
@@ -27,4 +27,61 @@
   --fs-4: 1.25rem; /* 区块标题、次要金额 */
   --fs-5: 1.75rem; /* 页面标题、主要金额 */
   --fs-6: 2.5rem; /* 首屏大数字 */
+
+  /* 表面与分隔线（浅色，只用于背景和线，不用于文字） */
+  --bg: #f7f8f5; /* 页面底色 */
+  --surface: #ffffff;
+  --surface-soft: #f5f7f3; /* 轻灰底：输入区、分组底色 */
+  --surface-muted: #eef2ec; /* 稍深的灰绿底：选中、悬停 */
+  --line: #e5e9e4; /* 细分隔线 */
+  --line-soft: #eef1eb; /* 更淡的列表分隔线 */
+  --mint-soft: #eaf2ed;
+  --cream-soft: #fbf6e6;
+  --warn-soft: #fbf1df;
+  --danger-soft: #fcefeb;
+  /* 唯一强调色：增长 */
+  --accent: #0b6e5a;
+  --accent-soft: #dff5ec;
+  /* 圆角 */
+  --radius-s: 6px;
+  --radius-m: 9px;
+  --radius-l: 14px;
+  --radius-xl: 20px;
+  --radius-pill: 999px;
+  /* 阴影：只用于浮层和主按钮，页面区块不用阴影 */
+  --shadow-s: 0 1px 5px #1e342915;
+  --shadow-m: 0 6px 18px #1e342914;
+  --shadow-l: 0 25px 80px #1a322633;
+  /* 间距（4 的倍数） */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+  --space-8: 64px;
+  /* 页面左右留白，随断点变化（600 / 1024 / 1440） */
+  --page-pad-x: 40px;
+  --page-pad-top: 32px;
+  /* 页面标题：随屏宽平滑缩放，不超出字号阶梯 */
+  --fs-title: clamp(var(--fs-4), 1rem + 1.6vw, var(--fs-5));
+  --fs-title-xl: clamp(var(--fs-5), 1rem + 2vw, var(--fs-6)); /* 页面主标题 */
+}
+@media (min-width: 1441px) {
+  :root {
+    --page-pad-top: 40px;
+  }
+}
+@media (max-width: 1024px) {
+  :root {
+    --page-pad-x: 20px;
+    --page-pad-top: 23px;
+  }
+}
+@media (max-width: 600px) {
+  :root {
+    --page-pad-x: 17px;
+    --page-pad-top: 24px;
+  }
 }
