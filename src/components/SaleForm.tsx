@@ -113,6 +113,11 @@ export function SaleForm({
   const [busy, setBusy] = useState(false);
   const [dirty, setDirty] = useState(false);
   const lock = useRef(false);
+  // 从明细打开编辑时，把焦点交给编辑页标题，键盘和读屏用户知道已进入编辑
+  const heading = useRef<HTMLHeadingElement>(null);
+  useEffect(() => {
+    if (edit) heading.current?.focus({ preventScroll: true });
+  }, [edit?.id]);
   const alive = useRef(true);
   useEffect(
     () => () => {
@@ -204,7 +209,9 @@ export function SaleForm({
             <ArrowLeft size={15} />
             返回账本
           </button>
-          <h1>{edit ? "编辑销售" : "记一笔销售"}</h1>
+          <h1 ref={heading} tabIndex={-1}>
+            {edit ? "编辑销售" : "记一笔销售"}
+          </h1>
           <p className="subtle">记下今天的成交，利润自动算好。</p>
         </div>
         <span className="draft-state">

@@ -149,8 +149,13 @@ export function Modal({
   const ref = useRef<HTMLDialogElement>(null);
   useEffect(() => {
     const d = ref.current;
+    // 关闭后把焦点还给打开它的按钮（如果那个按钮还在页面上）
+    const before = document.activeElement as HTMLElement | null;
     d?.showModal();
-    return () => d?.close();
+    return () => {
+      d?.close();
+      if (before?.isConnected) before.focus({ preventScroll: true });
+    };
   }, []);
   return (
     <dialog

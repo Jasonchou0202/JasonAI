@@ -19,7 +19,8 @@
 .skip-link:focus-visible {
   transform: none;
 }
-.main-content:focus {
+.main-content:focus,
+.page-heading h1:focus {
   outline: none;
 }
 
@@ -296,6 +297,10 @@
 }
 .detail-actions {
   z-index: 1;
+}
+/* 打开 ⋯ 菜单的那一行整体升层，菜单下沿不再被下一行的 ⋯ 盖住 */
+.detail-row:has(.row-menu-list) {
+  z-index: 2;
 }
 @media (min-width: 601px) {
   .detail-actions {

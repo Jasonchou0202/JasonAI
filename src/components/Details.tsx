@@ -527,7 +527,16 @@ function RowMenu({ label, items }: { label: string; items: MenuItem[] }) {
     list[next]?.focus();
   }
   return (
-    <div className="row-menu" ref={box}>
+    <div
+      className="row-menu"
+      ref={box}
+      onBlur={(e) => {
+        // Tab 离开菜单（焦点移到菜单外）时收起
+        // （relatedTarget 为空时是 Safari 点按钮不聚焦，交给 pointerdown 处理）
+        const next = e.relatedTarget as Node | null;
+        if (open && next && !box.current?.contains(next)) setOpen(false);
+      }}
+    >
       <button
         ref={trigger}
         type="button"
@@ -555,6 +564,8 @@ function RowMenu({ label, items }: { label: string; items: MenuItem[] }) {
               aria-label={item.aria}
               onClick={() => {
                 setOpen(false);
+                // 先把焦点还给 ⋯；若接着打开确认框或进入编辑页，由它们接管焦点
+                trigger.current?.focus();
                 item.onSelect();
               }}
             >

@@ -885,6 +885,39 @@ test("sales rows open the editor and keep schedule, edit and delete in a ⋯ men
   await first.locator(".detail-open").click();
   await expect(page.getByRole("heading", { name: "编辑销售" })).toBeVisible();
 });
+test("the ⋯ menu stays on top, closes when Tab leaves it and returns focus sensibly", async ({
+  page,
+}) => {
+  await page.goto("./#/details");
+  const first = page.locator(".detail-row").first();
+  const menu = first.getByRole("button", { name: /^更多操作/ });
+  await menu.click();
+  const list = first.getByRole("menu");
+  await list.scrollIntoViewIfNeeded();
+  // 菜单下沿不被下一行盖住
+  const onTop = await list.evaluate((el) => {
+    const r = el.getBoundingClientRect();
+    const hit = document.elementFromPoint(r.right - 12, r.bottom - 3);
+    return !!hit && el.contains(hit);
+  });
+  expect(onTop).toBe(true);
+  // Tab 离开菜单后收起
+  await first.getByRole("menuitem").last().focus();
+  await page.keyboard.press("Tab");
+  await expect(first.getByRole("menu")).toHaveCount(0);
+  await expect(menu).toHaveAttribute("aria-expanded", "false");
+  // 选「删除」后取消：焦点回到 ⋯
+  await menu.click();
+  await first.getByRole("menuitem", { name: /^删除/ }).press("Enter");
+  await expect(page.getByRole("dialog")).toContainText("移入回收站？");
+  await page.keyboard.press("Escape");
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await expect(menu).toBeFocused();
+  // 选「编辑」：焦点交给编辑页标题
+  await menu.click();
+  await first.getByRole("menuitem", { name: /^编辑/ }).press("Enter");
+  await expect(page.getByRole("heading", { name: "编辑销售" })).toBeFocused();
+});
 test("skip link, demo notice landmark and a single h1 on every page", async ({
   page,
 }) => {
