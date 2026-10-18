@@ -985,3 +985,16 @@
     flex: 1;
   }
 }
+.customer-view-hint {
+  margin: 0 24px 12px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  background: var(--light);
+  color: var(--text-2);
+  font-size: var(--fs-2);
+}
+@media (max-width: 680px) {
+  .customer-view-hint {
+    margin: 0 16px 12px;
+  }
+}

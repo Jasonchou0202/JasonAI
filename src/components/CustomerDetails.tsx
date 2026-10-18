@@ -10,8 +10,12 @@ import { money, totals } from "../domain/finance";
 import { customerProducts, displayCustomerName } from "../domain/customers";
 import {
   currentMonth,
+  defaultSalesView,
+  inSalesView,
+  salesViewFallbackHint,
   shiftMonth,
   useCustomerQuery,
+  type SalesView,
   type CustomerDetail,
   type CustomerMode,
 } from "../lib/customer-ui";
@@ -33,7 +37,6 @@ export interface CustomerDetailsProps {
 export function CustomerDetails(props: CustomerDetailsProps) {
   return <CustomerProfile key={`${props.mode}:${props.id}`} {...props} />;
 }
-type SalesView = "month" | "recent" | "all";
 const PAGE_SIZE = 20;
 function monthLabel(month: string) {
   return `${month.slice(0, 4)} 年 ${Number(month.slice(5, 7))} 月`;
@@ -58,6 +61,7 @@ function CustomerProfile({
     initialMonth === "all" ? "all" : explicitMonth ? "month" : null,
   );
   const [visible, setVisible] = useState(PAGE_SIZE);
+  const [hint, setHint] = useState("");
   const [refresh, setRefresh] = useState(0);
   useEffect(() => {
     if (initialMonth === "all") setView("all");
@@ -81,17 +85,19 @@ function CustomerProfile({
   const recentStart = shiftMonth(thisMonth, -2);
   const allSales = data?.sales || [];
   const inView = (v: SalesView, s: Sale) =>
-    v === "all" ||
-    (v === "recent"
-      ? s.date.slice(0, 7) >= recentStart
-      : s.date.slice(0, 7) === month);
-  const activeView: SalesView =
-    view ??
-    (allSales.some((s) => inView("month", s))
-      ? "month"
-      : allSales.some((s) => inView("recent", s))
-        ? "recent"
-        : "all");
+    inSalesView(v, s.date, month, thisMonth);
+  const activeView: SalesView = view ?? defaultSalesView(allSales, thisMonth);
+  // 默认范围算出来后就固定下来：之后改了记录、刷新数据，也不会自己跳回本月
+  useEffect(() => {
+    if (view !== null || !data) return;
+    const picked = defaultSalesView(data.sales, thisMonth);
+    setView(picked);
+    setHint(salesViewFallbackHint(picked));
+  }, [data, view, thisMonth]);
+  function pickView(v: SalesView) {
+    setHint("");
+    setView(v);
+  }
   const sales = allSales.filter((s) => inView(activeView, s));
   const viewTotals = totals(sales);
   const viewProducts = customerProducts(sales);
@@ -114,13 +120,13 @@ function CustomerProfile({
     activeView === "month"
       ? monthLabel(month)
       : activeView === "recent"
-        ? `近 3 个月（${monthLabel(recentStart)}起）`
+        ? `近 3 个月（${monthLabel(recentStart)}至${monthLabel(thisMonth)}）`
         : "全部历史";
   const calendarMonth = activeView === "month" ? month : undefined;
   function changeMonth(value: string) {
     if (/^\d{4}-\d{2}$/.test(value)) {
       setMonth(value);
-      setView("month");
+      pickView("month");
     }
   }
   return (
@@ -195,7 +201,7 @@ function CustomerProfile({
                     }
                     onClick={() => {
                       setMonth(thisMonth);
-                      setView("month");
+                      pickView("month");
                     }}
                   >
                     本月
@@ -204,7 +210,7 @@ function CustomerProfile({
                     type="button"
                     aria-pressed={activeView === "recent"}
                     className={activeView === "recent" ? "active" : ""}
-                    onClick={() => setView("recent")}
+                    onClick={() => pickView("recent")}
                   >
                     近 3 个月
                   </button>
@@ -212,7 +218,7 @@ function CustomerProfile({
                     type="button"
                     aria-pressed={activeView === "all"}
                     className={activeView === "all" ? "active" : ""}
-                    onClick={() => setView("all")}
+                    onClick={() => pickView("all")}
                   >
                     全部
                   </button>
@@ -243,6 +249,11 @@ function CustomerProfile({
                 )}
               </div>
             </div>
+            {hint && (
+              <p className="customer-view-hint" role="status">
+                {hint}
+              </p>
+            )}
             <div className="customer-stats">
               <div>
                 <small>收入</small>

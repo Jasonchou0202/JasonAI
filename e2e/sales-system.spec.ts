@@ -761,3 +761,62 @@ test("a merged alias link with month=all opens the owner's full history", async 
   ).toHaveAttribute("aria-pressed", "true");
   await expect(page.locator(".customer-stats")).toContainText("2");
 });
+test("customer detail without a month falls back with a hint and keeps the view after refresh", async ({
+  page,
+}) => {
+  await page.goto("./#/details");
+  await expect(page.getByRole("heading", { name: "销售明细" })).toBeVisible();
+  await page.evaluate(
+    ([recentId, oldId]) => {
+      const data = JSON.parse(localStorage.getItem("zhangyuge-demo-v1")!);
+      const base = Object.values(data.sales)[0] as any;
+      const add = (name: string, cid: string, date: string, i: number) => {
+        data.sales["fallback-" + i] = {
+          ...base,
+          id: "fallback-" + i,
+          customer: name,
+          date,
+        };
+        data.customers[cid] = {
+          id: cid,
+          name,
+          createdAt: base.createdAt,
+          updatedAt: base.createdAt,
+          revision: 1,
+          mergedInto: null,
+        };
+      };
+      add("回落客户", recentId, "2026-09-05", 1);
+      add("回落客户", recentId, "2026-03-05", 2);
+      add("久远客户", oldId, "2025-05-01", 3);
+      localStorage.setItem("zhangyuge-demo-v1", JSON.stringify(data));
+    },
+    [hash("回落客户"), hash("久远客户")],
+  );
+  await page.reload();
+  await page.goto(`./#/customer?id=${hash("回落客户")}`);
+  const period = page.getByRole("group", { name: "成交时间范围" });
+  const hint = page.locator(".customer-view-hint");
+  await expect(hint).toHaveText("本月暂无成交，已为你显示近 3 个月");
+  await expect(
+    period.getByRole("button", { name: "近 3 个月", exact: true }),
+  ).toHaveAttribute("aria-pressed", "true");
+  await expect(page.locator(".customer-sales .customer-sale")).toHaveCount(1);
+  await page.getByRole("button", { name: "刷新账本" }).click();
+  await expect(
+    period.getByRole("button", { name: "近 3 个月", exact: true }),
+  ).toHaveAttribute("aria-pressed", "true");
+  await expect(hint).toHaveText("本月暂无成交，已为你显示近 3 个月");
+  await period.getByRole("button", { name: "全部", exact: true }).click();
+  await expect(hint).toHaveCount(0);
+  await page.getByRole("button", { name: "刷新账本" }).click();
+  await expect(
+    period.getByRole("button", { name: "全部", exact: true }),
+  ).toHaveAttribute("aria-pressed", "true");
+  await expect(page.locator(".customer-sales .customer-sale")).toHaveCount(2);
+  await page.goto(`./#/customer?id=${hash("久远客户")}`);
+  await expect(hint).toHaveText("本月和近 3 个月暂无成交，已为你显示全部");
+  await expect(
+    period.getByRole("button", { name: "全部", exact: true }),
+  ).toHaveAttribute("aria-pressed", "true");
+});
