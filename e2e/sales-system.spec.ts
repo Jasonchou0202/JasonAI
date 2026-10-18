@@ -715,12 +715,16 @@ test("customer detail defaults to this month, switches range, groups by month an
   await expect(page.locator(".customer-month-title").nth(1)).toContainText(
     "15 笔",
   );
+  const count = page.locator(".customer-paging-count");
+  await expect(count).toHaveText("已显示 20 / 31");
   await page.getByRole("button", { name: /查看更多（还有 11 笔）/ }).click();
   await expect(rows).toHaveCount(31);
+  await expect(count).toHaveText("已显示 31 / 31");
   await expect(page.getByRole("button", { name: /查看更多/ })).toHaveCount(0);
   await period.getByRole("button", { name: "全部", exact: true }).click();
   await expect(rows).toHaveCount(20);
   await expect(page.locator(".customer-stats")).toContainText("46");
+  await expect(count).toHaveText("已显示 20 / 46");
   await page.getByRole("button", { name: "客户销售上个月" }).waitFor({
     state: "detached",
   });

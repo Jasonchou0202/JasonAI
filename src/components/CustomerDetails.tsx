@@ -349,14 +349,21 @@ function CustomerProfile({
                     </section>
                   );
                 })}
-                {remaining > 0 && (
-                  <button
-                    type="button"
-                    className="button secondary customer-more"
-                    onClick={() => setVisible((v) => v + PAGE_SIZE)}
-                  >
-                    查看更多（还有 {remaining} 笔）
-                  </button>
+                {sales.length > PAGE_SIZE && (
+                  <div className="customer-paging">
+                    <span className="customer-paging-count" role="status">
+                      已显示 {sales.length - remaining} / {sales.length}
+                    </span>
+                    {remaining > 0 && (
+                      <button
+                        type="button"
+                        className="button secondary customer-more"
+                        onClick={() => setVisible((v) => v + PAGE_SIZE)}
+                      >
+                        查看更多（还有 {remaining} 笔）
+                      </button>
+                    )}
+                  </div>
                 )}
               </div>
             ) : (
