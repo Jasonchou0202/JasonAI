@@ -52,14 +52,16 @@ function CustomerProfile({
   const explicitMonth =
     initialMonth && initialMonth !== "all" ? initialMonth : undefined;
   const [month, setMonth] = useState(explicitMonth || currentMonth);
-  // null：还没选，读到数据后默认看本月；本月没有成交就自动看近 3 个月，再没有就看全部
+  // 链接带 month=all：直接看全部历史；带具体月份：看那个月；
+  // 都没带（null）：读到数据后默认看本月，本月没有成交就自动看近 3 个月，再没有就看全部
   const [view, setView] = useState<SalesView | null>(
-    explicitMonth ? "month" : null,
+    initialMonth === "all" ? "all" : explicitMonth ? "month" : null,
   );
   const [visible, setVisible] = useState(PAGE_SIZE);
   const [refresh, setRefresh] = useState(0);
   useEffect(() => {
-    if (initialMonth && initialMonth !== "all") {
+    if (initialMonth === "all") setView("all");
+    else if (initialMonth) {
       setMonth(initialMonth);
       setView("month");
     }
@@ -172,7 +174,10 @@ function CustomerProfile({
             <div className="panel-heading customer-heading customer-period-heading">
               <div>
                 <h2>成交记录</h2>
-                <p>{periodText} · 利润 = 收入 − 成本</p>
+                <p>
+                  <span className="customer-period-text">{periodText}</span>
+                  {" · "}利润 = 收入 − 成本
+                </p>
               </div>
               <div className="customer-period-controls">
                 <div

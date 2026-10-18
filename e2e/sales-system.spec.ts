@@ -345,12 +345,12 @@ test("all-time top twenty, sorting, expand, search and history link", async ({
   await expect(rows).toHaveCount(1);
   await rows.first().getByRole("button").click();
   await expect(page).toHaveURL(/month=all/);
-  const period = page.getByRole("group", { name: "成交时间范围" });
+  await expect(page.getByText("全部历史", { exact: true })).toBeVisible();
   await expect(
-    period.getByRole("button", { name: "本月", exact: true }),
+    page
+      .getByRole("group", { name: "成交时间范围" })
+      .getByRole("button", { name: "全部", exact: true }),
   ).toHaveAttribute("aria-pressed", "true");
-  await period.getByRole("button", { name: "全部", exact: true }).click();
-  await expect(page.getByText(/^全部历史 · /)).toBeVisible();
   await expect(
     page.getByRole("heading", { name: "客户日程", exact: true }),
   ).toBeVisible();
@@ -549,6 +549,7 @@ test("sales customer search opens schedule management", async ({ page }) => {
   await expect(page).toHaveURL(
     new RegExp(`customer\\?id=${hash("客户01")}&month=all`),
   );
+  await expect(page.getByText("全部历史", { exact: true })).toBeVisible();
   await expect(page.getByRole("heading", { name: /今日日程/ })).toBeVisible();
 });
 test("calendar supports both name search and dropdown, and prioritizes today's tasks", async ({
@@ -700,7 +701,9 @@ test("customer detail defaults to this month, switches range, groups by month an
   await expect(
     period.getByRole("button", { name: "本月", exact: true }),
   ).toHaveAttribute("aria-pressed", "true");
-  await expect(page.getByText(/^2026 年 10 月 · /)).toBeVisible();
+  await expect(page.locator(".customer-period-text")).toHaveText(
+    "2026 年 10 月",
+  );
   await expect(page.locator(".customer-stats")).toContainText("16");
   await expect(rows).toHaveCount(16);
   await period.getByRole("button", { name: "近 3 个月", exact: true }).click();
@@ -723,7 +726,9 @@ test("customer detail defaults to this month, switches range, groups by month an
   });
   await period.getByRole("button", { name: "本月", exact: true }).click();
   await page.getByRole("button", { name: "客户销售上个月" }).click();
-  await expect(page.getByText(/^2026 年 9 月 · /)).toBeVisible();
+  await expect(page.locator(".customer-period-text")).toHaveText(
+    "2026 年 9 月",
+  );
   await expect(rows).toHaveCount(15);
   await page.setViewportSize({ width: 375, height: 812 });
   expect(
@@ -731,4 +736,28 @@ test("customer detail defaults to this month, switches range, groups by month an
       () => document.documentElement.scrollWidth <= innerWidth,
     ),
   ).toBe(true);
+});
+test("a merged alias link with month=all opens the owner's full history", async ({
+  page,
+}) => {
+  await page.goto("./#/settings");
+  const suggestions = page.locator(".customer-suggestions");
+  await suggestions
+    .getByRole("button", { name: "全部合并", exact: true })
+    .click();
+  await suggestions
+    .getByRole("button", { name: "已预览，确认全部合并" })
+    .click();
+  await expect(suggestions).toHaveCount(0);
+  await page.goto(`./#/customer?id=${hash("✅小林63.1.2.3")}&month=all`);
+  await expect(
+    page.getByRole("heading", { name: "小林", exact: true }),
+  ).toBeVisible();
+  await expect(page.getByText("全部历史", { exact: true })).toBeVisible();
+  await expect(
+    page
+      .getByRole("group", { name: "成交时间范围" })
+      .getByRole("button", { name: "全部", exact: true }),
+  ).toHaveAttribute("aria-pressed", "true");
+  await expect(page.locator(".customer-stats")).toContainText("2");
 });
