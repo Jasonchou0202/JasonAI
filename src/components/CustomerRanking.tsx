@@ -34,10 +34,15 @@ export function CustomerRanking({
   api,
   version,
   onCustomer,
+  allProfit,
+  onAllProfit,
 }: {
   api: Api;
   version: number;
   onCustomer: (id: string, month: string) => void;
+  /** 生意概览传入：全部销售的累计利润，显示在标题右侧 */
+  allProfit?: number;
+  onAllProfit?: () => void;
 }) {
   const [period, setPeriod] = useState<RankPeriod>({ type: "all" });
   const [expanded, setExpanded] = useState(false);
@@ -95,6 +100,17 @@ export function CustomerRanking({
           </h2>
           <p>全部客户按利润排行，支持全部 / 月 / 季 / 半年 / 年</p>
         </div>
+        {allProfit !== undefined && (
+          <button
+            className="customer-all-profit"
+            onClick={onAllProfit}
+            aria-label={`累计利润 ${money(allProfit)} 元，查看全部明细`}
+          >
+            <span>累计利润</span>
+            <strong>¥{money(allProfit)}</strong>
+            <ChevronRight size={15} aria-hidden="true" />
+          </button>
+        )}
       </div>
       <div className="customer-pad">
         <div className="ranking-controls">
@@ -169,7 +185,9 @@ export function CustomerRanking({
             <div className="customer-summary">
               <span>{data.totals.count} 笔成交</span>
               <span>
-                {PROFIT_LABEL[period.type]}{" "}
+                {period.type === "all" && allProfit !== undefined
+                  ? "客户利润合计"
+                  : PROFIT_LABEL[period.type]}{" "}
                 <strong>¥{money(data.totals.profit)}</strong>
               </span>
             </div>
@@ -218,22 +236,21 @@ export function CustomerRanking({
                       </span>
                       <span className="customer-rank-profit">
                         <Money value={row.totals.profit} />
-                        <small>{row.totals.count} 笔 · 利润</small>
                         <span className="customer-rank-action">
                           管理日程 <ArrowUpRight size={13} />
                         </span>
                       </span>
                     </button>
-                    <div className="customer-products">
-                      {row.products.map((product) => (
-                        <span key={product.name}>
-                          <strong>{product.name}</strong>
-                          <small>
-                            {product.count} 笔 · ¥{money(product.profit)}
-                          </small>
-                        </span>
-                      ))}
-                    </div>
+                    {row.products.length > 0 && (
+                      <p className="customer-products-line">
+                        {row.products
+                          .slice(0, 2)
+                          .map((product) => product.name)
+                          .join(" · ")}
+                        {row.products.length > 2 &&
+                          ` 等 ${row.products.length} 种`}
+                      </p>
+                    )}
                   </li>
                 ))}
               </ol>
