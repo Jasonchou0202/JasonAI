@@ -4,6 +4,7 @@ import {
   ChevronRight,
   Plus,
   TrendingUp,
+  TrendingDown,
   ReceiptText,
 } from "lucide-react";
 import type {
@@ -13,11 +14,13 @@ import type {
   Filters,
   Sale,
   Bucket,
+  SalesPage,
 } from "../domain/model";
 import { money, totals } from "../domain/finance";
 import { today, periodRange } from "../domain/dates";
 import { useQuery, ErrorNote, Loading, Money, Empty, SaleRows } from "./ui";
 import { CustomerRanking } from "./CustomerRanking";
+import { lastMonthSamePeriod, samePeriodGrowth } from "./growth";
 import heroArt800 from "../assets/hero-octopus-800.webp";
 import heroArt1200 from "../assets/hero-octopus-1200.webp";
 import "../dashboard.css";
@@ -42,6 +45,13 @@ export function Dashboard({
     {},
     version,
   );
+  // 上月同期（1 日到同一天）的合计，只读，用来算「比上月同期」
+  const { data: lastPeriod } = useQuery<SalesPage>(
+    api,
+    "sales.list",
+    lastMonthSamePeriod(today()),
+    version,
+  );
   const [period, setPeriod] = useState<Period>("day");
   const [hover, setHover] = useState<Bucket | null>(null);
   // 触屏：第一次点柱形先看金额，再点一次（或点“查看这段明细”）才进入明细
@@ -62,14 +72,9 @@ export function Dashboard({
   const anyNegative = chart.some((b) => b.profit < 0);
   const go = (p: Period) => onFilter(periodRange(today(), p));
   const [year, monthNo] = today().split("-");
-  const thisMonth = data.months[data.months.length - 1];
-  const lastMonth = data.months[data.months.length - 2];
-  const growth =
-    thisMonth && lastMonth && lastMonth.profit > 0
-      ? Math.round(
-          ((thisMonth.profit - lastMonth.profit) / lastMonth.profit) * 100,
-        )
-      : null;
+  const growth = lastPeriod
+    ? samePeriodGrowth(data.month.profit, lastPeriod.totals.profit)
+    : null;
   return (
     <div className="dash-page">
       <section className="dash-hero" aria-labelledby="dash-title">
@@ -110,8 +115,10 @@ export function Dashboard({
               <span className={`dash-growth ${growth >= 0 ? "up" : "down"}`}>
                 {growth >= 0 ? (
                   <TrendingUp size={14} aria-hidden="true" />
-                ) : null}
-                比上月 {growth >= 0 ? "+" : "−"}
+                ) : (
+                  <TrendingDown size={14} aria-hidden="true" />
+                )}
+                比上月同期 {growth >= 0 ? "+" : "−"}
                 {Math.abs(growth)}%
               </span>
             )}

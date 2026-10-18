@@ -885,6 +885,39 @@ test("sales rows open the editor and keep schedule, edit and delete in a ⋯ men
   await first.locator(".detail-open").click();
   await expect(page.getByRole("heading", { name: "编辑销售" })).toBeVisible();
 });
+test("the hero compares this month with the same days of last month", async ({
+  page,
+}) => {
+  await expect(page.locator(".dash-growth")).toHaveCount(0);
+  await page.evaluate(() => {
+    const data = JSON.parse(localStorage.getItem("zhangyuge-demo-v1")!);
+    const add = (id: string, date: string, profit: number) => {
+      data.sales[id] = {
+        ...data.sales["fixture-sale-0"],
+        id,
+        customer: "客户01",
+        date,
+        revenue: profit + 100,
+        cost: 100,
+      };
+    };
+    add("same-period", "2026-09-10", 100000);
+    add("after-same-day", "2026-09-20", 99900000);
+    localStorage.setItem("zhangyuge-demo-v1", JSON.stringify(data));
+  });
+  await page.reload();
+  const label = await page
+    .locator(".dash-hero-number")
+    .getAttribute("aria-label");
+  const month = Math.round(
+    Number(/本月利润 ([\d,.\-−]+) 元/.exec(label!)![1].replace(/[,]/g, "")) *
+      100,
+  );
+  const pct = Math.round(((month - 100000) / 100000) * 100);
+  await expect(page.locator(".dash-growth")).toHaveText(
+    `比上月同期 ${pct >= 0 ? "+" : "−"}${Math.abs(pct)}%`,
+  );
+});
 test("the ⋯ menu stays on top, closes when Tab leaves it and returns focus sensibly", async ({
   page,
 }) => {
