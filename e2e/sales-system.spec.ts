@@ -1041,11 +1041,14 @@ test.describe("after a new deploy removes old lazy chunks", () => {
     page,
   }) => {
     const chunk = /\/assets\/Calendar-[^/]+\.js(\?.*)?$/;
+    // 先离开 beforeEach 打开的页面：它的空闲预取若在拦截生效后才发出，也会触发自动刷新，和下面的打开抢跑
+    await page.goto("about:blank");
     await page.route(chunk, (route) =>
       route.fulfill({ status: 404, contentType: "text/plain", body: "" }),
     );
     // 每次打开文档都记一次数（存在 sessionStorage，刷新后仍在），不依赖 load 事件
     await page.addInitScript(() => {
+      if (location.protocol !== "http:") return;
       const n = Number(sessionStorage.getItem("e2e-doc-loads") || 0);
       sessionStorage.setItem("e2e-doc-loads", String(n + 1));
     });
@@ -1054,8 +1057,8 @@ test.describe("after a new deploy removes old lazy chunks", () => {
         .evaluate(() => Number(sessionStorage.getItem("e2e-doc-loads") || 0))
         .catch(() => -1);
     // 重新打开页面：空闲预取拿不到日程文件，会自动刷新一次，且只刷新一次。
-    // 自动刷新会打断这次 reload，所以只等到开始提交即可
-    await page.reload({ waitUntil: "commit" });
+    // 自动刷新可能打断这次打开，所以只等到开始提交即可
+    await page.goto("./#/dashboard", { waitUntil: "commit" });
     await expect.poll(loads, { timeout: 20000 }).toBe(2);
     await page.waitForLoadState("load");
     await expect(
