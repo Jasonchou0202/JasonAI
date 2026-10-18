@@ -18,7 +18,7 @@ import { money, totals } from "../domain/finance";
 import { today, periodRange } from "../domain/dates";
 import { useQuery, ErrorNote, Loading, Money, Empty, SaleRows } from "./ui";
 import { CustomerRanking } from "./CustomerRanking";
-import heroArt720 from "../assets/hero-octopus-720.webp";
+import heroArt800 from "../assets/hero-octopus-800.webp";
 import heroArt1200 from "../assets/hero-octopus-1200.webp";
 import "../dashboard.css";
 export function Dashboard({
@@ -69,13 +69,14 @@ export function Dashboard({
       <section className="dash-hero" aria-labelledby="dash-title">
         <img
           className="dash-hero-art"
-          src={heroArt720}
-          srcSet={`${heroArt720} 720w, ${heroArt1200} 1200w`}
-          sizes="(max-width: 680px) 720px, 1200px"
+          src={heroArt800}
+          srcSet={`${heroArt800} 800w, ${heroArt1200} 1200w`}
+          sizes="(max-width: 680px) 520px, 760px"
           width={1200}
           height={600}
           alt=""
           aria-hidden="true"
+          loading="lazy"
           decoding="async"
           fetchPriority="low"
         />
