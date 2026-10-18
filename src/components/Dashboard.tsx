@@ -225,7 +225,9 @@ export function Dashboard({
                 onFocus={() => setHover(b)}
                 onMouseLeave={() => setHover(null)}
                 onBlur={() => setHover(null)}
-                onClick={() => {
+                onClick={(e) => {
+                  // 鼠标连点的第二下不算：在记一笔页双击「保存」时，第二下可能落在刚出现的走势图上（触屏本来就要点两次，不受影响）
+                  if (e.detail > 1 && !touchOnly()) return;
                   if (touchOnly() && armed !== b.key) {
                     setArmed(b.key);
                     return;
