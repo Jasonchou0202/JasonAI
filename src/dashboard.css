@@ -1,0 +1,466 @@
+/* 生意概览：留白 + 细分隔线的首屏样式（只作用于 .dash-page 内） */
+.dash-page {
+  --accent: #0b6e5a; /* 唯一强调色：增长 */
+  --accent-soft: #dff5ec;
+  --page-pad-x: 40px;
+  --page-pad-top: 32px;
+}
+@media (min-width: 1500px) {
+  .dash-page {
+    --page-pad-top: 40px;
+  }
+}
+@media (max-width: 1180px) {
+  .dash-page {
+    --page-pad-x: 25px;
+    --page-pad-top: 26px;
+  }
+}
+@media (max-width: 900px) {
+  .dash-page {
+    --page-pad-x: 20px;
+    --page-pad-top: 23px;
+  }
+}
+@media (max-width: 680px) {
+  .dash-page {
+    --page-pad-x: 17px;
+    --page-pad-top: 24px;
+  }
+}
+
+/* ---------- 首屏 ---------- */
+.dash-hero {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  margin: calc(-1 * var(--page-pad-top)) calc(-1 * var(--page-pad-x)) 0;
+  padding: 64px var(--page-pad-x) 270px;
+  text-align: center;
+  background:
+    radial-gradient(60% 70% at 50% 100%, #e3f4ec 0%, #e3f4ec00 70%),
+    linear-gradient(180deg, #fbfcfa 0%, #f1f8f4 60%, #f5f6f3 100%);
+}
+.dash-hero-art {
+  position: absolute;
+  z-index: -1;
+  left: 50%;
+  bottom: -60px;
+  width: 760px;
+  max-width: none;
+  height: auto;
+  transform: translateX(-50%);
+  opacity: 0.72;
+  -webkit-mask-image: linear-gradient(180deg, #000 70%, transparent 86%);
+  mask-image: linear-gradient(180deg, #000 70%, transparent 86%);
+  pointer-events: none;
+  user-select: none;
+}
+.dash-hero-inner {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.dash-hero-title {
+  margin: 0;
+  font-size: var(--fs-2);
+  font-weight: 600;
+  color: var(--text-1);
+  letter-spacing: 0.04em;
+}
+.dash-hero-title span {
+  color: var(--text-3);
+  font-weight: 500;
+}
+.dash-hero-number {
+  margin-top: 28px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 20px;
+  border-radius: 20px;
+  background: transparent;
+  color: var(--text-1);
+}
+.dash-hero-number:hover .dash-hero-value,
+.dash-hero-number:focus-visible .dash-hero-value {
+  color: var(--green);
+}
+.dash-hero-label {
+  font-size: var(--fs-3);
+  color: var(--text-2);
+}
+/* 首屏大数字：允许超出字号阶梯（64–80px） */
+.dash-hero-value {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  font-family: "Manrope", sans-serif;
+  font-size: clamp(4rem, 3rem + 2.4vw, 5rem);
+  font-weight: 700;
+  line-height: 1.02;
+  letter-spacing: -0.035em;
+  font-variant-numeric: tabular-nums;
+  transition: color 0.2s;
+}
+.dash-hero-value .money {
+  color: inherit;
+}
+.dash-hero-value .money.negative {
+  color: var(--text-danger);
+}
+.dash-hero-currency {
+  font-size: 0.42em;
+  font-weight: 600;
+  color: var(--text-2);
+  transform: translateY(-0.12em);
+}
+.dash-hero-meta {
+  margin: 18px 0 0;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+  font-size: var(--fs-2);
+  color: var(--text-2);
+}
+.dash-growth {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 11px;
+  border-radius: 999px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.dash-growth.up {
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+.dash-growth.down {
+  color: var(--text-2);
+  background: #ffffffb3;
+}
+.dash-hero-actions {
+  margin-top: 30px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 10px 22px;
+}
+.dash-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  padding: 0 22px;
+  border-radius: 999px;
+  background: var(--green);
+  color: #fff;
+  font-size: var(--fs-2);
+  font-weight: 600;
+  box-shadow: 0 6px 18px #166b5526;
+  transition:
+    background 0.18s,
+    transform 0.18s;
+}
+.dash-cta:hover {
+  background: var(--green-dark);
+  transform: translateY(-1px);
+}
+.dash-quick {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 44px;
+  padding: 0 4px;
+  background: transparent;
+  color: var(--text-2);
+  font-size: var(--fs-2);
+}
+.dash-quick strong {
+  color: var(--text-1);
+  font-family: "Manrope", sans-serif;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.dash-quick:hover,
+.dash-quick:hover strong {
+  color: var(--green);
+}
+
+/* ---------- 本月三项 ---------- */
+.dash-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  margin: 0 auto;
+  padding: 34px 0 40px;
+  max-width: 960px;
+}
+.dash-stats > div {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 0 12px;
+  text-align: center;
+}
+.dash-stats > div + div {
+  border-left: 1px solid var(--border);
+}
+.dash-stats span {
+  font-size: var(--fs-1);
+  color: var(--text-3);
+  letter-spacing: 0.06em;
+}
+.dash-stats strong {
+  font-family: "Manrope", sans-serif;
+  font-size: var(--fs-5);
+  font-weight: 700;
+  color: var(--text-1);
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+.dash-stats small {
+  font-size: var(--fs-2);
+  font-weight: 500;
+  color: var(--text-2);
+}
+
+/* ---------- 去卡片：白底、细线分隔 ---------- */
+.dash-page .panel {
+  background: transparent;
+  border: 0;
+  border-top: 1px solid var(--border);
+  border-radius: 0;
+  box-shadow: none;
+}
+.dash-page .panel-heading {
+  padding: 32px 0 18px;
+}
+.dash-page .panel-heading h2 {
+  font-size: var(--fs-4);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+.dash-page .chart-summary {
+  padding: 0 0 6px;
+}
+.dash-page .segmented {
+  border: 0;
+  background: #e9eee9;
+  border-radius: 999px;
+}
+.dash-page .segmented button {
+  border-radius: 999px;
+}
+.dash-page .sale-rows {
+  padding: 0 0 10px;
+}
+.dash-page .dashboard-bottom {
+  gap: 56px;
+  margin-top: 0;
+}
+.dash-page .product-ranking .rank-row {
+  padding-left: 0;
+  padding-right: 0;
+}
+.dash-page .quiet-note {
+  margin-left: 0;
+  margin-right: 0;
+}
+
+/* ---------- 走势图：圆角渐变柱、悬停看金额 ---------- */
+.dash-chart {
+  margin: 18px 0 40px;
+  padding-left: 0;
+  height: 230px;
+}
+.dash-chart .bar-columns {
+  padding-left: 0;
+  gap: clamp(8px, 2vw, 28px);
+  justify-content: space-between;
+}
+.dash-chart .bar-column {
+  max-width: 88px;
+}
+.dash-chart .bar-track {
+  position: relative;
+}
+.dash-chart .bar,
+.dash-chart .bar-column:nth-child(2n) .bar {
+  max-width: 52px;
+  border-radius: 12px 12px 6px 6px;
+  background: linear-gradient(180deg, #c3e5d7 0%, #e4f3ec 100%);
+  transition:
+    height 0.35s,
+    filter 0.18s;
+}
+.dash-chart .bar-column.last .bar,
+.dash-chart .bar-column:hover .bar,
+.dash-chart .bar-column:focus-visible .bar {
+  background: linear-gradient(180deg, #1f8f73 0%, #8fd3bb 100%);
+}
+.dash-chart .bar-column.loss .bar {
+  background: linear-gradient(0deg, #e2a99c 0%, #f6e1db 100%);
+}
+.dash-chart .bar-tip {
+  top: -34px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: #fff;
+  color: var(--text-1);
+  font-weight: 700;
+  font-family: "Manrope", sans-serif;
+  box-shadow: 0 4px 14px #1e342918;
+  transition: opacity 0.15s;
+}
+/* 最近一根默认显示金额；指向其它柱时让位 */
+.dash-chart .bar-column.last .bar-tip {
+  opacity: 1;
+}
+.dash-chart .bar-columns:hover .bar-column.last:not(:hover) .bar-tip,
+.dash-chart
+  .bar-columns:focus-within
+  .bar-column.last:not(:focus-visible)
+  .bar-tip {
+  opacity: 0;
+}
+.dash-chart .bar-columns:hover .bar-column:hover .bar-tip,
+.dash-chart .bar-column:focus-visible .bar-tip {
+  opacity: 1;
+}
+.dash-chart .bar-label {
+  padding-top: 14px;
+}
+.dash-chart.has-negative .bar-track::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  border-top: 1px solid var(--border);
+}
+
+/* ---------- 核心客户：标题右侧累计利润，行更简洁 ---------- */
+.dash-page .customer-ranking .customer-heading {
+  align-items: flex-end;
+}
+.customer-all-profit {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 8px;
+  min-height: 44px;
+  padding: 8px 0;
+  background: transparent;
+  color: var(--text-2);
+  font-size: var(--fs-1);
+}
+.customer-all-profit strong {
+  font-family: "Manrope", sans-serif;
+  font-size: var(--fs-4);
+  font-weight: 700;
+  color: var(--text-1);
+  font-variant-numeric: tabular-nums;
+}
+.customer-all-profit svg {
+  align-self: center;
+}
+.customer-all-profit:hover strong {
+  color: var(--green);
+}
+.dash-page .customer-pad {
+  padding: 4px 0 20px;
+}
+.dash-page .customer-summary {
+  background: transparent;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border);
+}
+.dash-page .customer-ranks > li {
+  padding: 0 0 14px;
+  border-bottom-color: #edf0ec;
+}
+.dash-page .customer-rank-link {
+  padding: 16px 0 6px;
+}
+.dash-page .customer-unassigned {
+  border-bottom: 0;
+  border-radius: 0;
+}
+.dash-page .customer-expand {
+  margin: 8px 0;
+}
+.customer-products-line {
+  margin: 0 0 0 38px;
+  font-size: var(--fs-1);
+  color: var(--text-3);
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+
+/* ---------- 手机 ---------- */
+@media (max-width: 680px) {
+  .dash-hero {
+    padding-top: 40px;
+    padding-bottom: 180px;
+  }
+  .dash-hero-art {
+    width: 520px;
+    bottom: -36px;
+    opacity: 0.66;
+  }
+  .dash-hero-number {
+    margin-top: 18px;
+    padding: 4px 8px;
+  }
+  .dash-hero-value {
+    font-size: clamp(2.75rem, 13vw, 4rem);
+  }
+  .dash-hero-actions {
+    margin-top: 22px;
+    gap: 4px 16px;
+  }
+  .dash-cta {
+    width: 100%;
+    max-width: 320px;
+    justify-content: center;
+    min-height: 48px;
+  }
+  .dash-stats {
+    padding: 24px 0 28px;
+  }
+  .dash-stats > div {
+    padding: 0 4px;
+  }
+  .dash-stats strong {
+    font-size: var(--fs-4);
+  }
+  .dash-page .panel-heading {
+    padding: 26px 0 14px;
+  }
+  .dash-page .dashboard-bottom {
+    gap: 0;
+  }
+  .dash-chart {
+    margin-bottom: 28px;
+    height: 210px;
+  }
+  .customer-products-line {
+    margin-left: 29px;
+  }
+  .customer-all-profit {
+    flex-wrap: wrap;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .dash-cta,
+  .dash-hero-value,
+  .dash-chart .bar {
+    transition: none;
+  }
+}
