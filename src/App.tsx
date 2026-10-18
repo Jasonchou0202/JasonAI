@@ -444,13 +444,15 @@ export default function App() {
         {mode === "demo" && (
           <aside className="demo-banner" aria-label="演示提示">
             <Sparkles size={14} aria-hidden="true" />
-            <span title="虚构数据，只保存在本机，请勿录入真实客户">
-              演示数据
+            <span className="demo-text">
+              演示数据，只存本机，请勿录入真实客户
             </span>
-            <span aria-hidden="true">·</span>
-            <button aria-label="退出演示" onClick={() => void signOut()}>
-              退出
-            </button>
+            <span className="demo-exit">
+              <span aria-hidden="true">·</span>
+              <button aria-label="退出演示" onClick={() => void signOut()}>
+                退出
+              </button>
+            </span>
           </aside>
         )}
         {!online && (

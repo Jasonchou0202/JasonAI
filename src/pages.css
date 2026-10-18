@@ -23,16 +23,22 @@
   outline: none;
 }
 
-/* ---------- 演示提示：一行短字 ---------- */
+/* ---------- 演示提示：完整警告始终可见，窄屏自动换行 ---------- */
 .demo-banner {
-  gap: 6px;
+  flex-wrap: wrap;
+  gap: 2px 6px;
   padding: 5px 16px;
   background: var(--cream-soft);
   color: var(--text-warn);
   font-size: var(--fs-1);
+  line-height: 1.5;
+  text-align: center;
 }
-.demo-banner > span[title] {
-  cursor: help;
+.demo-banner .demo-exit {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
 }
 .demo-banner button {
   padding: 2px 4px;

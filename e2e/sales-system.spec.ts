@@ -889,7 +889,9 @@ test("skip link, demo notice landmark and a single h1 on every page", async ({
   page,
 }) => {
   const notice = page.getByRole("complementary", { name: "演示提示" });
-  await expect(notice).toContainText("演示数据");
+  await expect(notice).toHaveText(
+    /^演示数据，只存本机，请勿录入真实客户\s*·\s*退出$/,
+  );
   await expect(
     notice.getByRole("button", { name: "退出演示", exact: true }),
   ).toBeVisible();
@@ -914,6 +916,27 @@ test("skip link, demo notice landmark and a single h1 on every page", async ({
   await expect(page.locator("h1")).toHaveCount(1);
   await expect(page.getByRole("definition").first()).toBeVisible();
   await expect(page.locator(".hero-figures")).toContainText("累计利润");
+});
+test.describe("small phones", () => {
+  test.use({ viewport: { width: 375, height: 667 }, isMobile: true });
+  test("the demo notice shows the full warning without hover and fits the screen", async ({
+    page,
+  }) => {
+    const notice = page.getByRole("complementary", { name: "演示提示" });
+    const text = notice.getByText("演示数据，只存本机，请勿录入真实客户", {
+      exact: true,
+    });
+    await expect(text).toBeVisible();
+    await expect(
+      notice.getByRole("button", { name: "退出演示", exact: true }),
+    ).toBeVisible();
+    const box = (await notice.boundingBox())!;
+    expect(box.x).toBeGreaterThanOrEqual(0);
+    expect(box.x + box.width).toBeLessThanOrEqual(375);
+    expect(
+      await notice.evaluate((el) => el.scrollWidth <= el.clientWidth),
+    ).toBe(true);
+  });
 });
 test.describe("touch screens", () => {
   test.use({
