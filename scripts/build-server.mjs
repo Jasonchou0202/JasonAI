@@ -58,8 +58,37 @@ await writeFile(
     2,
   ) + "\n",
 );
+// 只读统计函数：独立部署，不改动 sales 函数
+await mkdir("cloudfunctions/sales-stats", { recursive: true });
+await build({
+  entryPoints: ["server/stats-cloud.ts"],
+  outfile: "cloudfunctions/sales-stats/index.js",
+  bundle: true,
+  platform: "node",
+  format: "cjs",
+  target: "node18",
+  sourcemap: false,
+  logLevel: "info",
+  alias: {
+    "lodash.set": resolve("vendor/lodash-set/index.cjs"),
+    "lodash.unset": resolve("vendor/lodash-unset/index.cjs"),
+  },
+});
+await writeFile(
+  "cloudfunctions/sales-stats/package.json",
+  JSON.stringify(
+    {
+      name: "zhangyuge-sales-stats-function",
+      version: "1.0.0",
+      private: true,
+      main: "index.js",
+    },
+    null,
+    2,
+  ) + "\n",
+);
 await mkdir("artifacts", { recursive: true });
-for (const name of ["sales", "reminders"]) {
+for (const name of ["sales", "reminders", "sales-stats"]) {
   const entries = Object.fromEntries(
     await Promise.all(
       ["index.js", "package.json"].map(async (file) => [
