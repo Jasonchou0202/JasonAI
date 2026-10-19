@@ -1,6 +1,7 @@
 // 核对 sales / reminders 云函数包和基线逐字节一致（内容函数的改动不许波及销售函数）。
 // 用法：先 npm run build:server，再 node scripts/verify-sales-bundles.mjs
-// 只有在审查通过、确实要改销售函数时，才用 --update 更新基线。
+// --update 只能用于销售代码（sales / reminders）的改动，且必须第二大脑审查通过并经章鱼哥本人确认；
+// 其他改动导致核对失败时不许用 --update 绕过。
 import { createHash } from "node:crypto";
 import { readFile, writeFile } from "node:fs/promises";
 const FIXTURE = "tests/fixtures/sales-bundles.sha256.json";

@@ -19,7 +19,10 @@
 
 1. **集合白名单** `contentOnly()`（`server/content/guard.ts`）：只放行上面 3 个集合，其他名字（包括全部销售集合）直接抛错。
 2. **源码扫描**（`tests/content-isolation.test.ts`）：用 esbuild 的依赖清单确认 content 函数打包进来的源码只有 `server/content/*`、`server/content-cloud.ts`、`src/domain/content.ts`；内容相关文件里不许出现销售集合名，也不许引用销售代码。
-3. **销售函数包逐字节一致**：`tests/fixtures/sales-bundles.sha256.json` 存的是改动前 `origin/main` 的 sales / reminders 包哈希；`npm run check` 最后一步 `node scripts/verify-sales-bundles.mjs` 会核对。以后确实要改销售函数，审查通过后用 `node scripts/verify-sales-bundles.mjs --update` 更新基线。
+3. **销售函数包逐字节一致**：`tests/fixtures/sales-bundles.sha256.json` 存的是改动前 `origin/main` 的 sales / reminders 包哈希；`npm run check` 最后一步 `node scripts/verify-sales-bundles.mjs` 会核对。基线只能这样更新：
+   - **只有**改动的是销售代码（sales / reminders），**并且**第二大脑已经审查通过、**并且**章鱼哥本人已经确认，才可以运行 `node scripts/verify-sales-bundles.mjs --update`；
+   - 更新后的 `tests/fixtures/sales-bundles.sha256.json` 要和那次销售改动放在同一个 PR 里；
+   - 内容函数、看板或其他改动导致核对失败时，**不许**用 `--update` 让它通过，要先查清为什么销售包变了。
 4. **规则清单**：`database.rules.json` 只在末尾追加 3 条 `content_*`，测试锁住原来的 7 条。
 
 ## 身份
@@ -41,6 +44,8 @@
 每次修改都写一条 `content_audit`（前后数字对照），同一个 `requestId` 重试只生效一次（`content_receipts`）。
 
 ## 公开看板怎么拿到数字
+
+看板的源码和数据（`content-board-src/` 下的 validate.py、build.py、cockpit.py、pipeline.py、`data/`，以及 `public/board-*`）归第二大脑维护，这个功能不改它们。只新增了导入脚本 `content-board-src/import_content_export.py`，它按 main 上看板的格式写 `acquisition.daily`（date / count / sources / note / reported_at / reported_by）。
 
 不开公开接口。录入页点「生成可发布汇总」→ 章鱼哥确认 → 下载文件交给第二大脑：
 
