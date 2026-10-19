@@ -8,7 +8,8 @@ from datetime import datetime, timedelta
 ROOT = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, ROOT)
 from validate import red_hits, privacy_hits, load_all, parse_time, now_bj, LEAD_SOURCES, STALE_HOURS
-from cockpit import render_cockpit, render_acq_sources, render_compare, Fresh
+from cockpit import render_cockpit, render_acq_sources, render_compare, Fresh, ACQ_SCRIPT
+from pipeline import slot_map_for, render_topics, render_collection, legend as chart_legend, DIALOG_SCRIPT
 E = html.escape
 NUM = '①②③④⑤⑥⑦'
 ST = {'published': ('已发布', 's-ok'), 'made': ('已制作', 's-made'), 'pending': ('待采集', 's-wait'), 'paused': ('停更中', 's-pause'), 'none': ('未做', 's-wait'), 'tbd': ('待定', 's-wait')}
@@ -45,7 +46,7 @@ SALES_NAV = [
 CONTENT_NAV = [
     ('/JasonAI/board-e160b241a233/', '内容闭环看板'),
     ('#acq', '获客来源'),
-    ('#compare', '五平台对比'),
+    ('#compare', '四平台对比'),
     ('#stages', '七段流水线'),
     ('#topics', '选题流水线'),
     ('#mechanisms', '机制验证'),
@@ -101,7 +102,7 @@ var mt=document.querySelector(".more-toggle");
 if(mt) mt.addEventListener("click",function(){
   var open=document.body.classList.toggle("show-more");
   mt.setAttribute("aria-expanded",open?"true":"false");
-  mt.textContent=open?"收起":"展开全部数据（获客来源、五平台对比、选题流水线）";
+  mt.textContent=open?"收起":"展开全部数据";
 });
 window.addEventListener("hashchange",function(){ if(location.hash && location.hash!=="#cockpit"){document.body.classList.add("show-more"); if(mt){mt.setAttribute("aria-expanded","true"); mt.textContent="收起";}} });
 window.addEventListener("hashchange",mark);
@@ -125,7 +126,6 @@ def render(d, now=None):
         lab = f'{len(d["collection"])} 项采集' if i == 1 else (f'{c} 个选题' if c else '暂无')
         has = c or i == 1
         pipe += f'<li class="st{" has" if has else ""}"><div class="nd">{i}</div><h3>{E(st["name"])}</h3><div class="o">{E(st["owner"])} · {E(st["rhythm"])}</div><span class="cnt{"" if has else " z"}">{lab}</span></li>'
-    coll = ''.join(f'<div class="cc"{F.attr(c["time"])}><div class="t">{E(c["name"])}</div><b>{E(c["count"])}</b><p>{E(c["detail"])}</p><p>{E(c["time"])}</p></div>' for c in d['collection'])
     # 机制
     mech = d['mechanisms']; cnt = {}
     for it in mech['items']: cnt[it['status']] = cnt.get(it['status'], 0) + 1
@@ -133,56 +133,8 @@ def render(d, now=None):
     mlist = ''.join(f'<li><span class="no">{it["no"]}</span>{E(it["title"])}<span class="tag m-{ {"初步验证":"a","已验证":"a","待验证":"b","暂停":"c","未标注":"d"}[it["status"]] }">{E(it["status"])}</span></li>' for it in mech['items'])
     bl = d['baselines']
     blt = '　'.join(f'{E(k)}：中位 {v["median"]:g} · 2 倍线 {v["double"]:g}（{E(v["formula"])}，{E(v["sample"])}）' for k, v in bl.items())
-    # 选题行
-    order = sorted([t for t in topics if 3 <= t['stage'] <= 5], key=lambda t: -t['stage']) + [t for t in topics if t['stage'] == 6] + [t for t in topics if t['stage'] == 7] + [t for t in topics if t['stage'] <= 2]
-    rows = ''
-    for t in order:
-        s = t['stage']
-        seg = ''.join(f'<div class="seg{" done" if i < s else " now" if i == s else ""}"></div>' for i in range(1, 8))
-        tl = ''.join(f'<span class="{"now" if st["id"] == s else ""}">{NUM[st["id"]-1]} {E(st["name"])}</span>' for st in stages)
-        fl = ''.join({'best': '<span class="tag best">本周最佳</span>', 'worst': '<span class="tag worst">本周最差</span>', 'focus': '<span class="tag focus">今日重点</span>'}[f] for f in t['flags'])
-        pfs = ''
-        for q in t['platforms']:
-            lab, cls = ST[q['status']]
-            extra = ' '.join(x for x in (q.get('work', ''), q.get('time', '')) if x)
-            inner = f'{E(q["platform"])} · {lab}' + (f'<span class="x"> {E(extra)}</span>' if extra else '')
-            if q.get('url'): inner = f'<a href="{E(q["url"])}" target="_blank" rel="noopener noreferrer">{inner}</a>'
-            pfs += f'<span class="tag {cls}"><span class="dot"></span>{inner}</span>'
-        pnotes = ''.join(f'<li>{E(q["platform"])}：{val(q["note"])}</li>' for q in t['platforms'] if q.get('note'))
-        if not t['platforms']: pfs = '<span class="tag s-wait">尚未制作</span>'
-        pn_html = '<ul class="pn">' + pnotes + '</ul>' if pnotes else ''
-        # 数据：按平台展示 4 个固定快照位 + 最新一次
-        snaps = t['snapshots']; data = ''
-        plats = []
-        for q in t['platforms']:
-            if q['status'] == 'published' and q['platform'] not in plats: plats.append(q['platform'])
-        for q in snaps:
-            if q['platform'] not in plats: plats.append(q['platform'])
-        nosnap = [p for p in plats if not any(q['platform'] == p for q in snaps)]
-        for pfn in plats:
-            ss = [q for q in snaps if q['platform'] == pfn]
-            if not ss: continue
-            work = next((q.get('work') for q in t['platforms'] if q['platform'] == pfn and q.get('work')), '')
-            boxes = ''
-            for sk, sn in SLOT_NAME:
-                hit = [q for q in ss if q['slot'] == sk]
-                v = mshort(pfn, hit[-1]['metrics']) + (f'<i>{E(hit[-1]["elapsed"])}</i>' if hit else '') if hit else '<span class="pending">待采集</span>'
-                boxes += f'<div class="sb"{F.attr(hit[-1]["time"]) if hit else ""}><span>{sn}</span><div>{v}</div></div>'
-            last = max(ss, key=lambda q: q['time']) if ss else None
-            lt = f'<p class="last"{F.attr(last["time"])}>最新 {E(short_time(last["time"]))}（{E(last["elapsed"])}）：{mtext(last["metrics"])}{("；" + val(last["note"])) if last.get("note") else ""}</p>' if last else '<p class="last">还没有快照：<span class="pending">待采集</span></p>'
-            data += f'<div class="pd"><h5>{E(pfn)}{(" · " + E(work)) if work else ""}</h5><div class="sbs">{boxes}</div>{lt}</div>'
-        if nosnap: data += f'<div class="pd"><h5>{"、".join(E(p) for p in nosnap)}</h5><p class="last">已发布，4 个快照位均为 <span class="pending">待采集</span></p></div>'
-        if not plats: data = f'<p class="last">{val(t["compare"])}</p>'
-        else: data += f'<p class="cmp"><b>对比中位：</b>{val(t["compare"])}</p>'
-        rl, rc = RED[t['redline']['level']]
-        blk = ''.join(f'<li>{E(b)}</li>' for b in t['blockers'])
-        blk = f'<div class="block"><b>卡点</b><ul>{blk}</ul></div>' if t['blockers'] else '<div class="noblock">卡点：无</div>'
-        rows += f'''<article class="row{" hot" if "focus" in t["flags"] else ""}" id="{E(t["id"])}"><div class="rh"><span class="date">{E(t["date"][5:])}</span><h3>{E(t["title"])}</h3><span class="cur">当前：{NUM[s-1]} {E(stages[s-1]["name"])}</span>{fl}</div>
-<div class="track" aria-hidden="true">{seg}</div><div class="tl">{tl}</div><p class="note">{E(t["stage_note"])}</p>
-<div class="grid3"><div><h4>各平台状态</h4><div class="pfs">{pfs}</div>{pn_html}<div class="red">{tag(rl, rc)}<span>{E(t["redline"]["note"])}</span></div>{blk}</div>
-<div><h4>数据快照</h4>{data}</div>
-<div><h4>来源与分工</h4><dl><div class="f"><dt>来源</dt><dd>{E(t["source"])}</dd></div><div class="f"><dt>对应机制</dt><dd>{E(t["mechanism"])}</dd></div><div class="f"><dt>负责</dt><dd>{E(t["owners"])}</dd></div></dl></div></div></article>'''
-    legend = ''.join(tag(l, c) for k, (l, c) in ST.items() if k in ('published', 'made', 'pending', 'paused'))
+    slot_map = slot_map_for(F.year)
+    rows = render_topics(d, F, slot_map)
     embedded = json.dumps(d, ensure_ascii=False).replace('</', '<\\/')
     groups = nav_groups(True)
     return f'''<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
@@ -195,16 +147,16 @@ def render(d, now=None):
 <p class="asof">数据更新于 <b>{E(d["updated_at"])}</b> · 本周 {E(d["week"]["label"])}</p></header>
 <main class="main-content wrap" id="top">
 {render_cockpit(d, F)}
-<div class="more" id="more"><div class="sec"><h2>获客来源榜</h2><span class="legend">只存人数和来源，不存名字和联系方式</span></div>
+<div class="more" id="more"><div class="sec"><h2>获客来源榜</h2><span class="legend" title="只存人数和渠道，不存名字和联系方式；手填数字先存本机，标「未同步」">手填 · 存本机 · 复制口令同步</span></div>
 {render_acq_sources(d, F)}
-<div class="sec" id="compare"><h2>五平台对比 · 本周主推选题</h2><span class="legend">格子里是各平台主指标；灰色 = 采集已超 24 小时</span></div>
-{render_compare(d, F)}
+<div class="sec" id="compare"><h2>四平台对比 · 本周主推选题</h2></div>
+{render_compare(d, F, slot_map)}
 <div class="sec"><h2>过程指标</h2><span class="legend">采集、选题、发布、机制</span></div>
 <section class="kpis" aria-label="过程指标">{kp}</section>
 <section class="accs" aria-label="账号概况">{acc}</section>
 <section class="pipe-wrap" id="stages" aria-label="7 个阶段"><ol class="pipe">{pipe}</ol></section>
-<div class="sec" id="collect"><h2>① 采集入口</h2><span class="legend">采集只读 · 含红线内容只记录不采用</span></div><section class="collect">{coll}</section>
-<div class="sec" id="topics"><h2>选题流水线</h2><div class="legend">{legend}</div></div>
+<div class="sec" id="collect"><h2>① 采集入口</h2><span class="legend">点卡片看明细</span></div>{render_collection(d, F)}
+<div class="sec" id="topics"><h2>选题流水线</h2><div class="legend">{chart_legend()}<span class="legend-s" title="平台没有的字段（例如视频号没有收藏）按缺失处理，不算 0；72 小时等其他时间点的快照在「展开」里">✓ 已发布 ✗ 未发布</span></div></div>
 {rows}
 <div class="sec" id="mechanisms"><h2>爆款文案机制 · 验证进度</h2><div class="legend">{mtags}<span>待验证假设 {mech["hypotheses_count"]} 条 · {E(mech["updated"])}</span></div></div>
 <ol class="mech">{mlist}</ol>
@@ -217,6 +169,8 @@ def render(d, now=None):
 </div>
 <script type="application/json" id="dashboard-data">{embedded}</script>
 {SHELL_SCRIPT.replace("STALE_MS", str(STALE_HOURS * 3600 * 1000))}
+{ACQ_SCRIPT}
+{DIALOG_SCRIPT}
 </body></html>'''
 
 def main():

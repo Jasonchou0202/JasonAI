@@ -24,9 +24,11 @@ FLAGS = {'focus', 'best', 'worst'}
 MISSING = {'待采集', '拿不到', '不适用'}
 RE_DT = re.compile(r'^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$')
 RE_D = re.compile(r'^\d{4}-\d{2}-\d{2}$')
-# 获客来源（固定 6 个，key 即页面显示名）
-LEAD_SOURCES = ['抖音', '视频号', '公众号', '朋友圈', '小红书', '未知']
-SOURCE_ALIAS = {'来源未知': '未知', '不知道': '未知', '': '未知'}
+# 获客渠道（固定 4 个，key 即页面显示名）。口径（章鱼哥 10-19 16:18）：有渠道拆分时，4 个渠道之和必须正好等于当天 count；渠道全空 = 渠道未填，允许
+LEAD_SOURCES = ['抖音', '视频号', '公众号', '小红书']
+UNASSIGNED = {''}  # CSV 里 source 只能留空（= 渠道未填），不再有「未分渠道」
+SLOT_CANON = ['2h', '15:00', '21:00', '24h']   # 新快照只用这 4 个；旧标签 72h / other 仍能读，页面按采集时间自动归入或不显示
+COLL_PLATFORMS = {'小红书', '抖音', '知乎', 'X', '视频号', '公众号', '其他'}
 SRC_STATUS = {'active', 'not_started'}
 DEAL_SOURCE = '销售看板成交客户数（同步方式待章鱼哥拍板）'
 DEAL_PROVIDERS = {'销售看板Bot', '章鱼哥'}
@@ -144,6 +146,22 @@ def validate(d):
             if not isinstance(mv, (int, float, str)) or isinstance(mv, bool): E.append(f'{p}.metrics.{mk}：只能是数字或文字')
     for i, c in enumerate(need(d, 'collection', list, '$') or []):
         for f in ('name', 'count', 'detail', 'time'): s(c, f, f'$.collection[{i}]')
+        s(c, 'items_source', f'$.collection[{i}]', required=False)
+        its = c.get('items')
+        if its is None: continue
+        if not isinstance(its, list): E.append(f'$.collection[{i}].items：必须是列表（没有明细写 []，页面显示「明细待大管家补充」）'); continue
+        for j, it in enumerate(its):
+            p = f'$.collection[{i}].items[{j}]'
+            if not isinstance(it, dict): E.append(f'{p}：必须是对象'); continue
+            s(it, 'title', p)
+            pf = s(it, 'platform', p, required=False)
+            if pf and pf not in COLL_PLATFORMS: E.append(f'{p}.platform：只能是 {"、".join(sorted(COLL_PLATFORMS))}')
+            s(it, 'time', p, required=False); s(it, 'note', p, required=False)
+            u = s(it, 'url', p, required=False)
+            if u and not u.startswith('https://'): E.append(f'{p}.url：必须以 https:// 开头')
+            if 'count' in it and (not isinstance(it['count'], int) or isinstance(it['count'], bool) or it['count'] < 0): E.append(f'{p}.count：出现次数必须是 ≥0 的整数')
+            extra = set(it) - {'title', 'platform', 'time', 'note', 'url', 'count'}
+            if extra: E.append(f'{p}：不认识的字段 {sorted(extra)}')
     mc = need(d, 'mechanisms', dict, '$')
     if mc:
         need(mc, 'hypotheses_count', int, '$.mechanisms'); s(mc, 'updated', '$.mechanisms')
@@ -177,7 +195,7 @@ def validate(d):
             if url and not url.startswith('https://'): E.append(f'{pp}.url：必须以 https:// 开头')
         for j, q in enumerate(need(t, 'snapshots', list, p) or []):
             pp = f'{p}.snapshots[{j}]'
-            if s(q, 'slot', pp) not in SLOTS: E.append(f'{pp}.slot：只能是 2h / 15:00 / 21:00 / 24h / 72h / other')
+            if s(q, 'slot', pp) not in SLOTS: E.append(f'{pp}.slot：只能是 2h / 15:00 / 21:00 / 24h（旧标签 72h / other 也认）')
             if s(q, 'platform', pp) not in PLATFORMS: E.append(f'{pp}.platform：平台名不对')
             tm = s(q, 'time', pp)
             if tm and not RE_DT.match(tm): E.append(f'{pp}.time：格式应为 YYYY-MM-DD HH:MM')
@@ -226,16 +244,20 @@ def _banned_keys(o, path, E):
     elif isinstance(o, list):
         for i, v in enumerate(o): _banned_keys(v, f'{path}[{i}]', E)
 
-def _sources(obj, path, E, total=None, allow_missing=False):
+def _sources(obj, path, E, total=None, allow_missing=True, exact=False):
+    """渠道拆分可以不填、可以是 {}（= 渠道未填）；只要填了，exact=True 时合计必须正好等于总数，exact=False 时不能大于总数"""
     if obj is None and allow_missing: return
-    if not isinstance(obj, dict): E.append(f'{path}：必须是对象，例 {{"抖音": 2, "未知": 1}}'); return
+    if not isinstance(obj, dict): E.append(f'{path}：必须是对象，例 {{"抖音": 2, "视频号": 1}}；没拆分可以不写或写 {{}}'); return
     sm = 0
     for k, v in obj.items():
         if k not in LEAD_SOURCES: E.append(f'{path}：来源「{k}」不认识，只能是 {"、".join(LEAD_SOURCES)}')
         if not _int(v) or v < 0: E.append(f'{path}.{k}：必须是 ≥0 的整数')
         else: sm += v
-    if total is not None and _int(total) and sm != total:
-        E.append(f'{path}：来源拆分合计 {sm} ≠ 当天总数 {total}（说不清来源的人数记到「未知」）')
+    if total is None or not _int(total) or not obj: return
+    if exact and sm != total:
+        E.append(f'{path}：4 个渠道合计 {sm} ≠ 当天总数 {total}，渠道合计必须正好等于总数（说不清渠道就整项不写 sources）')
+    elif not exact and sm > total:
+        E.append(f'{path}：渠道合计 {sm} 大于总数 {total}，请核对')
 
 def validate_acquisition(d, E, topic_ids):
     a = d.get('acquisition')
@@ -251,7 +273,7 @@ def validate_acquisition(d, E, topic_ids):
     if not isinstance(srcs, list): E.append(f'{P}.sources：必须是列表')
     else:
         keys = [x.get('key') for x in srcs if isinstance(x, dict)]
-        if sorted(keys) != sorted(LEAD_SOURCES): E.append(f'{P}.sources：必须正好是 {"、".join(LEAD_SOURCES)} 这 6 个来源')
+        if sorted(keys) != sorted(LEAD_SOURCES): E.append(f'{P}.sources：必须正好是 {"、".join(LEAD_SOURCES)} 这 4 个渠道')
         for i, x in enumerate(srcs):
             if not isinstance(x, dict): E.append(f'{P}.sources[{i}]：必须是对象'); continue
             for f in ('key', 'label', 'path'):
@@ -291,7 +313,7 @@ def validate_acquisition(d, E, topic_ids):
             else: seen.add(dt)
             c = r.get('count')
             if not _int(c) or c < 0: E.append(f'{p}.count：必须是 ≥0 的整数（当天没加人写 0；没报数就不要建这一天）')
-            _sources(r.get('sources'), f'{p}.sources', E, total=c)
+            _sources(r.get('sources'), f'{p}.sources', E, total=c, exact=True)
             for j, bc in enumerate(r.get('by_content') or []):
                 pp = f'{p}.by_content[{j}]'
                 if not isinstance(bc, dict): E.append(f'{pp}：必须是对象'); continue
@@ -371,15 +393,17 @@ def load_leads_csv(path):
         for n, row in enumerate(rd, start=2):
             p = f'wechat_leads.csv 第 {n} 行'
             dt = (row.get('date') or '').strip(); cs = (row.get('count') or '').strip()
-            src = (row.get('source') or '').strip(); src = SOURCE_ALIAS.get(src, src); note = (row.get('note') or '').strip()
+            src = (row.get('source') or '').strip(); note = (row.get('note') or '').strip()
+            if src in UNASSIGNED: src = ''
             if not RE_D.match(dt): E.append(f'{p}：date 格式应为 YYYY-MM-DD'); continue
             if not re.match(r'^\d+$', cs): E.append(f'{p}：count 必须是 ≥0 的整数'); continue
-            if src not in LEAD_SOURCES: E.append(f'{p}：source「{src}」不认识，只能是 {"、".join(LEAD_SOURCES)}'); continue
+            if src and src not in LEAD_SOURCES: E.append(f'{p}：source「{src}」不认识，只能是 {"、".join(LEAD_SOURCES)}，或留空（= 渠道未填）'); continue
             if len(note) > 60: E.append(f'{p}：note 最多 60 字')
             h = red_hits(note) + privacy_hits(note)
             if h: E.append(f'{p}：note 命中 {h}')
             r = days.setdefault(dt, {'date': dt, 'count': 0, 'sources': {}, 'note': '', 'reported_at': mtime, 'reported_by': 'wechat_leads.csv'})
-            r['count'] += int(cs); r['sources'][src] = r['sources'].get(src, 0) + int(cs)
+            r['count'] += int(cs)
+            if src: r['sources'][src] = r['sources'].get(src, 0) + int(cs)
             if note: r['note'] = (r['note'] + '；' + note).strip('；')[:60]
     return [days[k] for k in sorted(days)], E
 
