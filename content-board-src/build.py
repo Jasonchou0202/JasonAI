@@ -4,9 +4,11 @@
 用法：python3 build.py   →  dist/index.html（单文件，无外部依赖）
 先运行校验（validate.py），不通过就停止，不会生成页面。"""
 import json, os, sys, re, html
+from datetime import datetime, timedelta
 ROOT = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, ROOT)
-from validate import validate, red_hits, privacy_hits
+from validate import red_hits, privacy_hits, load_all, parse_time, now_bj, LEAD_SOURCES, STALE_HOURS
+from cockpit import render_cockpit, render_acq_sources, render_compare, Fresh
 E = html.escape
 NUM = '①②③④⑤⑥⑦'
 ST = {'published': ('已发布', 's-ok'), 'made': ('已制作', 's-made'), 'pending': ('待采集', 's-wait'), 'paused': ('停更中', 's-pause'), 'none': ('未做', 's-wait'), 'tbd': ('待定', 's-wait')}
@@ -42,6 +44,8 @@ SALES_NAV = [
 ]
 CONTENT_NAV = [
     ('/JasonAI/board-e160b241a233/', '内容闭环看板'),
+    ('#acq', '获客来源'),
+    ('#compare', '五平台对比'),
     ('#stages', '七段流水线'),
     ('#topics', '选题流水线'),
     ('#mechanisms', '机制验证'),
@@ -88,18 +92,32 @@ document.querySelectorAll("[data-sheet]").forEach(function(btn){
     });
   });
 });
+var now=Date.now();
+document.querySelectorAll("[data-t]").forEach(function(el){
+  var t=Date.parse(el.getAttribute("data-t"));
+  if(t && now-t>STALE_MS){el.classList.add("stale");}
+});
+var mt=document.querySelector(".more-toggle");
+if(mt) mt.addEventListener("click",function(){
+  var open=document.body.classList.toggle("show-more");
+  mt.setAttribute("aria-expanded",open?"true":"false");
+  mt.textContent=open?"收起":"展开全部数据（获客来源、五平台对比、选题流水线）";
+});
+window.addEventListener("hashchange",function(){ if(location.hash && location.hash!=="#cockpit"){document.body.classList.add("show-more"); if(mt){mt.setAttribute("aria-expanded","true"); mt.textContent="收起";}} });
 window.addEventListener("hashchange",mark);
 mark();
 })();</script>'''
 
-def render(d):
+def render(d, now=None):
+    now = now or now_bj()
+    F = Fresh(d, now)
     stages = d['stages']; topics = d['topics']
     # KPI 条
     kp = ''
     for k in d['kpis']:
         v = '<span class="pending">待采集</span>' if k['status'] == 'pending' else E(str(k['value']))
-        kp += f'<div class="kpi"><div class="k-t">{E(k["title"])}</div><div class="k-v">{v}<small>{E(k.get("unit",""))}</small></div><div class="k-d">{E(k["note"])}</div></div>'
-    acc = ''.join(f'<div class="acc"><b>{E(a["platform"])}</b><span>{" · ".join(f"{E(mk)} {val(mv)}" for mk, mv in a["metrics"].items())}</span><em>{E(short_time(a["time"]))}{("　" + E(a["note"])) if a.get("note") else ""}</em></div>' for a in d['accounts'])
+        kp += f'<div class="kpi"{F.attr(k.get("time") or d["updated_at"])}><div class="k-t">{E(k["title"])}</div><div class="k-v">{v}<small>{E(k.get("unit",""))}</small></div><div class="k-d">{E(k["note"])}</div>{F.src(k.get("source") or d["updated_by"], k.get("time") or d["updated_at"])}</div>'
+    acc = ''.join(f'<div class="acc"{F.attr(a["time"])}><b>{E(a["platform"])}</b><span>{" · ".join(f"{E(mk)} {val(mv)}" for mk, mv in a["metrics"].items())}</span><em>{E(short_time(a["time"]))}{("　" + E(a["note"])) if a.get("note") else ""}</em></div>' for a in d['accounts'])
     # 流程图
     pipe = ''
     for st in stages:
@@ -107,7 +125,7 @@ def render(d):
         lab = f'{len(d["collection"])} 项采集' if i == 1 else (f'{c} 个选题' if c else '暂无')
         has = c or i == 1
         pipe += f'<li class="st{" has" if has else ""}"><div class="nd">{i}</div><h3>{E(st["name"])}</h3><div class="o">{E(st["owner"])} · {E(st["rhythm"])}</div><span class="cnt{"" if has else " z"}">{lab}</span></li>'
-    coll = ''.join(f'<div class="cc"><div class="t">{E(c["name"])}</div><b>{E(c["count"])}</b><p>{E(c["detail"])}</p><p>{E(c["time"])}</p></div>' for c in d['collection'])
+    coll = ''.join(f'<div class="cc"{F.attr(c["time"])}><div class="t">{E(c["name"])}</div><b>{E(c["count"])}</b><p>{E(c["detail"])}</p><p>{E(c["time"])}</p></div>' for c in d['collection'])
     # 机制
     mech = d['mechanisms']; cnt = {}
     for it in mech['items']: cnt[it['status']] = cnt.get(it['status'], 0) + 1
@@ -149,9 +167,9 @@ def render(d):
             for sk, sn in SLOT_NAME:
                 hit = [q for q in ss if q['slot'] == sk]
                 v = mshort(pfn, hit[-1]['metrics']) + (f'<i>{E(hit[-1]["elapsed"])}</i>' if hit else '') if hit else '<span class="pending">待采集</span>'
-                boxes += f'<div class="sb"><span>{sn}</span><div>{v}</div></div>'
+                boxes += f'<div class="sb"{F.attr(hit[-1]["time"]) if hit else ""}><span>{sn}</span><div>{v}</div></div>'
             last = max(ss, key=lambda q: q['time']) if ss else None
-            lt = f'<p class="last">最新 {E(short_time(last["time"]))}（{E(last["elapsed"])}）：{mtext(last["metrics"])}{("；" + val(last["note"])) if last.get("note") else ""}</p>' if last else '<p class="last">还没有快照：<span class="pending">待采集</span></p>'
+            lt = f'<p class="last"{F.attr(last["time"])}>最新 {E(short_time(last["time"]))}（{E(last["elapsed"])}）：{mtext(last["metrics"])}{("；" + val(last["note"])) if last.get("note") else ""}</p>' if last else '<p class="last">还没有快照：<span class="pending">待采集</span></p>'
             data += f'<div class="pd"><h5>{E(pfn)}{(" · " + E(work)) if work else ""}</h5><div class="sbs">{boxes}</div>{lt}</div>'
         if nosnap: data += f'<div class="pd"><h5>{"、".join(E(p) for p in nosnap)}</h5><p class="last">已发布，4 个快照位均为 <span class="pending">待采集</span></p></div>'
         if not plats: data = f'<p class="last">{val(t["compare"])}</p>'
@@ -176,7 +194,13 @@ def render(d):
 <header class="topbar"><div class="breadcrumb">工作室<span>/</span>内容生产板块<span>/</span><strong>内容闭环看板</strong></div>
 <p class="asof">数据更新于 <b>{E(d["updated_at"])}</b> · 本周 {E(d["week"]["label"])}</p></header>
 <main class="main-content wrap" id="top">
-<section class="kpis" aria-label="本周关键数字">{kp}</section>
+{render_cockpit(d, F)}
+<div class="more" id="more"><div class="sec"><h2>获客来源榜</h2><span class="legend">只存人数和来源，不存名字和联系方式</span></div>
+{render_acq_sources(d, F)}
+<div class="sec" id="compare"><h2>五平台对比 · 本周主推选题</h2><span class="legend">格子里是各平台主指标；灰色 = 采集已超 24 小时</span></div>
+{render_compare(d, F)}
+<div class="sec"><h2>过程指标</h2><span class="legend">采集、选题、发布、机制</span></div>
+<section class="kpis" aria-label="过程指标">{kp}</section>
 <section class="accs" aria-label="账号概况">{acc}</section>
 <section class="pipe-wrap" id="stages" aria-label="7 个阶段"><ol class="pipe">{pipe}</ol></section>
 <div class="sec" id="collect"><h2>① 采集入口</h2><span class="legend">采集只读 · 含红线内容只记录不采用</span></div><section class="collect">{coll}</section>
@@ -184,22 +208,23 @@ def render(d):
 {rows}
 <div class="sec" id="mechanisms"><h2>爆款文案机制 · 验证进度</h2><div class="legend">{mtags}<span>待验证假设 {mech["hypotheses_count"]} 条 · {E(mech["updated"])}</span></div></div>
 <ol class="mech">{mlist}</ol>
+</div>
 </main>
-<footer class="wrap foot"><div class="footer-workspace">{groups}</div><p>中位数基线：{blt}</p><p>灰色「待采集」「拿不到」表示目前没有真实数据，不做估算。时间均为北京时间。更新人：{E(d["updated_by"])}</p></footer>
+<footer class="wrap foot"><div class="footer-workspace">{groups}</div><p>中位数基线：{blt}</p><p>灰色「待采集」「拿不到」「待录入」表示目前没有真实数据，不做估算；整块变灰 = 采集时间已超 24 小时。时间均为北京时间（页面生成于 {now:%Y-%m-%d %H:%M}）。更新人：{E(d["updated_by"])}</p></footer>
 </main></div>
 <div class="mobile-dock"><div class="mobile-sheet" id="mobile-sheet" hidden data-open=""><div class="sheet-sales nav-sub">{nav_links(SALES_NAV)}</div><div class="sheet-content nav-sub">{nav_links(CONTENT_NAV)}</div></div>
 <nav class="mobile-nav" aria-label="手机导航"><button type="button" data-sheet="sales">销售板块</button><a class="mobile-add" href="/JasonAI/#/entry">记一笔</a><button type="button" data-sheet="content">内容生产</button></nav></div>
 </div>
 <script type="application/json" id="dashboard-data">{embedded}</script>
-{SHELL_SCRIPT}
+{SHELL_SCRIPT.replace("STALE_MS", str(STALE_HOURS * 3600 * 1000))}
 </body></html>'''
 
 def main():
     src = os.path.join(ROOT, 'data', 'dashboard.json')
-    d = json.load(open(src, encoding='utf-8'))
-    errs = validate(d)
+    d, errs, warns, cs = load_all(src)
     if errs:
         print('✗ 数据校验没通过，已停止构建：'); [print('  - ' + e) for e in errs]; sys.exit(1)
+    print(f'· {cs}；新鲜度提醒 {len(warns)} 条（页面显示灰色）')
     out = render(d)
     text = html.unescape(re.sub(r'<style.*?</style>|<[^>]+>', ' ', out, flags=re.S))
     h = red_hits(text) + privacy_hits(text)
