@@ -62,7 +62,7 @@ python3 validate.py && python3 build.py   # 照常校验、生成，再走审核
 3. 👤 云开发控制台 → 文档型数据库 → 新建 3 个集合 `content_daily`、`content_audit`、`content_receipts`，每个都把权限设为自定义规则 `{"read":false,"write":false}`（逐个集合设置，不碰已有集合）。建完逐个打开确认。
 4. 👤 云开发控制台 → 云函数 → 新建函数 `content`：Node.js 18 或更新、入口 `index.main`、内存 128MB、超时 10 秒，上传上一步的 zip。不创建 HTTP 访问路径。
 5. 👤 `content` 函数的环境变量填 `OWNER_UID`，值和 `sales` 函数的 `OWNER_UID` 一样。
-6. 👤 云开发控制台 → 云函数 → 权限控制：**先把当前配置整页截图保存**，然后**只新增** `content` 这一项：`"content": { "invoke": "auth.loginType != 'ANONYMOUS' && auth != null" }`。`*`、`sales`、`reminders` 等已有条目一个字都不改。保存后马上在生意手账记一笔（或打开明细）确认销售照常。
+6. 👤 云开发控制台 → 云函数 → 权限控制：**先把当前配置整页截图保存**，然后**只新增** `content` 这一项：`"content": { "invoke": "auth.loginType != 'ANONYMOUS' && auth != null" }`。`*`、`sales`、`reminders` 等已有条目一个字都不改。保存后马上只读验证销售照常：打开生意手账的概览和销售明细，确认都能正常加载；不记一笔、不写任何测试数据。
 7. 👤 登录生意手账 → 今日获客录入：存一条测试数字，看「最近 14 天」出现后删除，再在「最近删除」里确认能恢复（测试完可以再删掉）。
 8. 👤 打开销售各页确认照常；在云开发控制台确认销售 7 个集合的权限仍是 `{"read":false,"write":false}`。
 
