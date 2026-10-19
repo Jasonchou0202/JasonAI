@@ -24,3 +24,7 @@ cloudbaserc.json
 test-results/
 playwright-report/
 output/playwright/
+cloudfunctions/content/index.js
+cloudfunctions/content/node_modules/
+cloudfunctions/content/package-lock.json
+__pycache__/

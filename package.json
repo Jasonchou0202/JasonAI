@@ -12,7 +12,7 @@
     "deploy:functions": "node scripts/deploy-functions.mjs",
     "typecheck": "tsc -b",
     "build:server": "node scripts/build-server.mjs",
-    "check": "npm run test && npm run build && npm run build:server"
+    "check": "npm run test && npm run build && npm run build:server && node scripts/verify-sales-bundles.mjs"
   },
   "dependencies": {
     "@cloudbase/js-sdk": "^3.0.0",
