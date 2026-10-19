@@ -1,751 +1,875 @@
 {
- "schema_version": "1.0",
- "updated_at": "2026-10-19 10:49",
- "updated_by": "第二大脑（据大管家 10:20 快照与作品追踪总表整理）",
- "week": {
-  "start": "2026-10-19",
-  "end": "2026-10-25",
-  "label": "10-19（周一）至 10-25（周日）"
- },
- "kpis": [
-  {
-   "key": "collect",
-   "title": "采集条数",
-   "value": 59,
-   "unit": "条",
-   "status": "real",
-   "note": "痛点 39（第11批 20 · 第12批 19）＋ 今日热门 20（小红书 4 · 抖音 5 · 知乎 6 · X 5）"
+  "schema_version": "1.0",
+  "updated_at": "2026-10-19 12:10",
+  "updated_by": "大管家（2 小时快照，含小红书后台补采）",
+  "week": {
+    "start": "2026-10-19",
+    "end": "2026-10-25",
+    "label": "10-19（周一）至 10-25（周日）"
   },
-  {
-   "key": "topics",
-   "title": "选题数",
-   "value": 4,
-   "unit": "个",
-   "status": "real",
-   "note": "10-19 提案 A/B/C 3 个（拍板 A）＋ 10-20「ChatGPT 项目」；进入制作 2 个"
+  "kpis": [
+    {
+      "key": "collect",
+      "title": "采集条数",
+      "value": 59,
+      "unit": "条",
+      "status": "real",
+      "note": "痛点 39（第11批 20 · 第12批 19）＋ 今日热门 20（小红书 4 · 抖音 5 · 知乎 6 · X 5）"
+    },
+    {
+      "key": "topics",
+      "title": "选题数",
+      "value": 4,
+      "unit": "个",
+      "status": "real",
+      "note": "10-19 提案 A/B/C 3 个（拍板 A）＋ 10-20「ChatGPT 项目」；进入制作 2 个"
+    },
+    {
+      "key": "published",
+      "title": "发布数",
+      "value": 1,
+      "unit": "个选题 · 5 个平台",
+      "status": "real",
+      "note": "10-19 论文题：抖音 09:44 · 公众号 09:46 · 视频号 · 小红书 · 朋友圈"
+    },
+    {
+      "key": "above_median",
+      "title": "破中位数",
+      "value": 0,
+      "unit": "条",
+      "status": "real",
+      "note": "本周已发 1 个选题：抖音第88集 2 小时互动和 4 ＜ 中位 50.5；视频号版刚发约 15 分钟，播放 0 ＜ 中位 9（2 小时快照 10-19 11:53）"
+    },
+    {
+      "key": "mechanism",
+      "title": "机制验证进度",
+      "value": "1 / 10",
+      "unit": "条初步验证",
+      "status": "real",
+      "note": "打法 10 条：初步验证 1 · 待验证 3 · 有证据未标状态 6；待验证假设 8 条"
+    }
+  ],
+  "stages": [
+    {
+      "id": 1,
+      "name": "采集",
+      "owner": "大管家",
+      "rhythm": "每日",
+      "desc": "国外资讯（X）· 国内热门（抖音/小红书/知乎，只读）· 对标账号 · 痛点池 · 红线过滤"
+    },
+    {
+      "id": 2,
+      "name": "选题",
+      "owner": "大管家提案 · 章鱼哥拍板",
+      "rhythm": "每日",
+      "desc": "A/B/C 方案：目标问题、争论点、站队问题、对应机制条目"
+    },
+    {
+      "id": 3,
+      "name": "蒸馏二创",
+      "owner": "分 Bot",
+      "rhythm": "拍板后",
+      "desc": "朋友圈 / 抖音 / 视频号 / 小红书 / 公众号 各一版"
+    },
+    {
+      "id": 4,
+      "name": "审核交付",
+      "owner": "大管家验收 · 第二大脑二审",
+      "rhythm": "发布前",
+      "desc": "红线词、图片 OCR、错别字、来源；公众号草稿箱；发布包到 E 盘"
+    },
+    {
+      "id": 5,
+      "name": "发布与线上复查",
+      "owner": "章鱼哥手动发布",
+      "rhythm": "约 11:00",
+      "desc": "发布后再查一遍线上版本的红线词"
+    },
+    {
+      "id": 6,
+      "name": "数据反馈",
+      "owner": "大管家",
+      "rhythm": "2 小时 / 15:00 / 21:00 快照 · 次日日报",
+      "desc": "赞藏评转粉 对比 中位数与 2 倍线；评论区话题"
+    },
+    {
+      "id": 7,
+      "name": "复盘调整",
+      "owner": "大管家 · 第二大脑",
+      "rhythm": "每周一 9:30",
+      "desc": "本周最佳/最差；机制条目 待验证→初步验证→暂停；下周方向"
+    }
+  ],
+  "baselines": {
+    "抖音": {
+      "median": 50.5,
+      "double": 101,
+      "formula": "赞＋藏＋转",
+      "sample": "92 条全量（10-18）"
+    },
+    "视频号": {
+      "median": 9,
+      "double": 18,
+      "formula": "喜欢＋转发＋点赞",
+      "sample": "10-18 全量"
+    }
   },
-  {
-   "key": "published",
-   "title": "发布数",
-   "value": 1,
-   "unit": "个选题 · 5 个平台",
-   "status": "real",
-   "note": "10-19 论文题：抖音 09:44 · 公众号 09:46 · 视频号 · 小红书 · 朋友圈"
+  "accounts": [
+    {
+      "platform": "抖音",
+      "time": "2026-10-19 11:53",
+      "metrics": {
+        "粉丝": 2361,
+        "关注": 2255,
+        "获赞": "3.2万",
+        "作品": 97
+      },
+      "note": "与 10:20 持平；无验证码或限流提示"
+    },
+    {
+      "platform": "视频号",
+      "time": "2026-10-19 11:56",
+      "metrics": {
+        "关注者": 2109,
+        "视频": 210,
+        "昨日净增关注": 2,
+        "昨日新增播放": 1139
+      },
+      "note": "首页提示 10-07 有 1 条视频被暂时限制传播；登录正常"
+    },
+    {
+      "platform": "公众号",
+      "time": "2026-10-19 11:56",
+      "metrics": {
+        "昨日阅读": 6,
+        "昨日分享": 0,
+        "昨日新增关注": 1
+      },
+      "note": "首页统计截至 10-18"
+    }
+  ],
+  "collection": [
+    {
+      "name": "痛点第12批",
+      "count": "19 条",
+      "detail": "小红书 9 · 抖音 2 · 知乎 8；剔除重复 1 条",
+      "time": "10-19 07:11"
+    },
+    {
+      "name": "痛点第11批",
+      "count": "20 条",
+      "detail": "小红书 8 · 抖音 4 · 知乎 8；剔除 4 条（含红线或国产 AI 评论不收）",
+      "time": "10-19 01:12"
+    },
+    {
+      "name": "今日热门",
+      "count": "20 条",
+      "detail": "小红书 4 · 抖音 5 · 知乎 6 · X 资讯 5；含红线的评论只记录不采用",
+      "time": "10-19 08:20"
+    },
+    {
+      "name": "对标账号",
+      "count": "49 ＋ 7",
+      "detail": "抖音头部候选 49 个 · 低粉爆帖线索 7 条",
+      "time": "10-18"
+    },
+    {
+      "name": "痛点池累计",
+      "count": "286 条",
+      "detail": "去重后的原帖链接总数",
+      "time": "截至 10-19"
+    }
+  ],
+  "mechanisms": {
+    "updated": "2026-10-19 周复盘",
+    "hypotheses_count": 8,
+    "items": [
+      {
+        "no": 1,
+        "title": "实用技巧类容易被转发",
+        "status": "待验证"
+      },
+      {
+        "no": 2,
+        "title": "科研 + Codex 实操是历史爆款方向",
+        "status": "待验证"
+      },
+      {
+        "no": 3,
+        "title": "价格、额度类能拿曝光但互动差，此类题暂停",
+        "status": "初步验证"
+      },
+      {
+        "no": 4,
+        "title": "图文完胜视频",
+        "status": "未标注"
+      },
+      {
+        "no": 5,
+        "title": "清单/数字型标题最强",
+        "status": "未标注"
+      },
+      {
+        "no": 6,
+        "title": "号召型标题两平台都有效",
+        "status": "未标注"
+      },
+      {
+        "no": 7,
+        "title": "抖音靠收藏，视频号靠转发",
+        "status": "未标注"
+      },
+      {
+        "no": 8,
+        "title": "科研 + Codex「跑通流程/出结果」是头部打法",
+        "status": "未标注"
+      },
+      {
+        "no": 9,
+        "title": "选择题钩子能带评论，只用在科研用法上",
+        "status": "待验证"
+      },
+      {
+        "no": 10,
+        "title": "每周至少一半选题是科研或带课实操",
+        "status": "未标注"
+      }
+    ]
   },
-  {
-   "key": "above_median",
-   "title": "破中位数",
-   "value": null,
-   "unit": "条",
-   "status": "pending",
-   "note": "本周首条（抖音第88集）2 小时快照约 11:44；上周作品第87集最新 87 ＞ 中位 50.5，未到 2 倍线 101"
-  },
-  {
-   "key": "mechanism",
-   "title": "机制验证进度",
-   "value": "1 / 10",
-   "unit": "条初步验证",
-   "status": "real",
-   "note": "打法 10 条：初步验证 1 · 待验证 3 · 有证据未标状态 6；待验证假设 8 条"
-  }
- ],
- "stages": [
-  {
-   "id": 1,
-   "name": "采集",
-   "owner": "大管家",
-   "rhythm": "每日",
-   "desc": "国外资讯（X）· 国内热门（抖音/小红书/知乎，只读）· 对标账号 · 痛点池 · 红线过滤"
-  },
-  {
-   "id": 2,
-   "name": "选题",
-   "owner": "大管家提案 · 章鱼哥拍板",
-   "rhythm": "每日",
-   "desc": "A/B/C 方案：目标问题、争论点、站队问题、对应机制条目"
-  },
-  {
-   "id": 3,
-   "name": "蒸馏二创",
-   "owner": "分 Bot",
-   "rhythm": "拍板后",
-   "desc": "朋友圈 / 抖音 / 视频号 / 小红书 / 公众号 各一版"
-  },
-  {
-   "id": 4,
-   "name": "审核交付",
-   "owner": "大管家验收 · 第二大脑二审",
-   "rhythm": "发布前",
-   "desc": "红线词、图片 OCR、错别字、来源；公众号草稿箱；发布包到 E 盘"
-  },
-  {
-   "id": 5,
-   "name": "发布与线上复查",
-   "owner": "章鱼哥手动发布",
-   "rhythm": "约 11:00",
-   "desc": "发布后再查一遍线上版本的红线词"
-  },
-  {
-   "id": 6,
-   "name": "数据反馈",
-   "owner": "大管家",
-   "rhythm": "2 小时 / 15:00 / 21:00 快照 · 次日日报",
-   "desc": "赞藏评转粉 对比 中位数与 2 倍线；评论区话题"
-  },
-  {
-   "id": 7,
-   "name": "复盘调整",
-   "owner": "大管家 · 第二大脑",
-   "rhythm": "每周一 9:30",
-   "desc": "本周最佳/最差；机制条目 待验证→初步验证→暂停；下周方向"
-  }
- ],
- "baselines": {
-  "抖音": {
-   "median": 50.5,
-   "double": 101,
-   "formula": "赞＋藏＋转",
-   "sample": "92 条全量（10-18）"
-  },
-  "视频号": {
-   "median": 9,
-   "double": 18,
-   "formula": "喜欢＋转发＋点赞",
-   "sample": "10-18 全量"
-  }
- },
- "accounts": [
-  {
-   "platform": "抖音",
-   "time": "2026-10-19 10:20",
-   "metrics": {
-    "粉丝": 2361,
-    "关注": 2255,
-    "获赞": "3.2万",
-    "作品": 97
-   },
-   "note": "粉丝较昨日 -1（2362→2361）；无限流或违规提示"
-  },
-  {
-   "platform": "视频号",
-   "time": "2026-10-19 10:20",
-   "metrics": {
-    "关注者": 2109,
-    "昨日净增关注": 2,
-    "昨日新增播放": 1139
-   },
-   "note": "据大管家 10:20 快照"
-  },
-  {
-   "platform": "公众号",
-   "time": "2026-10-19 10:20",
-   "metrics": {
-    "昨日新增关注": 1
-   },
-   "note": ""
-  }
- ],
- "collection": [
-  {
-   "name": "痛点第12批",
-   "count": "19 条",
-   "detail": "小红书 9 · 抖音 2 · 知乎 8；剔除重复 1 条",
-   "time": "10-19 07:11"
-  },
-  {
-   "name": "痛点第11批",
-   "count": "20 条",
-   "detail": "小红书 8 · 抖音 4 · 知乎 8；剔除 4 条（含红线或国产 AI 评论不收）",
-   "time": "10-19 01:12"
-  },
-  {
-   "name": "今日热门",
-   "count": "20 条",
-   "detail": "小红书 4 · 抖音 5 · 知乎 6 · X 资讯 5；含红线的评论只记录不采用",
-   "time": "10-19 08:20"
-  },
-  {
-   "name": "对标账号",
-   "count": "49 ＋ 7",
-   "detail": "抖音头部候选 49 个 · 低粉爆帖线索 7 条",
-   "time": "10-18"
-  },
-  {
-   "name": "痛点池累计",
-   "count": "286 条",
-   "detail": "去重后的原帖链接总数",
-   "time": "截至 10-19"
-  }
- ],
- "mechanisms": {
-  "updated": "2026-10-19 周复盘",
-  "hypotheses_count": 8,
-  "items": [
-   {
-    "no": 1,
-    "title": "实用技巧类容易被转发",
-    "status": "待验证"
-   },
-   {
-    "no": 2,
-    "title": "科研 + Codex 实操是历史爆款方向",
-    "status": "待验证"
-   },
-   {
-    "no": 3,
-    "title": "价格、额度类能拿曝光但互动差，此类题暂停",
-    "status": "初步验证"
-   },
-   {
-    "no": 4,
-    "title": "图文完胜视频",
-    "status": "未标注"
-   },
-   {
-    "no": 5,
-    "title": "清单/数字型标题最强",
-    "status": "未标注"
-   },
-   {
-    "no": 6,
-    "title": "号召型标题两平台都有效",
-    "status": "未标注"
-   },
-   {
-    "no": 7,
-    "title": "抖音靠收藏，视频号靠转发",
-    "status": "未标注"
-   },
-   {
-    "no": 8,
-    "title": "科研 + Codex「跑通流程/出结果」是头部打法",
-    "status": "未标注"
-   },
-   {
-    "no": 9,
-    "title": "选择题钩子能带评论，只用在科研用法上",
-    "status": "待验证"
-   },
-   {
-    "no": 10,
-    "title": "每周至少一半选题是科研或带课实操",
-    "status": "未标注"
-   }
+  "topics": [
+    {
+      "id": "2026-10-19-lunwen",
+      "date": "2026-10-19",
+      "title": "写论文用 Claude 还是 ChatGPT？按 5 个阶段给你答案",
+      "stage": 6,
+      "stage_note": "2 小时快照已采（含小红书后台）；公众号线上复查未完成",
+      "source": "小红书「学术论文修改如何求助ai」赞 3343 / 藏 4184；抖音论文图文藏 508 ＞ 赞 331；知乎「物理系师生」问答",
+      "mechanism": "第 8 条 科研流程 ＋ 第 5 条 清单；验证第 9 条 选择题钩子",
+      "owners": "大管家统筹 · 分 Bot 出各平台版 · 第二大脑二审",
+      "flags": [
+        "focus"
+      ],
+      "platforms": [
+        {
+          "platform": "抖音",
+          "status": "published",
+          "time": "10-19 09:44",
+          "work": "第88集",
+          "url": "https://www.douyin.com/note/7698188943593920889"
+        },
+        {
+          "platform": "公众号",
+          "status": "published",
+          "time": "10-19 09:46",
+          "url": "https://mp.weixin.qq.com/s/gHoLTfxM6vauveH5loMCHA",
+          "note": "只保留 09:46 完整版，11:22 短版由 Jason 自行删除，只追踪完整版"
+        },
+        {
+          "platform": "视频号",
+          "status": "published",
+          "time": "10-19 11:41"
+        },
+        {
+          "platform": "小红书",
+          "status": "published",
+          "time": "10-19 09:50",
+          "note": "账号「章鱼哥说AI」，创作中心后台只读采集"
+        },
+        {
+          "platform": "朋友圈",
+          "status": "published",
+          "note": "发布时间待采集；朋友圈无后台数据"
+        }
+      ],
+      "snapshots": [
+        {
+          "slot": "other",
+          "platform": "抖音",
+          "time": "2026-10-19 10:20",
+          "elapsed": "约 35 分钟",
+          "metrics": {
+            "赞": 1,
+            "评": 0,
+            "藏": 1,
+            "转": 1,
+            "互动和": 3
+          }
+        },
+        {
+          "slot": "other",
+          "platform": "公众号",
+          "time": "2026-10-19 10:20",
+          "elapsed": "约 34 分钟",
+          "metrics": {
+            "阅读": 0,
+            "赞": 0,
+            "在看": 0,
+            "转": 0
+          }
+        },
+        {
+          "slot": "2h",
+          "platform": "抖音",
+          "time": "2026-10-19 11:53",
+          "elapsed": "约 2 小时 10 分",
+          "metrics": {
+            "赞": 2,
+            "评": 0,
+            "藏": 1,
+            "转": 1,
+            "互动和": 4
+          },
+          "note": "评论区暂无评论"
+        },
+        {
+          "slot": "2h",
+          "platform": "公众号",
+          "time": "2026-10-19 11:56",
+          "elapsed": "约 2 小时 10 分",
+          "metrics": {
+            "阅读": 0,
+            "赞": 0,
+            "评": 0,
+            "在看": 0,
+            "转": 0
+          },
+          "note": "09:46 完整版"
+        },
+        {
+          "slot": "other",
+          "platform": "视频号",
+          "time": "2026-10-19 11:56",
+          "elapsed": "约 15 分钟",
+          "metrics": {
+            "播放": 0,
+            "赞": 0,
+            "评": 0,
+            "转": 0,
+            "互动和": 0
+          },
+          "note": "实测 11:41 发布"
+        },
+        {
+          "slot": "2h",
+          "platform": "小红书",
+          "time": "2026-10-19 12:02",
+          "elapsed": "约 2 小时 10 分",
+          "metrics": {
+            "观看": 287,
+            "赞": 11,
+            "评": 0,
+            "藏": 13,
+            "转": 2,
+            "互动和": 26
+          },
+          "note": "创作中心后台；曝光、涨粉数据按天更新暂未生成"
+        },
+        {
+          "slot": "2h",
+          "platform": "朋友圈",
+          "time": "2026-10-19 11:58",
+          "elapsed": "约 2 小时",
+          "metrics": "拿不到",
+          "note": "朋友圈无后台数据"
+        }
+      ],
+      "compare": "小红书 2 小时观看 287、互动和 26，五个平台里最好；抖音 2 小时互动和 4 ＜ 中位 50.5；视频号刚发 15 分钟播放 0；公众号阅读 0",
+      "redline": {
+        "level": "check",
+        "note": "抖音线上标题正文、视频号描述复查 0 命中；公众号公开页遇微信验证页未能复查（定稿文件 0 命中）；小红书后台笔记状态正常，评论 0"
+      },
+      "blockers": [
+        "公众号线上正文未复查"
+      ]
+    },
+    {
+      "id": "2026-10-20-chatgpt-xiangmu",
+      "date": "2026-10-20",
+      "title": "ChatGPT 项目：一个课题一个项目，不用每次重说背景",
+      "stage": 4,
+      "stage_note": "朋友圈版已进发布包",
+      "source": "OpenAI 帮助中心「ChatGPT 项目」功能说明 ＋ OpenAI 官方学院教程",
+      "mechanism": "待大管家标注",
+      "owners": "分 Bot（朋友圈）· 第二大脑二审",
+      "flags": [],
+      "platforms": [
+        {
+          "platform": "朋友圈",
+          "status": "made",
+          "note": "已入发布包"
+        },
+        {
+          "platform": "抖音",
+          "status": "tbd"
+        },
+        {
+          "platform": "视频号",
+          "status": "tbd"
+        },
+        {
+          "platform": "公众号",
+          "status": "tbd"
+        },
+        {
+          "platform": "小红书",
+          "status": "tbd"
+        }
+      ],
+      "snapshots": [],
+      "compare": "未发布",
+      "redline": {
+        "level": "check",
+        "note": "扫描命中 1 个套餐档位词，待二审判定"
+      },
+      "blockers": [
+        "其他平台版本未定",
+        "等二审判定"
+      ]
+    },
+    {
+      "id": "2026-10-18-shouquan",
+      "date": "2026-10-18",
+      "title": "像管理者一样给 AI 授权：skill、AGENTS.md、任务提示词三处修改",
+      "stage": 6,
+      "stage_note": "公众号已发，次日数据已采",
+      "source": "知乎热榜第 27 位「管理者究竟该如何用好授权这杆枪？」58 万热度",
+      "mechanism": "待验证假设：改前/改后对比卡",
+      "owners": "大管家统筹 · 分 Bot 出各平台版 · 第二大脑二审",
+      "flags": [],
+      "platforms": [
+        {
+          "platform": "公众号",
+          "status": "published",
+          "time": "10-18 20:26",
+          "note": "同题另有 19:53 一版，阅读 6、其余 0"
+        },
+        {
+          "platform": "抖音",
+          "status": "made",
+          "note": "未见发布"
+        },
+        {
+          "platform": "视频号",
+          "status": "made",
+          "note": "未见发布"
+        },
+        {
+          "platform": "朋友圈",
+          "status": "pending"
+        },
+        {
+          "platform": "小红书",
+          "status": "none"
+        }
+      ],
+      "snapshots": [
+        {
+          "slot": "2h",
+          "platform": "公众号",
+          "time": "2026-10-18 21:57",
+          "elapsed": "约 2 小时",
+          "metrics": "拿不到",
+          "note": "当时后台需重新登录"
+        },
+        {
+          "slot": "other",
+          "platform": "公众号",
+          "time": "2026-10-19 10:20",
+          "elapsed": "约 14 小时",
+          "metrics": {
+            "阅读": 6,
+            "赞": 1,
+            "在看": 1,
+            "转": 0
+          },
+          "note": "20:26 版"
+        }
+      ],
+      "compare": "公众号暂无中位数基线",
+      "redline": {
+        "level": "todo",
+        "note": "线上复查待做"
+      },
+      "blockers": []
+    },
+    {
+      "id": "2026-10-18-20meiyuan",
+      "date": "2026-10-18",
+      "title": "每月20美元，三家选哪个？",
+      "stage": 6,
+      "stage_note": "7 天跟踪中（第 2 天）",
+      "source": "10-17 选题方案 A（工具选购对比）",
+      "mechanism": "第 9 条 选择题钩子（本条为证据）",
+      "owners": "大管家统筹 · 分 Bot 出各平台版 · 第二大脑二审",
+      "flags": [
+        "best"
+      ],
+      "platforms": [
+        {
+          "platform": "抖音",
+          "status": "published",
+          "time": "10-18 11:04",
+          "work": "第87集"
+        },
+        {
+          "platform": "视频号",
+          "status": "published",
+          "time": "10-18 11:17"
+        },
+        {
+          "platform": "公众号",
+          "status": "made",
+          "note": "发布情况待采集"
+        },
+        {
+          "platform": "朋友圈",
+          "status": "pending"
+        },
+        {
+          "platform": "小红书",
+          "status": "none"
+        }
+      ],
+      "snapshots": [
+        {
+          "slot": "other",
+          "platform": "视频号",
+          "time": "2026-10-18 12:30",
+          "elapsed": "约 1 小时",
+          "metrics": {
+            "播放": 183,
+            "转": 2
+          }
+        },
+        {
+          "slot": "21:00",
+          "platform": "抖音",
+          "time": "2026-10-18 21:18",
+          "elapsed": "约 10 小时",
+          "metrics": {
+            "赞": 51,
+            "评": 11,
+            "藏": 19,
+            "转": 5,
+            "互动和": 75
+          }
+        },
+        {
+          "slot": "21:00",
+          "platform": "视频号",
+          "time": "2026-10-18 21:18",
+          "elapsed": "约 10 小时",
+          "metrics": {
+            "播放": 850,
+            "赞": 3,
+            "转": 6,
+            "关注": 1,
+            "互动和": 9
+          },
+          "note": "平均播放时长 9.31 秒"
+        },
+        {
+          "slot": "24h",
+          "platform": "抖音",
+          "time": "2026-10-19 10:20",
+          "elapsed": "约 23 小时",
+          "metrics": {
+            "赞": 57,
+            "评": 16,
+            "藏": 24,
+            "转": 6,
+            "互动和": 87
+          }
+        },
+        {
+          "slot": "other",
+          "platform": "抖音",
+          "time": "2026-10-19 11:53",
+          "elapsed": "约 25 小时",
+          "metrics": {
+            "赞": 57,
+            "评": 14,
+            "藏": 25,
+            "转": 6,
+            "互动和": 88
+          },
+          "note": "评论数 16 降到 14"
+        },
+        {
+          "slot": "other",
+          "platform": "视频号",
+          "time": "2026-10-19 11:56",
+          "elapsed": "约 25 小时",
+          "metrics": {
+            "播放": 1236,
+            "赞": 4,
+            "评": 0,
+            "转": 7,
+            "互动和": 11
+          }
+        }
+      ],
+      "compare": "抖音 88 ＞ 中位 50.5（未到 2 倍线 101）；视频号 11 ＞ 中位 9（未到 18）",
+      "redline": {
+        "level": "check",
+        "note": "评论区原有 3 条违规广告类评论，已有 2 条不见，剩 1 条仍在，无新增同类；视频号线上文案待人工核对"
+      },
+      "blockers": [
+        "评论区仍有 1 条违规广告类评论，待 Jason 本人处理",
+        "视频号线上文案待人工核对"
+      ]
+    },
+    {
+      "id": "2026-10-17-yuantishici",
+      "date": "2026-10-17",
+      "title": "Anthropic 工程师的一句提示词（元提示词）",
+      "stage": 7,
+      "stage_note": "已复盘：本周转发率最好",
+      "source": "Felix Rieseberg 公开教程",
+      "mechanism": "第 1 条 实用技巧易转发（本条为证据）",
+      "owners": "大管家统筹 · 分 Bot 出各平台版 · 第二大脑二审",
+      "flags": [],
+      "platforms": [
+        {
+          "platform": "抖音",
+          "status": "published",
+          "time": "10-17 11:59",
+          "work": "第86集"
+        },
+        {
+          "platform": "视频号",
+          "status": "published",
+          "time": "10-17 12:02"
+        },
+        {
+          "platform": "公众号",
+          "status": "made",
+          "note": "发布情况待采集"
+        },
+        {
+          "platform": "朋友圈",
+          "status": "made",
+          "note": "发布情况待采集"
+        },
+        {
+          "platform": "小红书",
+          "status": "none"
+        }
+      ],
+      "snapshots": [
+        {
+          "slot": "21:00",
+          "platform": "抖音",
+          "time": "2026-10-17 21:05",
+          "elapsed": "约 9 小时",
+          "metrics": {
+            "赞": 5,
+            "评": 0,
+            "藏": 3,
+            "转": 1
+          }
+        },
+        {
+          "slot": "24h",
+          "platform": "视频号",
+          "time": "2026-10-18 12:30",
+          "elapsed": "约 24 小时",
+          "metrics": {
+            "播放": 271,
+            "转": 8,
+            "关注": 1
+          }
+        },
+        {
+          "slot": "other",
+          "platform": "视频号",
+          "time": "2026-10-18 21:18",
+          "elapsed": "约 33 小时",
+          "metrics": {
+            "播放": 286,
+            "赞": 1,
+            "转": 10,
+            "关注": 1,
+            "互动和": 11
+          },
+          "note": "平均播放时长 6.71 秒"
+        },
+        {
+          "slot": "other",
+          "platform": "抖音",
+          "time": "2026-10-19 10:20",
+          "elapsed": "约 46 小时",
+          "metrics": {
+            "赞": 14,
+            "评": 0,
+            "藏": 6,
+            "转": 2,
+            "互动和": 22
+          }
+        },
+        {
+          "slot": "other",
+          "platform": "视频号",
+          "time": "2026-10-19 11:56",
+          "elapsed": "约 48 小时",
+          "metrics": {
+            "播放": 292,
+            "赞": 1,
+            "评": 0,
+            "转": 10,
+            "互动和": 11
+          }
+        }
+      ],
+      "compare": "抖音 22 ＜ 中位 50.5；视频号 11 ＞ 中位 9（未到 18）",
+      "redline": {
+        "level": "check",
+        "note": "视频号线上文案疑似含违禁词，待人工核对"
+      },
+      "blockers": [
+        "视频号线上文案待核对"
+      ]
+    },
+    {
+      "id": "2026-10-16-edu",
+      "date": "2026-10-16",
+      "title": "额度焦虑？3 步治好！",
+      "stage": 7,
+      "stage_note": "已复盘：机制第 3 条升为初步验证，此类题暂停",
+      "source": "X 资讯「Tibo 全员重置额度」",
+      "mechanism": "第 3 条 价格/额度类互动差（本条为反例证据）",
+      "owners": "大管家统筹 · 分 Bot 出各平台版 · 第二大脑二审",
+      "flags": [
+        "worst"
+      ],
+      "platforms": [
+        {
+          "platform": "抖音",
+          "status": "published",
+          "time": "10-16 18:09",
+          "work": "第85集"
+        },
+        {
+          "platform": "视频号",
+          "status": "published",
+          "time": "10-16 23:37"
+        },
+        {
+          "platform": "公众号",
+          "status": "pending"
+        },
+        {
+          "platform": "朋友圈",
+          "status": "pending"
+        },
+        {
+          "platform": "小红书",
+          "status": "none"
+        }
+      ],
+      "snapshots": [
+        {
+          "slot": "other",
+          "platform": "抖音",
+          "time": "2026-10-17 21:05",
+          "elapsed": "约 27 小时",
+          "metrics": {
+            "赞": 4,
+            "评": 0,
+            "藏": 0,
+            "转": 0
+          }
+        },
+        {
+          "slot": "other",
+          "platform": "视频号",
+          "time": "2026-10-18 21:18",
+          "elapsed": "约 46 小时",
+          "metrics": {
+            "播放": 1554,
+            "赞": 2,
+            "转": 0,
+            "互动和": 2
+          },
+          "note": "平均播放时长 10.13 秒"
+        },
+        {
+          "slot": "other",
+          "platform": "抖音",
+          "time": "2026-10-19 10:20",
+          "elapsed": "约 64 小时",
+          "metrics": {
+            "赞": 5,
+            "评": 0,
+            "藏": 1,
+            "转": 0,
+            "互动和": 6
+          }
+        },
+        {
+          "slot": "other",
+          "platform": "视频号",
+          "time": "2026-10-19 11:56",
+          "elapsed": "约 60 小时",
+          "metrics": {
+            "播放": 1573,
+            "赞": 2,
+            "评": 0,
+            "转": 0,
+            "互动和": 2
+          }
+        }
+      ],
+      "compare": "抖音 6 ＜ 中位 50.5；视频号 2 ＜ 中位 9",
+      "redline": {
+        "level": "hit",
+        "note": "抖音线上正文命中 3 个红线词；视频号文案疑似，待核对"
+      },
+      "blockers": [
+        "线上正文待改为「建议走官方渠道订阅」"
+      ]
+    },
+    {
+      "id": "2026-10-19-plan-b",
+      "date": "2026-10-19",
+      "title": "Codex 和 ChatGPT 到底什么关系？一张图讲清谁该打开哪个",
+      "stage": 2,
+      "stage_note": "备选 · 未拍板",
+      "source": "抖音第87集评论区追问；知乎机器之心两篇；痛点第 8、12 批",
+      "mechanism": "新尝试（概念科普，图文）",
+      "owners": "大管家提案",
+      "flags": [],
+      "platforms": [],
+      "snapshots": [],
+      "compare": "—",
+      "redline": {
+        "level": "pass",
+        "note": "方案自查：不涉及价格、订阅、账号"
+      },
+      "blockers": [
+        "等章鱼哥拍板"
+      ]
+    },
+    {
+      "id": "2026-10-19-plan-c",
+      "date": "2026-10-19",
+      "title": "Codex 能替代 SPSS 和 R 吗？统计交给它之前先做 3 步核对",
+      "stage": 2,
+      "stage_note": "备选 · 本周备用",
+      "source": "痛点第 12 批抖音「建议所有硕士博士…」赞 4.4 万；国外 Claude 量子电路研究",
+      "mechanism": "第 8 条 科研＋Codex 跑通流程",
+      "owners": "大管家提案",
+      "flags": [],
+      "platforms": [],
+      "snapshots": [],
+      "compare": "—",
+      "redline": {
+        "level": "pass",
+        "note": "方案自查：不涉及价格、订阅、账号"
+      },
+      "blockers": [
+        "等章鱼哥拍板"
+      ]
+    }
   ]
- },
- "topics": [
-  {
-   "id": "2026-10-19-lunwen",
-   "date": "2026-10-19",
-   "title": "写论文用 Claude 还是 ChatGPT？按 5 个阶段给你答案",
-   "stage": 5,
-   "stage_note": "5 个平台已发布；首个快照已采，线上红线复查待做",
-   "source": "小红书「学术论文修改如何求助ai」赞 3343 / 藏 4184；抖音论文图文藏 508 ＞ 赞 331；知乎「物理系师生」问答",
-   "mechanism": "第 8 条 科研流程 ＋ 第 5 条 清单；验证第 9 条 选择题钩子",
-   "owners": "大管家统筹 · 分 Bot 出各平台版 · 第二大脑二审",
-   "flags": [
-    "focus"
-   ],
-   "platforms": [
-    {
-     "platform": "抖音",
-     "status": "published",
-     "time": "09:44",
-     "work": "第88集",
-     "url": "https://www.douyin.com/note/7698188943593920889"
-    },
-    {
-     "platform": "公众号",
-     "status": "published",
-     "time": "09:46"
-    },
-    {
-     "platform": "视频号",
-     "status": "published",
-     "note": "发布时间待采集"
-    },
-    {
-     "platform": "小红书",
-     "status": "published",
-     "note": "10-19 恢复更新；发布时间待采集"
-    },
-    {
-     "platform": "朋友圈",
-     "status": "published",
-     "note": "发布时间待采集"
-    }
-   ],
-   "snapshots": [
-    {
-     "slot": "other",
-     "platform": "抖音",
-     "time": "2026-10-19 10:20",
-     "elapsed": "约 35 分钟",
-     "metrics": {
-      "赞": 1,
-      "评": 0,
-      "藏": 1,
-      "转": 1,
-      "互动和": 3
-     }
-    },
-    {
-     "slot": "other",
-     "platform": "公众号",
-     "time": "2026-10-19 10:20",
-     "elapsed": "约 34 分钟",
-     "metrics": {
-      "阅读": 0,
-      "赞": 0,
-      "在看": 0,
-      "转": 0
-     }
-    }
-   ],
-   "compare": "待采集（等 2 小时快照）",
-   "redline": {
-    "level": "todo",
-    "note": "二审 36 个词，文本＋图片 OCR 0 命中（10-19 09:03）；发布后线上复查待做"
-   },
-   "blockers": [
-    "发布后线上红线复查未做"
-   ]
-  },
-  {
-   "id": "2026-10-20-chatgpt-xiangmu",
-   "date": "2026-10-20",
-   "title": "ChatGPT 项目：一个课题一个项目，不用每次重说背景",
-   "stage": 4,
-   "stage_note": "朋友圈版已进发布包",
-   "source": "OpenAI 帮助中心「ChatGPT 项目」功能说明 ＋ OpenAI 官方学院教程",
-   "mechanism": "待大管家标注",
-   "owners": "分 Bot（朋友圈）· 第二大脑二审",
-   "flags": [],
-   "platforms": [
-    {
-     "platform": "朋友圈",
-     "status": "made",
-     "note": "已入发布包"
-    },
-    {
-     "platform": "抖音",
-     "status": "tbd"
-    },
-    {
-     "platform": "视频号",
-     "status": "tbd"
-    },
-    {
-     "platform": "公众号",
-     "status": "tbd"
-    },
-    {
-     "platform": "小红书",
-     "status": "tbd"
-    }
-   ],
-   "snapshots": [],
-   "compare": "未发布",
-   "redline": {
-    "level": "check",
-    "note": "扫描命中 1 个套餐档位词，待二审判定"
-   },
-   "blockers": [
-    "其他平台版本未定",
-    "等二审判定"
-   ]
-  },
-  {
-   "id": "2026-10-18-shouquan",
-   "date": "2026-10-18",
-   "title": "像管理者一样给 AI 授权：skill、AGENTS.md、任务提示词三处修改",
-   "stage": 6,
-   "stage_note": "公众号已发，次日数据已采",
-   "source": "知乎热榜第 27 位「管理者究竟该如何用好授权这杆枪？」58 万热度",
-   "mechanism": "待验证假设：改前/改后对比卡",
-   "owners": "大管家统筹 · 分 Bot 出各平台版 · 第二大脑二审",
-   "flags": [],
-   "platforms": [
-    {
-     "platform": "公众号",
-     "status": "published",
-     "time": "10-18 20:26",
-     "note": "同题另有 19:53 一版，阅读 6、其余 0"
-    },
-    {
-     "platform": "抖音",
-     "status": "made",
-     "note": "未见发布"
-    },
-    {
-     "platform": "视频号",
-     "status": "made",
-     "note": "未见发布"
-    },
-    {
-     "platform": "朋友圈",
-     "status": "pending"
-    },
-    {
-     "platform": "小红书",
-     "status": "none"
-    }
-   ],
-   "snapshots": [
-    {
-     "slot": "2h",
-     "platform": "公众号",
-     "time": "2026-10-18 21:57",
-     "elapsed": "约 2 小时",
-     "metrics": "拿不到",
-     "note": "当时后台需重新登录"
-    },
-    {
-     "slot": "other",
-     "platform": "公众号",
-     "time": "2026-10-19 10:20",
-     "elapsed": "约 14 小时",
-     "metrics": {
-      "阅读": 6,
-      "赞": 1,
-      "在看": 1,
-      "转": 0
-     },
-     "note": "20:26 版"
-    }
-   ],
-   "compare": "公众号暂无中位数基线",
-   "redline": {
-    "level": "todo",
-    "note": "线上复查待做"
-   },
-   "blockers": []
-  },
-  {
-   "id": "2026-10-18-20meiyuan",
-   "date": "2026-10-18",
-   "title": "每月20美元，三家选哪个？",
-   "stage": 6,
-   "stage_note": "7 天跟踪中（第 2 天）",
-   "source": "10-17 选题方案 A（工具选购对比）",
-   "mechanism": "第 9 条 选择题钩子（本条为证据）",
-   "owners": "大管家统筹 · 分 Bot 出各平台版 · 第二大脑二审",
-   "flags": [
-    "best"
-   ],
-   "platforms": [
-    {
-     "platform": "抖音",
-     "status": "published",
-     "time": "10-18 11:04",
-     "work": "第87集"
-    },
-    {
-     "platform": "视频号",
-     "status": "published",
-     "time": "10-18 11:17"
-    },
-    {
-     "platform": "公众号",
-     "status": "made",
-     "note": "发布情况待采集"
-    },
-    {
-     "platform": "朋友圈",
-     "status": "pending"
-    },
-    {
-     "platform": "小红书",
-     "status": "none"
-    }
-   ],
-   "snapshots": [
-    {
-     "slot": "other",
-     "platform": "视频号",
-     "time": "2026-10-18 12:30",
-     "elapsed": "约 1 小时",
-     "metrics": {
-      "播放": 183,
-      "转": 2
-     }
-    },
-    {
-     "slot": "21:00",
-     "platform": "抖音",
-     "time": "2026-10-18 21:18",
-     "elapsed": "约 10 小时",
-     "metrics": {
-      "赞": 51,
-      "评": 11,
-      "藏": 19,
-      "转": 5,
-      "互动和": 75
-     }
-    },
-    {
-     "slot": "21:00",
-     "platform": "视频号",
-     "time": "2026-10-18 21:18",
-     "elapsed": "约 10 小时",
-     "metrics": {
-      "播放": 850,
-      "赞": 3,
-      "转": 6,
-      "关注": 1,
-      "互动和": 9
-     },
-     "note": "平均播放时长 9.31 秒"
-    },
-    {
-     "slot": "24h",
-     "platform": "抖音",
-     "time": "2026-10-19 10:20",
-     "elapsed": "约 23 小时",
-     "metrics": {
-      "赞": 57,
-      "评": 16,
-      "藏": 24,
-      "转": 6,
-      "互动和": 87
-     }
-    }
-   ],
-   "compare": "抖音 87 ＞ 中位 50.5（未到 2 倍线 101）；视频号 9 ＝ 中位 9",
-   "redline": {
-    "level": "check",
-    "note": "评论区出现违规广告类评论；视频号线上文案疑似含违禁词，待人工核对"
-   },
-   "blockers": [
-    "评论区出现违规广告类评论，待 Jason 本人处理",
-    "视频号线上文案待人工核对"
-   ]
-  },
-  {
-   "id": "2026-10-17-yuantishici",
-   "date": "2026-10-17",
-   "title": "Anthropic 工程师的一句提示词（元提示词）",
-   "stage": 7,
-   "stage_note": "已复盘：本周转发率最好",
-   "source": "Felix Rieseberg 公开教程",
-   "mechanism": "第 1 条 实用技巧易转发（本条为证据）",
-   "owners": "大管家统筹 · 分 Bot 出各平台版 · 第二大脑二审",
-   "flags": [],
-   "platforms": [
-    {
-     "platform": "抖音",
-     "status": "published",
-     "time": "10-17 11:59",
-     "work": "第86集"
-    },
-    {
-     "platform": "视频号",
-     "status": "published",
-     "time": "10-17 12:02"
-    },
-    {
-     "platform": "公众号",
-     "status": "made",
-     "note": "发布情况待采集"
-    },
-    {
-     "platform": "朋友圈",
-     "status": "made",
-     "note": "发布情况待采集"
-    },
-    {
-     "platform": "小红书",
-     "status": "none"
-    }
-   ],
-   "snapshots": [
-    {
-     "slot": "21:00",
-     "platform": "抖音",
-     "time": "2026-10-17 21:05",
-     "elapsed": "约 9 小时",
-     "metrics": {
-      "赞": 5,
-      "评": 0,
-      "藏": 3,
-      "转": 1
-     }
-    },
-    {
-     "slot": "24h",
-     "platform": "视频号",
-     "time": "2026-10-18 12:30",
-     "elapsed": "约 24 小时",
-     "metrics": {
-      "播放": 271,
-      "转": 8,
-      "关注": 1
-     }
-    },
-    {
-     "slot": "other",
-     "platform": "视频号",
-     "time": "2026-10-18 21:18",
-     "elapsed": "约 33 小时",
-     "metrics": {
-      "播放": 286,
-      "赞": 1,
-      "转": 10,
-      "关注": 1,
-      "互动和": 11
-     },
-     "note": "平均播放时长 6.71 秒"
-    },
-    {
-     "slot": "other",
-     "platform": "抖音",
-     "time": "2026-10-19 10:20",
-     "elapsed": "约 46 小时",
-     "metrics": {
-      "赞": 14,
-      "评": 0,
-      "藏": 6,
-      "转": 2,
-      "互动和": 22
-     }
-    }
-   ],
-   "compare": "抖音 22 ＜ 中位 50.5；视频号 11 ＞ 中位 9（未到 18）",
-   "redline": {
-    "level": "check",
-    "note": "视频号线上文案疑似含违禁词，待人工核对"
-   },
-   "blockers": [
-    "视频号线上文案待核对"
-   ]
-  },
-  {
-   "id": "2026-10-16-edu",
-   "date": "2026-10-16",
-   "title": "额度焦虑？3 步治好！",
-   "stage": 7,
-   "stage_note": "已复盘：机制第 3 条升为初步验证，此类题暂停",
-   "source": "X 资讯「Tibo 全员重置额度」",
-   "mechanism": "第 3 条 价格/额度类互动差（本条为反例证据）",
-   "owners": "大管家统筹 · 分 Bot 出各平台版 · 第二大脑二审",
-   "flags": [
-    "worst"
-   ],
-   "platforms": [
-    {
-     "platform": "抖音",
-     "status": "published",
-     "time": "10-16 18:09",
-     "work": "第85集"
-    },
-    {
-     "platform": "视频号",
-     "status": "published",
-     "time": "10-16 23:37"
-    },
-    {
-     "platform": "公众号",
-     "status": "pending"
-    },
-    {
-     "platform": "朋友圈",
-     "status": "pending"
-    },
-    {
-     "platform": "小红书",
-     "status": "none"
-    }
-   ],
-   "snapshots": [
-    {
-     "slot": "other",
-     "platform": "抖音",
-     "time": "2026-10-17 21:05",
-     "elapsed": "约 27 小时",
-     "metrics": {
-      "赞": 4,
-      "评": 0,
-      "藏": 0,
-      "转": 0
-     }
-    },
-    {
-     "slot": "other",
-     "platform": "视频号",
-     "time": "2026-10-18 21:18",
-     "elapsed": "约 46 小时",
-     "metrics": {
-      "播放": 1554,
-      "赞": 2,
-      "转": 0,
-      "互动和": 2
-     },
-     "note": "平均播放时长 10.13 秒"
-    },
-    {
-     "slot": "other",
-     "platform": "抖音",
-     "time": "2026-10-19 10:20",
-     "elapsed": "约 64 小时",
-     "metrics": {
-      "赞": 5,
-      "评": 0,
-      "藏": 1,
-      "转": 0,
-      "互动和": 6
-     }
-    }
-   ],
-   "compare": "抖音 6 ＜ 中位 50.5；视频号 2 ＜ 中位 9",
-   "redline": {
-    "level": "hit",
-    "note": "抖音线上正文命中 3 个红线词；视频号文案疑似，待核对"
-   },
-   "blockers": [
-    "线上正文待改为「建议走官方渠道订阅」"
-   ]
-  },
-  {
-   "id": "2026-10-19-plan-b",
-   "date": "2026-10-19",
-   "title": "Codex 和 ChatGPT 到底什么关系？一张图讲清谁该打开哪个",
-   "stage": 2,
-   "stage_note": "备选 · 未拍板",
-   "source": "抖音第87集评论区追问；知乎机器之心两篇；痛点第 8、12 批",
-   "mechanism": "新尝试（概念科普，图文）",
-   "owners": "大管家提案",
-   "flags": [],
-   "platforms": [],
-   "snapshots": [],
-   "compare": "—",
-   "redline": {
-    "level": "pass",
-    "note": "方案自查：不涉及价格、订阅、账号"
-   },
-   "blockers": [
-    "等章鱼哥拍板"
-   ]
-  },
-  {
-   "id": "2026-10-19-plan-c",
-   "date": "2026-10-19",
-   "title": "Codex 能替代 SPSS 和 R 吗？统计交给它之前先做 3 步核对",
-   "stage": 2,
-   "stage_note": "备选 · 本周备用",
-   "source": "痛点第 12 批抖音「建议所有硕士博士…」赞 4.4 万；国外 Claude 量子电路研究",
-   "mechanism": "第 8 条 科研＋Codex 跑通流程",
-   "owners": "大管家提案",
-   "flags": [],
-   "platforms": [],
-   "snapshots": [],
-   "compare": "—",
-   "redline": {
-    "level": "pass",
-    "note": "方案自查：不涉及价格、订阅、账号"
-   },
-   "blockers": [
-    "等章鱼哥拍板"
-   ]
-  }
- ]
 }
