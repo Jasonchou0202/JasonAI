@@ -235,36 +235,78 @@ label small {
   font-size: var(--fs-1);
   color: var(--text-3);
   letter-spacing: 1px;
-  margin: 51px 16px 16px;
+  margin: 28px 8px 8px;
 }
 .sidebar nav {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 4px;
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  margin-right: -8px;
+  padding-right: 8px;
 }
-.sidebar nav button {
+.nav-summary {
   display: flex;
   align-items: center;
-  gap: 12px;
+  justify-content: space-between;
+  width: 100%;
+  gap: 8px;
   text-align: left;
-  padding: 13px 16px;
+  padding: 10px 12px;
+  background: transparent;
+  color: var(--text-1);
+  border-radius: var(--radius-m);
+  font-size: var(--fs-2);
+  font-weight: 700;
+}
+.nav-summary:hover {
+  background: var(--surface-muted);
+}
+.nav-chevron {
+  color: var(--text-3);
+  transition: transform 0.16s;
+}
+.nav-summary[aria-expanded="true"] .nav-chevron {
+  transform: rotate(180deg);
+}
+.nav-sub {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 0 0 6px 6px;
+}
+.nav-sub button,
+.nav-sub a {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  text-align: left;
+  text-decoration: none;
+  padding: 9px 12px;
   background: transparent;
   color: var(--text-3);
   border-radius: var(--radius-m);
   font-size: var(--fs-2);
   font-weight: 500;
 }
-.sidebar nav button:hover {
+.nav-sub button:hover,
+.nav-sub a:hover {
   background: var(--surface-muted);
+  color: var(--text-2);
 }
-.sidebar nav button.active {
+.nav-sub button.active,
+.nav-sub a.active {
   background: var(--mint-soft);
   color: var(--green);
   font-weight: 700;
 }
 .sidebar-bottom {
-  margin-top: auto;
-  padding-top: 50px;
+  margin-top: 8px;
+  padding-top: 8px;
+  flex-shrink: 0;
 }
 .sidebar-note {
   border: 1px solid var(--line);
@@ -306,24 +348,7 @@ label small {
   background: var(--surface-muted);
   color: var(--green);
 }
-.board-entry {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  color: var(--text-3);
-  text-decoration: none;
-  padding: 12px 14px;
-  font-size: var(--fs-1);
-  font-weight: 500;
-  margin-bottom: 8px;
-  width: 100%;
-  border-radius: var(--radius-m);
-}
-.board-entry:hover {
-  background: var(--surface-muted);
-  color: var(--green);
-}
-.board-entry-footer {
+.footer-workspace {
   display: none;
 }
 .account {
@@ -1217,6 +1242,7 @@ label small {
   font-size: var(--fs-2);
   max-width: 90vw;
 }
+.mobile-dock,
 .mobile-nav {
   display: none;
 }
@@ -2208,15 +2234,35 @@ label small {
   .mobile-settings {
     display: flex;
   }
+  .footer-workspace {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    gap: 2px;
+    margin-top: 10px;
+  }
   .app-footer {
     flex-wrap: wrap;
     gap: 6px 14px;
   }
-  .board-entry-footer {
-    display: inline-flex;
-    width: auto;
-    margin: 0;
-    padding: 6px 0;
+  .mobile-dock {
+    display: block;
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 50;
+  }
+  .mobile-sheet {
+    background: #fffffff2;
+    border-top: 1px solid var(--line);
+    backdrop-filter: blur(12px);
+    padding: 8px 12px 2px;
+    max-height: 46vh;
+    overflow: auto;
+  }
+  .mobile-sheet[hidden] {
+    display: none;
   }
   .main-content {
     padding-bottom: 88px;
@@ -2410,16 +2456,12 @@ label small {
     padding: 23px 0 10px;
   }
   .mobile-nav {
-    position: fixed;
+    position: static;
     display: flex;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    z-index: 50;
     background: #fffffff2;
     border-top: 1px solid var(--line);
     backdrop-filter: blur(12px);
-    padding: 9px 35px calc(8px + env(safe-area-inset-bottom));
+    padding: 8px 10px calc(8px + env(safe-area-inset-bottom));
     align-items: flex-end;
     justify-content: space-between;
   }

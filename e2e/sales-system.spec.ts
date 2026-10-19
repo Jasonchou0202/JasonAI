@@ -476,7 +476,7 @@ test("375px navigation, period controls and unsaved draft survive an offline ref
   await page.setViewportSize({ width: 375, height: 812 });
   await expect(
     page.getByRole("navigation", { name: "手机导航" }).getByRole("button"),
-  ).toHaveCount(4);
+  ).toHaveCount(3);
   await ranking(page).getByRole("tab", { name: "半年", exact: true }).click();
   await expect(ranking(page)).toContainText("下半年");
   expect(
@@ -1102,22 +1102,43 @@ test.describe("first screen on a 1280×800 laptop", () => {
     expect(box.y + box.height).toBeLessThanOrEqual(800);
   });
 });
-test("content board entry opens the static page outside the sales shell", async ({
+test("workspace categories expand, and the content board keeps the same nav", async ({
   page,
 }) => {
-  const entry = page.getByRole("link", { name: "内容闭环看板" });
-  await expect(entry).toHaveCount(1);
+  const side = page.getByRole("navigation", { name: "主要导航" });
+  await expect(side.getByRole("button", { name: "生意看板" })).toHaveAttribute(
+    "aria-current",
+    "page",
+  );
+  await expect(side.getByRole("link", { name: "内容闭环看板" })).toHaveCount(0);
+  await side.getByRole("button", { name: "内容生产板块" }).click();
+  const entry = side.getByRole("link", { name: "内容闭环看板" });
   await expect(entry).toHaveAttribute("href", "/JasonAI/board-e160b241a233/");
-  await expect(entry).toHaveAttribute("target", "_blank");
-  const popupPromise = page.waitForEvent("popup");
+  await expect(side.getByRole("link", { name: "七段流水线" })).toHaveAttribute(
+    "href",
+    "/JasonAI/board-e160b241a233/#stages",
+  );
   await entry.click();
-  const popup = await popupPromise;
-  await popup.waitForLoadState("domcontentloaded");
-  await expect(popup).toHaveURL(/\/JasonAI\/board-e160b241a233\/?$/);
-  await expect(popup).toHaveTitle(/内容闭环看板/);
-  await expect(page).toHaveURL(/#\/dashboard/);
+  await expect(page).toHaveURL(/\/JasonAI\/board-e160b241a233\/?$/);
+  await expect(page).toHaveTitle(/内容闭环看板/);
+  const boardNav = page.getByRole("navigation", { name: "主要导航" });
+  await expect(boardNav.getByRole("link", { name: "内容闭环看板" })).toHaveClass(
+    /active/,
+  );
+  await boardNav.getByRole("button", { name: "销售板块" }).click();
+  await expect(boardNav.getByRole("link", { name: "生意看板" })).toHaveAttribute(
+    "href",
+    "/JasonAI/#/dashboard",
+  );
+  await page.goto("./#/dashboard");
   await page.setViewportSize({ width: 375, height: 812 });
+  const mobile = page.getByRole("navigation", { name: "手机导航" });
+  await mobile.getByRole("button", { name: "内容生产" }).click();
   await expect(page.getByRole("link", { name: "内容闭环看板" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "机制验证" })).toHaveAttribute(
+    "href",
+    /#mechanisms$/,
+  );
 });
 test.describe("first screen on a phone", () => {
   test.use({

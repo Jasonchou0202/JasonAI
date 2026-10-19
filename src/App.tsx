@@ -14,6 +14,7 @@ import {
   RefreshCw,
   CalendarDays,
   ArrowUpRight,
+  ChevronDown,
 } from "lucide-react";
 import { Dashboard } from "./components/Dashboard";
 import { SaleForm } from "./components/SaleForm";
@@ -45,17 +46,104 @@ const CustomerDetails = lazy(() =>
 );
 type Page =
   "dashboard" | "entry" | "details" | "settings" | "calendar" | "customer";
-function ContentBoardLink({ className = "" }: { className?: string }) {
+const BOARD = import.meta.env.BASE_URL + "board-e160b241a233/";
+const CONTENT_LINKS = [
+  [BOARD, "内容闭环看板"],
+  [BOARD + "#stages", "七段流水线"],
+  [BOARD + "#topics", "选题流水线"],
+  [BOARD + "#mechanisms", "机制验证"],
+] as const;
+function salesCurrent(page: Page, id: Page) {
+  if (id === "calendar") return page === "calendar" || page === "customer";
+  return page === id;
+}
+function SalesLinks({
+  page,
+  onOpen,
+}: {
+  page: Page;
+  onOpen: (id: Page) => void;
+}) {
+  const items: { id: Page; label: string; icon: typeof Plus }[] = [
+    { id: "dashboard", label: "生意看板", icon: LayoutDashboard },
+    { id: "entry", label: "记一笔", icon: Plus },
+    { id: "details", label: "销售明细", icon: ReceiptText },
+    { id: "calendar", label: "客户日程", icon: CalendarDays },
+    { id: "settings", label: "账本设置", icon: SettingsIcon },
+  ];
   return (
-    <a
-      className={`board-entry ${className}`.trim()}
-      href={`${import.meta.env.BASE_URL}board-e160b241a233/`}
-      target="_blank"
-      rel="noopener noreferrer"
-    >
-      <ArrowUpRight size={16} aria-hidden="true" />
-      内容闭环看板
-    </a>
+    <div className="nav-sub">
+      {items.map((item) => {
+        const Icon = item.icon;
+        const active = salesCurrent(page, item.id);
+        return (
+          <button
+            key={item.id}
+            type="button"
+            className={active ? "active" : ""}
+            aria-current={active ? "page" : undefined}
+            onClick={() => onOpen(item.id)}
+          >
+            <Icon size={18} aria-hidden="true" />
+            {item.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+function ContentLinks() {
+  return (
+    <div className="nav-sub">
+      {CONTENT_LINKS.map(([href, label]) => (
+        <a key={href} href={href}>
+          <ArrowUpRight size={16} aria-hidden="true" />
+          {label}
+        </a>
+      ))}
+    </div>
+  );
+}
+function NavGroups({
+  page,
+  onOpen,
+  salesOpen,
+  contentOpen,
+  onToggle,
+}: {
+  page: Page;
+  onOpen: (id: Page) => void;
+  salesOpen: boolean;
+  contentOpen: boolean;
+  onToggle: (group: "sales" | "content") => void;
+}) {
+  return (
+    <>
+      <div className="nav-group">
+        <button
+          type="button"
+          className="nav-summary"
+          aria-expanded={salesOpen}
+          onClick={() => onToggle("sales")}
+        >
+          销售板块
+          <ChevronDown className="nav-chevron" size={16} aria-hidden="true" />
+        </button>
+        {salesOpen && <SalesLinks page={page} onOpen={onOpen} />}
+      </div>
+      <div className="nav-group">
+        <button
+          type="button"
+          className="nav-summary"
+          aria-expanded={contentOpen}
+          onClick={() => onToggle("content")}
+        >
+          内容生产板块
+          <ChevronDown className="nav-chevron" size={16} aria-hidden="true" />
+        </button>
+        {contentOpen && <ContentLinks />}
+      </div>
+    </>
   );
 }
 function readRoute(): Page {
@@ -77,6 +165,11 @@ export default function App() {
   const [error, setError] = useState("");
   const [online, setOnline] = useState(navigator.onLine);
   const [loginBusy, setLoginBusy] = useState(false);
+  const [salesOpen, setSalesOpen] = useState(true);
+  const [contentOpen, setContentOpen] = useState(false);
+  const [mobileSheet, setMobileSheet] = useState<null | "sales" | "content">(
+    null,
+  );
   useEffect(() => {
     let alive = true;
     session()
@@ -180,6 +273,19 @@ export default function App() {
   function go(p: Page, q = "") {
     location.hash = "/" + p + (q ? "?" + q : "");
     setPage(p);
+    setSalesOpen(true);
+    setMobileSheet(null);
+  }
+  function toggleGroup(group: "sales" | "content") {
+    if (group === "sales") setSalesOpen((v) => !v);
+    else setContentOpen((v) => !v);
+  }
+  function openSalesItem(id: Page) {
+    if (id === "entry") newSale();
+    else if (id === "details") {
+      setFilters({});
+      go("details");
+    } else go(id);
   }
   function changed(s: string) {
     setVersion((v) => v + 1);
@@ -340,39 +446,13 @@ export default function App() {
         <Brand />
         <div className="workspace-label">我的工作台</div>
         <nav aria-label="主要导航">
-          <button
-            className={page === "dashboard" ? "active" : ""}
-            onClick={() => go("dashboard")}
-          >
-            <LayoutDashboard size={19} />
-            生意看板
-          </button>
-          <button
-            className={page === "entry" ? "active" : ""}
-            onClick={newSale}
-          >
-            <Plus size={19} />
-            记一笔
-          </button>
-          <button
-            className={page === "details" ? "active" : ""}
-            onClick={() => {
-              setFilters({});
-              go("details");
-            }}
-          >
-            <ReceiptText size={19} />
-            销售明细
-          </button>
-          <button
-            className={
-              page === "calendar" || page === "customer" ? "active" : ""
-            }
-            onClick={() => go("calendar")}
-          >
-            <CalendarDays size={19} />
-            客户日程
-          </button>
+          <NavGroups
+            page={page}
+            onOpen={openSalesItem}
+            salesOpen={salesOpen}
+            contentOpen={contentOpen}
+            onToggle={toggleGroup}
+          />
         </nav>
         <div className="sidebar-bottom">
           <div className="sidebar-note">
@@ -384,14 +464,6 @@ export default function App() {
               看见每一点成长
             </p>
           </div>
-          <button
-            className={`sidebar-settings ${page === "settings" ? "selected" : ""}`}
-            onClick={() => go("settings")}
-          >
-            <SettingsIcon size={18} />
-            账本设置
-          </button>
-          <ContentBoardLink />
           <div className="account">
             <div className="avatar">章</div>
             <div>
@@ -411,7 +483,7 @@ export default function App() {
       <div className="main-shell">
         <header className="topbar">
           <div className="breadcrumb">
-            工作室<span>/</span>
+            工作室<span>/</span>销售板块<span>/</span>
             <strong>
               {
                 {
@@ -564,46 +636,61 @@ export default function App() {
           </UpdateBoundary>
           <footer className="app-footer">
             <span>章鱼哥 AI 工作室</span>
-            <ContentBoardLink className="board-entry-footer" />
             <span>认真记账，轻松经营。</span>
+            <div className="footer-workspace">
+              <NavGroups
+                page={page}
+                onOpen={openSalesItem}
+                salesOpen={salesOpen}
+                contentOpen={contentOpen}
+                onToggle={toggleGroup}
+              />
+            </div>
           </footer>
         </main>
       </div>
-      <nav className="mobile-nav" aria-label="手机导航">
-        <button
-          className={page === "dashboard" ? "active" : ""}
-          onClick={() => go("dashboard")}
-        >
-          <LayoutDashboard size={20} />
-          <span>看板</span>
-        </button>
-        <button
-          className={`mobile-add ${page === "entry" ? "active" : ""}`}
-          onClick={newSale}
-        >
-          <span>
-            <Plus size={23} />
-          </span>
-          <small>记一笔</small>
-        </button>
-        <button
-          className={page === "details" ? "active" : ""}
-          onClick={() => {
-            setFilters({});
-            go("details");
-          }}
-        >
-          <ReceiptText size={20} />
-          <span>明细</span>
-        </button>
-        <button
-          className={page === "calendar" || page === "customer" ? "active" : ""}
-          onClick={() => go("calendar")}
-        >
-          <CalendarDays size={20} />
-          <span>日程</span>
-        </button>
-      </nav>
+      <div className="mobile-dock">
+        <div className="mobile-sheet" hidden={mobileSheet === null}>
+          {mobileSheet === "sales" && (
+            <SalesLinks page={page} onOpen={openSalesItem} />
+          )}
+          {mobileSheet === "content" && <ContentLinks />}
+        </div>
+        <nav className="mobile-nav" aria-label="手机导航">
+          <button
+            type="button"
+            className={mobileSheet !== "content" ? "active" : ""}
+            aria-expanded={mobileSheet === "sales"}
+            onClick={() =>
+              setMobileSheet((s) => (s === "sales" ? null : "sales"))
+            }
+          >
+            <LayoutDashboard size={18} />
+            <span>销售板块</span>
+          </button>
+          <button
+            type="button"
+            className={`mobile-add ${page === "entry" ? "active" : ""}`}
+            onClick={newSale}
+          >
+            <span>
+              <Plus size={23} />
+            </span>
+            <small>记一笔</small>
+          </button>
+          <button
+            type="button"
+            className={mobileSheet === "content" ? "active" : ""}
+            aria-expanded={mobileSheet === "content"}
+            onClick={() =>
+              setMobileSheet((s) => (s === "content" ? null : "content"))
+            }
+          >
+            <ArrowUpRight size={18} />
+            <span>内容生产</span>
+          </button>
+        </nav>
+      </div>
       {toast && (
         <div className="toast" role="status">
           <CheckCircle2 size={18} />
