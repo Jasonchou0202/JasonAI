@@ -14,6 +14,9 @@ cloudfunctions/sales/package-lock.json
 cloudfunctions/reminders/index.js
 cloudfunctions/reminders/node_modules/
 cloudfunctions/reminders/package-lock.json
+cloudfunctions/sales-stats/index.js
+cloudfunctions/sales-stats/node_modules/
+cloudfunctions/sales-stats/package-lock.json
 *.log
 .cloudbase/
 .tcb/
