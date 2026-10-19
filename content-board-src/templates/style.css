@@ -53,6 +53,10 @@ button:focus-visible, a:focus-visible { outline: 3px solid #91bfac; outline-offs
   padding: 28px 16px 16px;
   position: fixed;
   inset: 0 auto 0 0;
+  height: 100vh;
+  height: 100dvh;
+  max-height: 100dvh;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
   z-index: 20;
@@ -72,8 +76,11 @@ button:focus-visible, a:focus-visible { outline: 3px solid #91bfac; outline-offs
   display: flex;
   flex-direction: column;
   gap: 4px;
-  overflow: auto;
+  flex: 1 1 auto;
   min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  padding-bottom: 8px;
 }
 .nav-summary {
   display: flex;

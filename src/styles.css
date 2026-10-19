@@ -224,6 +224,10 @@ label small {
   padding: 31px 21px 0;
   position: fixed;
   inset: 0 auto 0 0;
+  height: 100vh;
+  height: 100dvh;
+  max-height: 100dvh;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
   z-index: 20;
@@ -241,11 +245,18 @@ label small {
   display: flex;
   flex-direction: column;
   gap: 4px;
-  flex: 1;
+  flex: 1 1 auto;
   min-height: 0;
-  overflow: auto;
+  overflow-x: hidden;
+  overflow-y: auto;
   margin-right: -8px;
   padding-right: 8px;
+  padding-bottom: 8px;
+}
+@media (max-height: 900px) {
+  .sidebar-note {
+    display: none;
+  }
 }
 .nav-summary {
   display: flex;
