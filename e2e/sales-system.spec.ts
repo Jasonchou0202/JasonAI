@@ -972,6 +972,7 @@ test("skip link, demo notice landmark and a single h1 on every page", async ({
     "details",
     "calendar",
     "settings",
+    "content-entry",
   ]) {
     await page.goto(`./#/${route}`);
     await expect(page.locator("main h1")).toHaveCount(1);

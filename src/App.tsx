@@ -15,6 +15,7 @@ import {
   CalendarDays,
   ArrowUpRight,
   ChevronDown,
+  UserPlus,
 } from "lucide-react";
 import { Dashboard } from "./components/Dashboard";
 import { SaleForm } from "./components/SaleForm";
@@ -30,11 +31,14 @@ import { Brand, ErrorNote, Loading, message } from "./components/ui";
 import type { Filters, Sale } from "./domain/model";
 import { cloudApi, configured, session, login, logout } from "./lib/cloud";
 import { createDemo } from "./lib/demo";
+import { contentCloudApi } from "./lib/content-api";
+import { createContentDemo } from "./lib/content-demo";
 import { routeParams, readFilters, filterQuery } from "./lib/routes";
 // 日程、客户详情、设置按需加载；进入工作台后空闲时预取，断网时也能打开
 const loadSettings = () => import("./components/Settings");
 const loadCalendar = () => import("./components/Calendar");
 const loadCustomer = () => import("./components/CustomerDetails");
+const loadContentEntry = () => import("./components/ContentEntry");
 const Settings = lazy(() =>
   loadSettings().then((m) => ({ default: m.Settings })),
 );
@@ -44,8 +48,17 @@ const Calendar = lazy(() =>
 const CustomerDetails = lazy(() =>
   loadCustomer().then((m) => ({ default: m.CustomerDetails })),
 );
+const ContentEntry = lazy(() =>
+  loadContentEntry().then((m) => ({ default: m.ContentEntry })),
+);
 type Page =
-  "dashboard" | "entry" | "details" | "settings" | "calendar" | "customer";
+  | "dashboard"
+  | "entry"
+  | "details"
+  | "settings"
+  | "calendar"
+  | "customer"
+  | "content-entry";
 const BOARD = import.meta.env.BASE_URL + "board-e160b241a233/";
 const CONTENT_LINKS = [
   [BOARD, "内容闭环看板"],
@@ -92,9 +105,25 @@ function SalesLinks({
     </div>
   );
 }
-function ContentLinks() {
+function ContentLinks({
+  page,
+  onOpen,
+}: {
+  page: Page;
+  onOpen: (id: Page) => void;
+}) {
+  const active = page === "content-entry";
   return (
     <div className="nav-sub">
+      <button
+        type="button"
+        className={active ? "active" : ""}
+        aria-current={active ? "page" : undefined}
+        onClick={() => onOpen("content-entry")}
+      >
+        <UserPlus size={18} aria-hidden="true" />
+        今日获客录入
+      </button>
       {CONTENT_LINKS.map(([href, label]) => (
         <a key={href} href={href}>
           <ArrowUpRight size={16} aria-hidden="true" />
@@ -141,14 +170,21 @@ function NavGroups({
           内容生产板块
           <ChevronDown className="nav-chevron" size={16} aria-hidden="true" />
         </button>
-        {contentOpen && <ContentLinks />}
+        {contentOpen && <ContentLinks page={page} onOpen={onOpen} />}
       </div>
     </>
   );
 }
 function readRoute(): Page {
   const p = location.hash.replace("#/", "").split("?")[0];
-  return ["entry", "details", "settings", "calendar", "customer"].includes(p)
+  return [
+    "entry",
+    "details",
+    "settings",
+    "calendar",
+    "customer",
+    "content-entry",
+  ].includes(p)
     ? (p as Page)
     : "dashboard";
 }
@@ -166,7 +202,9 @@ export default function App() {
   const [online, setOnline] = useState(navigator.onLine);
   const [loginBusy, setLoginBusy] = useState(false);
   const [salesOpen, setSalesOpen] = useState(true);
-  const [contentOpen, setContentOpen] = useState(false);
+  const [contentOpen, setContentOpen] = useState(
+    () => readRoute() === "content-entry",
+  );
   const [mobileSheet, setMobileSheet] = useState<null | "sales" | "content">(
     null,
   );
@@ -179,7 +217,10 @@ export default function App() {
           if (alive) {
             setMode("cloud");
             const pending = sessionStorage.getItem("zhangyuge-return-route");
-            if (pending && /^#\/(calendar|customer)(\?|$)/.test(pending))
+            if (
+              pending &&
+              /^#\/(calendar|customer|content-entry)(\?|$)/.test(pending)
+            )
               location.hash = pending;
             sessionStorage.removeItem("zhangyuge-return-route");
           }
@@ -216,7 +257,13 @@ export default function App() {
     };
   }, []);
   // 新版本发布后按需文件拿不到：自动刷新一次（记一笔页面除外，免得打断输入）
-  useEffect(() => installPreloadRecovery(() => readRoute() !== "entry"), []);
+  useEffect(
+    () =>
+      installPreloadRecovery(
+        () => !["entry", "content-entry"].includes(readRoute()),
+      ),
+    [],
+  );
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [page, mode]);
@@ -231,6 +278,7 @@ export default function App() {
       void loadCalendar().catch(() => {});
       void loadCustomer().catch(() => {});
       void loadSettings().catch(() => {});
+      void loadContentEntry().catch(() => {});
     };
     const idle = (
       window as { requestIdleCallback?: (cb: () => void) => number }
@@ -240,6 +288,10 @@ export default function App() {
   }, [mode]);
   const api = useMemo(
     () => (mode === "demo" ? createDemo() : cloudApi),
+    [mode],
+  );
+  const contentApi = useMemo(
+    () => (mode === "demo" ? createContentDemo() : contentCloudApi),
     [mode],
   );
   const editId = page === "entry" ? routeParams().get("id") : null;
@@ -273,7 +325,8 @@ export default function App() {
   function go(p: Page, q = "") {
     location.hash = "/" + p + (q ? "?" + q : "");
     setPage(p);
-    setSalesOpen(true);
+    if (p === "content-entry") setContentOpen(true);
+    else setSalesOpen(true);
     setMobileSheet(null);
   }
   function toggleGroup(group: "sales" | "content") {
@@ -483,7 +536,9 @@ export default function App() {
       <div className="main-shell">
         <header className="topbar">
           <div className="breadcrumb">
-            工作室<span>/</span>销售板块<span>/</span>
+            工作室<span>/</span>
+            {page === "content-entry" ? "内容生产板块" : "销售板块"}
+            <span>/</span>
             <strong>
               {
                 {
@@ -493,6 +548,7 @@ export default function App() {
                   settings: "账本设置",
                   calendar: "客户日程",
                   customer: "客户详情",
+                  "content-entry": "今日获客录入",
                 }[page]
               }
             </strong>
@@ -618,6 +674,14 @@ export default function App() {
                   taskId={routeParams().get("task") || undefined}
                 />
               )}
+              {page === "content-entry" && (
+                <ContentEntry
+                  key={mode}
+                  api={contentApi}
+                  mode={mode}
+                  onSaved={(s) => setToast(s)}
+                />
+              )}
               {page === "customer" && (
                 <CustomerDetails
                   key={routeParams().get("id")}
@@ -654,7 +718,9 @@ export default function App() {
           {mobileSheet === "sales" && (
             <SalesLinks page={page} onOpen={openSalesItem} />
           )}
-          {mobileSheet === "content" && <ContentLinks />}
+          {mobileSheet === "content" && (
+            <ContentLinks page={page} onOpen={openSalesItem} />
+          )}
         </div>
         <nav className="mobile-nav" aria-label="手机导航">
           <button

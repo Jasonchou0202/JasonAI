@@ -99,3 +99,41 @@ for (const name of ["sales", "reminders", "sales-stats"]) {
   );
   await writeFile(`artifacts/customer-${name}-function.zip`, zipSync(entries));
 }
+// 内容获客 content 云函数：独立入口、独立打包，和上面的 sales / reminders 互不影响
+await mkdir("cloudfunctions/content", { recursive: true });
+await build({
+  entryPoints: ["server/content-cloud.ts"],
+  outfile: "cloudfunctions/content/index.js",
+  bundle: true,
+  platform: "node",
+  format: "cjs",
+  target: "node18",
+  sourcemap: false,
+  logLevel: "info",
+  alias: {
+    "lodash.set": resolve("vendor/lodash-set/index.cjs"),
+    "lodash.unset": resolve("vendor/lodash-unset/index.cjs"),
+  },
+});
+await writeFile(
+  "cloudfunctions/content/package.json",
+  JSON.stringify(
+    {
+      name: "zhangyuge-content-function",
+      version: "1.0.0",
+      private: true,
+      main: "index.js",
+    },
+    null,
+    2,
+  ) + "\n",
+);
+await writeFile(
+  "artifacts/customer-content-function.zip",
+  zipSync({
+    "index.js": new Uint8Array(await readFile("cloudfunctions/content/index.js")),
+    "package.json": new Uint8Array(
+      await readFile("cloudfunctions/content/package.json"),
+    ),
+  }),
+);
