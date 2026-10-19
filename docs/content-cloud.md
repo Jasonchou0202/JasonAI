@@ -19,8 +19,8 @@
 
 1. **集合白名单** `contentOnly()`（`server/content/guard.ts`）：只放行上面 3 个集合，其他名字（包括全部销售集合）直接抛错。
 2. **源码扫描**（`tests/content-isolation.test.ts`）：用 esbuild 的依赖清单确认 content 函数打包进来的源码只有 `server/content/*`、`server/content-cloud.ts`、`src/domain/content.ts`；内容相关文件里不许出现销售集合名，也不许引用销售代码。
-3. **销售函数包逐字节一致**：`tests/fixtures/sales-bundles.sha256.json` 存的是改动前 `origin/main` 的 sales / reminders 包哈希；`npm run check` 最后一步 `node scripts/verify-sales-bundles.mjs` 会核对。基线只能这样更新：
-   - **只有**改动的是销售代码（sales / reminders），**并且**第二大脑已经审查通过、**并且**章鱼哥本人已经确认，才可以运行 `node scripts/verify-sales-bundles.mjs --update`；
+3. **销售函数包逐字节一致**：`tests/fixtures/sales-bundles.sha256.json` 存的是 main 上 sales / reminders / sales-stats 三个函数包的哈希（sales-stats 在 #11 合并后一并锁住）；`npm run check` 最后一步 `node scripts/verify-sales-bundles.mjs` 会核对。基线只能这样更新：
+   - **只有**改动的是销售代码（sales / reminders / sales-stats），**并且**第二大脑已经审查通过、**并且**章鱼哥本人已经确认，才可以运行 `node scripts/verify-sales-bundles.mjs --update`；
    - 更新后的 `tests/fixtures/sales-bundles.sha256.json` 要和那次销售改动放在同一个 PR 里；
    - 内容函数、看板或其他改动导致核对失败时，**不许**用 `--update` 让它通过，要先查清为什么销售包变了。
 4. **规则清单**：`database.rules.json` 只在末尾追加 3 条 `content_*`，测试锁住原来的 7 条。

@@ -246,7 +246,7 @@ describe("销售那边一个字节都不变", () => {
     for (const v of Object.values(rules))
       expect(v).toEqual({ read: false, write: false });
   });
-  it("sales / reminders 云函数包和改动前的基线逐字节一致", () => {
+  it("sales / reminders / sales-stats 云函数包和基线逐字节一致", () => {
     execFileSync(process.execPath, ["scripts/build-server.mjs"], {
       stdio: "pipe",
     });

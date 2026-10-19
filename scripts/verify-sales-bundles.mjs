@@ -1,6 +1,6 @@
-// 核对 sales / reminders 云函数包和基线逐字节一致（内容函数的改动不许波及销售函数）。
+// 核对 sales / reminders / sales-stats 云函数包和基线逐字节一致（内容函数的改动不许波及销售函数）。
 // 用法：先 npm run build:server，再 node scripts/verify-sales-bundles.mjs
-// --update 只能用于销售代码（sales / reminders）的改动，且必须第二大脑审查通过并经章鱼哥本人确认；
+// --update 只能用于销售代码（sales / reminders / sales-stats）的改动，且必须第二大脑审查通过并经章鱼哥本人确认；
 // 其他改动导致核对失败时不许用 --update 绕过。
 import { createHash } from "node:crypto";
 import { readFile, writeFile } from "node:fs/promises";
@@ -10,6 +10,8 @@ const FILES = [
   "cloudfunctions/sales/package.json",
   "cloudfunctions/reminders/index.js",
   "cloudfunctions/reminders/package.json",
+  "cloudfunctions/sales-stats/index.js",
+  "cloudfunctions/sales-stats/package.json",
 ];
 const actual = {};
 for (const f of FILES)
