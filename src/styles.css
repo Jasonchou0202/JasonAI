@@ -306,6 +306,26 @@ label small {
   background: var(--surface-muted);
   color: var(--green);
 }
+.board-entry {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--text-3);
+  text-decoration: none;
+  padding: 12px 14px;
+  font-size: var(--fs-1);
+  font-weight: 500;
+  margin-bottom: 8px;
+  width: 100%;
+  border-radius: var(--radius-m);
+}
+.board-entry:hover {
+  background: var(--surface-muted);
+  color: var(--green);
+}
+.board-entry-footer {
+  display: none;
+}
 .account {
   display: flex;
   gap: 10px;
@@ -2187,6 +2207,16 @@ label small {
   }
   .mobile-settings {
     display: flex;
+  }
+  .app-footer {
+    flex-wrap: wrap;
+    gap: 6px 14px;
+  }
+  .board-entry-footer {
+    display: inline-flex;
+    width: auto;
+    margin: 0;
+    padding: 6px 0;
   }
   .main-content {
     padding-bottom: 88px;

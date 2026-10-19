@@ -13,6 +13,7 @@ import {
   Sparkles,
   RefreshCw,
   CalendarDays,
+  ArrowUpRight,
 } from "lucide-react";
 import { Dashboard } from "./components/Dashboard";
 import { SaleForm } from "./components/SaleForm";
@@ -44,6 +45,19 @@ const CustomerDetails = lazy(() =>
 );
 type Page =
   "dashboard" | "entry" | "details" | "settings" | "calendar" | "customer";
+function ContentBoardLink({ className = "" }: { className?: string }) {
+  return (
+    <a
+      className={`board-entry ${className}`.trim()}
+      href={`${import.meta.env.BASE_URL}board-e160b241a233/`}
+      target="_blank"
+      rel="noopener noreferrer"
+    >
+      <ArrowUpRight size={16} aria-hidden="true" />
+      内容闭环看板
+    </a>
+  );
+}
 function readRoute(): Page {
   const p = location.hash.replace("#/", "").split("?")[0];
   return ["entry", "details", "settings", "calendar", "customer"].includes(p)
@@ -377,6 +391,7 @@ export default function App() {
             <SettingsIcon size={18} />
             账本设置
           </button>
+          <ContentBoardLink />
           <div className="account">
             <div className="avatar">章</div>
             <div>
@@ -549,6 +564,7 @@ export default function App() {
           </UpdateBoundary>
           <footer className="app-footer">
             <span>章鱼哥 AI 工作室</span>
+            <ContentBoardLink className="board-entry-footer" />
             <span>认真记账，轻松经营。</span>
           </footer>
         </main>

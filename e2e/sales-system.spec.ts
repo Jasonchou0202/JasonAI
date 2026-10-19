@@ -1102,6 +1102,23 @@ test.describe("first screen on a 1280×800 laptop", () => {
     expect(box.y + box.height).toBeLessThanOrEqual(800);
   });
 });
+test("content board entry opens the static page outside the sales shell", async ({
+  page,
+}) => {
+  const entry = page.getByRole("link", { name: "内容闭环看板" });
+  await expect(entry).toHaveCount(1);
+  await expect(entry).toHaveAttribute("href", "/JasonAI/board-e160b241a233/");
+  await expect(entry).toHaveAttribute("target", "_blank");
+  const popupPromise = page.waitForEvent("popup");
+  await entry.click();
+  const popup = await popupPromise;
+  await popup.waitForLoadState("domcontentloaded");
+  await expect(popup).toHaveURL(/\/JasonAI\/board-e160b241a233\/?$/);
+  await expect(popup).toHaveTitle(/内容闭环看板/);
+  await expect(page).toHaveURL(/#\/dashboard/);
+  await page.setViewportSize({ width: 375, height: 812 });
+  await expect(page.getByRole("link", { name: "内容闭环看板" })).toBeVisible();
+});
 test.describe("first screen on a phone", () => {
   test.use({
     viewport: { width: 390, height: 844 },
