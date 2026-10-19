@@ -170,31 +170,832 @@
       "name": "痛点第12批",
       "count": "19 条",
       "detail": "小红书 9 · 抖音 2 · 知乎 8；剔除重复 1 条",
-      "time": "10-19 07:11"
+      "time": "10-19 07:11",
+      "items": [
+        {
+          "title": "Skill 装好了但用不起来（登录失败、找不到权限选项、不会改 Skill）",
+          "platform": "小红书",
+          "time": "10-19 07:11",
+          "note": "原帖：用了这么久 Codex，原来 Skill 还能这样装？",
+          "url": "https://www.xiaohongshu.com/explore/6a3c9709000000001603ff8c?xsec_token=ABbI39v7JM0gghxjVLW9q0ernfvNCs8mSEpaFyhQoFxAk=&xsec_source=pc_feed"
+        },
+        {
+          "title": "装好 Skill 后 @ 或 / 都调用不出来；找不到 Skill 市场；想要中文界面",
+          "platform": "小红书",
+          "time": "10-19 07:11",
+          "note": "原帖：Codex➕skill=王炸！纯纯纯小白级教程",
+          "url": "https://www.xiaohongshu.com/explore/6aae7bbe00000000260168b7?xsec_token=ABPCA2Y82ldH1l1Z7udshfOnWcv9HRF4RcL41W-PE7zLw=&xsec_source=pc_feed"
+        },
+        {
+          "title": "用语音练口语，免费版够不够、值不值得开 Plus",
+          "platform": "小红书",
+          "time": "10-19 07:11",
+          "note": "原帖：GPT live模式练口语有必要开plus吗",
+          "url": "https://www.xiaohongshu.com/explore/6a51d8360000000008025cb0?xsec_token=ABxaeej0qqcmTt4tCNhk6Ft7g6GH48fd0pP1lwouohH8M=&xsec_source=pc_feed"
+        },
+        {
+          "title": "Live 模式默认太捧场、不纠错；找不到入口",
+          "platform": "小红书",
+          "time": "10-19 07:11",
+          "note": "原帖：GPTLive模式上线第三天，练口语的人快去用",
+          "url": "https://www.xiaohongshu.com/explore/6a520e4e000000000f032c98?xsec_token=ABlnrGnrJvosJTWMCGiTGk3u0E0ZOydjhIxbprxJ-rlBM=&xsec_source=pc_feed"
+        },
+        {
+          "title": "Grok Bot 定时任务每次晚 10–15 分钟，对时间敏感的场景不够准",
+          "platform": "小红书",
+          "time": "10-19 07:11",
+          "note": "原帖：Grok bot定时任务唤醒bot每次都延时",
+          "url": "https://www.xiaohongshu.com/explore/6a90f1b8000000002902bd40?xsec_token=AB8T9hej95awqZXPgHWUrdNoDoNOxLpS71nXGr2zaj-ho=&xsec_source=pc_feed"
+        },
+        {
+          "title": "分不清 Grok Bot 和 Codex 的定位",
+          "platform": "小红书",
+          "time": "10-19 07:11",
+          "note": "原帖：【干货】GrokBot 实例： 自动化工作流",
+          "url": "https://www.xiaohongshu.com/explore/6aae0585000000000f039c00?xsec_token=ABPCA2Y82ldH1l1Z7udshfOvcT-I87SWnqOr1YzVI5sU0=&xsec_source=pc_feed"
+        },
+        {
+          "title": "收藏了还是不会用，新手要的是一步一步的上手教程",
+          "platform": "小红书",
+          "time": "10-19 07:11",
+          "note": "原帖：Claude 终极新手指南（2026年3月）",
+          "url": "https://www.xiaohongshu.com/explore/69bc0de500000000230218e3?xsec_token=AByGJCX15yNTWxbyUV86KXLPAvxHo15qAO9tCJ-XE4t30=&xsec_source=pc_feed"
+        },
+        {
+          "title": "怕账号出问题，用 Claude 和 Codex 分工；新增身份认证让新手卡住",
+          "platform": "小红书",
+          "time": "10-19 07:11",
+          "note": "原帖：先把能使用这一关说透【Claude保姆级入门】",
+          "url": "https://www.xiaohongshu.com/explore/6ac0f2b100000000150048b7?xsec_token=ABEd5kn6a4pE2za3HEHDKR1Nw4Jo6Zly5qSdkTp_IAXcs=&xsec_source=pc_feed"
+        },
+        {
+          "title": "找不到入口（如 Cowork）、不知道怎么下载、要不要付费；嫌教程有「AI 味」",
+          "platform": "小红书",
+          "time": "10-19 07:11",
+          "note": "原帖：Claude 9种用法-小白入门｜教程",
+          "url": "https://www.xiaohongshu.com/explore/69f2cd6c000000003601c52a?xsec_token=ABHYGHIHgJKxUfkNkUJ6bppidaajI5Sgrku481dS81gIA=&xsec_source=pc_feed"
+        },
+        {
+          "title": "研究生想用 AI 写毕业论文，关心查重、AI 率和工具怎么获取",
+          "platform": "抖音",
+          "time": "10-19 07:11",
+          "note": "原帖：用Gemini和Claude，7天搞定一篇高质量毕业论文！",
+          "url": "https://www.douyin.com/video/7599987429319298323"
+        },
+        {
+          "title": "科研人想知道 Codex 能不能直接出统计和作图、取代 SPSS 和 R；导师开始让新生学 Claude",
+          "platform": "抖音",
+          "time": "10-19 07:11",
+          "note": "原帖：建议所有硕士博士，一定要用上最先进的AI",
+          "url": "https://www.douyin.com/video/7637890429077288121"
+        },
+        {
+          "title": "科研人想要现成的科研 Skill 清单和安装命令",
+          "platform": "知乎",
+          "time": "10-19 07:11",
+          "note": "原帖：大学生在学习和科研中应该如何使用codex？（回答：苏苏学长）",
+          "url": "https://www.zhihu.com/question/2058648818057531853/answer/2058854207738926707"
+        },
+        {
+          "title": "教程太复杂，新手看完更懵；注册登录卡住",
+          "platform": "知乎",
+          "time": "10-19 07:11",
+          "note": "原帖：为什么我反复推荐所有人学Codex！10分钟全面掌握Codex～【附完整手册】",
+          "url": "https://zhuanlan.zhihu.com/p/2055236043729905283"
+        },
+        {
+          "title": "觉得 Codex 是程序员工具，不会 Python 就不敢碰",
+          "platform": "知乎",
+          "time": "10-19 07:11",
+          "note": "原帖：不会编程的人，到底能不能用 Codex？我拿 10 个真实任务试了一遍",
+          "url": "https://zhuanlan.zhihu.com/p/2085309783041631846"
+        },
+        {
+          "title": "直接让 Codex「写论文」只得到通用文本；引用有编造风险",
+          "platform": "知乎",
+          "time": "10-19 07:11",
+          "note": "原帖：一周内用Codex完成一篇可投稿级SCI论文：我的七天实操流程与踩坑记录",
+          "url": "https://zhuanlan.zhihu.com/p/2071615226705982299"
+        },
+        {
+          "title": "老师担心学生太依赖问 AI，提问能力和判断 AI 答案的能力怎么培养",
+          "platform": "知乎",
+          "time": "10-19 07:11",
+          "note": "原帖：AI 能受业解惑了，大学老师还剩下什么？",
+          "url": "https://zhuanlan.zhihu.com/p/2095159797209474309"
+        },
+        {
+          "title": "博士生和导师担心 AI 结果看着对其实错、引用不可靠",
+          "platform": "知乎",
+          "time": "10-19 07:11",
+          "note": "原帖：会议摘要：对数学博士生和导师使用AI科研的建议",
+          "url": "https://zhuanlan.zhihu.com/p/2089263275338897207"
+        },
+        {
+          "title": "弱，科研新闻解读，没看到用户痛点；可作为「Claude 做生物医学科研」的资讯素材",
+          "platform": "知乎",
+          "time": "10-19 07:11",
+          "note": "原帖：Claude自主发现类CRISPR新酶系统，但还不知道它能干什么，张锋点评：值得研究",
+          "url": "https://zhuanlan.zhihu.com/p/2086401443725161919"
+        },
+        {
+          "title": "研一新生不知道怎么打基础、做总结、找科研方向（老帖，信号偏旧）",
+          "platform": "知乎",
+          "time": "10-19 07:11",
+          "note": "原帖：研究生如何利用 ChatGPT 帮助开展日常科研工作？（回答：IT人刘俊明）",
+          "url": "https://www.zhihu.com/question/583232012/answer/2897193484"
+        }
+      ],
+      "items_source": "painpoint_research/2026-10-19_batch12.md"
     },
     {
       "name": "痛点第11批",
       "count": "20 条",
       "detail": "小红书 8 · 抖音 4 · 知乎 8；剔除 4 条（含红线或国产 AI 评论不收）",
-      "time": "10-19 01:12"
+      "time": "10-19 01:12",
+      "items": [
+        {
+          "title": "科研人想把 Zotero 接进 Codex，卡在装哪个 skill、会不会很费 token",
+          "platform": "小红书",
+          "time": "10-19 01:12",
+          "note": "原帖：用codex结合zotero一起读文献效率高多了",
+          "url": "https://www.xiaohongshu.com/explore/6ad0fe2500000000180067df?xsec_token=ABmiqkcwFELp866QlRAVZoW29EfIyaVIXgFW3mFEl5EVE=&xsec_source=pc_search"
+        },
+        {
+          "title": "研究生想上手 Codex×Zotero，但安装和找 skill 没有现成路径",
+          "platform": "小红书",
+          "time": "10-19 01:12",
+          "note": "原帖：研究生必会｜Codex × Zotero 科研工作流",
+          "url": "https://www.xiaohongshu.com/explore/6ac79867000000001b030bce"
+        },
+        {
+          "title": "涉及敏感词，已隐去",
+          "platform": "小红书",
+          "time": "10-19 01:12",
+          "note": "原帖：明确不退款！别再订阅claude了",
+          "url": "https://www.xiaohongshu.com/explore/6a96def9000000002502e5ac"
+        },
+        {
+          "title": "生物和医学科研问题在 Claude 上被降级模型或被安全拦截",
+          "platform": "小红书",
+          "time": "10-19 01:12",
+          "note": "原帖：医学生物科研还是放弃claude吧",
+          "url": "https://www.xiaohongshu.com/explore/6ab681e40000000013019323"
+        },
+        {
+          "title": "顶配 Max 20X 用户也被封，申诉和退款没把握，没被封的人也提心吊胆",
+          "platform": "小红书",
+          "time": "10-19 01:12",
+          "note": "原帖：涉及敏感词，已隐去",
+          "url": "https://www.xiaohongshu.com/explore/6ac8ab37000000001802f791"
+        },
+        {
+          "title": "想知道 Grok Bot 和同类产品差在哪，语音怎么用，Token 消耗如何",
+          "platform": "小红书",
+          "time": "10-19 01:12",
+          "note": "原帖：拥有 Grokbot之后好无聊",
+          "url": "https://www.xiaohongshu.com/explore/6acb7c2a000000001801772c"
+        },
+        {
+          "title": "新手分不清 Chat 和 Work 两个模式，设置入口分散（高收藏、低评论，说明「收藏备用」需求强）",
+          "platform": "小红书",
+          "time": "10-19 01:12",
+          "note": "原帖：ChatGPT新手避坑🔥这5件事必须做",
+          "url": "https://www.xiaohongshu.com/explore/6aca5d15000000001400c400"
+        },
+        {
+          "title": "零基础先要分清电脑版和手机版，还想用它做自己的小工具",
+          "platform": "小红书",
+          "time": "10-19 01:12",
+          "note": "原帖：ChatGPT Work + Codex 零基础完整教程",
+          "url": "https://www.xiaohongshu.com/explore/6a5b12cf000000001102d25d"
+        },
+        {
+          "title": "博士生担心 AI 做研究型数学，会抢走自己做了几年的课题",
+          "platform": "抖音",
+          "time": "10-19 01:12",
+          "note": "原帖：博士生慌不慌？OpenAI 700份数学稿件，抢科学家饭碗？",
+          "url": "https://www.douyin.com/video/7695743353727487282"
+        },
+        {
+          "title": "Codex 和 ChatGPT 合并后入口和用法混乱，想知道思考和执行怎么分工",
+          "platform": "抖音",
+          "time": "10-19 01:12",
+          "note": "原帖：FPT-5.6正式上线！那么Codex和ChatGPT合并之后又有哪些新升级？",
+          "url": "https://www.douyin.com/video/7668740073084456232"
+        },
+        {
+          "title": "用 Codex 剪视频时它看不懂画面，素材识别准确率差；跟着教程找不到对应工具",
+          "platform": "抖音",
+          "time": "10-19 01:12",
+          "note": "原帖：AI 剪辑教程：用这套方法，让Codex剪视频效果和效率翻倍",
+          "url": "https://www.douyin.com/video/7641230262990556479"
+        },
+        {
+          "title": "让 AI 直接写整章，逻辑断、偏离大纲，副业变现不如预期",
+          "platform": "抖音",
+          "time": "10-19 01:12",
+          "note": "原帖：AI写网文，赔光3个月稿费！副业避雷",
+          "url": "https://www.douyin.com/video/7581464456677494051"
+        },
+        {
+          "title": "AI 做课件太容易，「看着很懂」和真本事对不上（高校老师视角）",
+          "platform": "知乎",
+          "time": "10-19 01:12",
+          "note": "原帖：网传一大学生因公选课老师连续缺课，自己上台用AI生成PPT讲了一小时课，是真的吗？暴露了哪些问题？",
+          "url": "https://www.zhihu.com/question/2088388963652166144/answer/2089368928225059167"
+        },
+        {
+          "title": "科研图要结构正确而不是好看，提示词门槛降了，结构还得人把关",
+          "platform": "知乎",
+          "time": "10-19 01:12",
+          "note": "原帖：现在的各种ai绘图软件具备科研绘图的能力吗？（回答）",
+          "url": "https://www.zhihu.com/question/587780589/answer/2019541211560551750"
+        },
+        {
+          "title": "AI 画的科研图箭头和科学内容常出错，位图放大会糊，期刊要矢量源文件",
+          "platform": "知乎",
+          "time": "10-19 01:12",
+          "note": "原帖：现在的各种ai绘图软件具备科研绘图的能力吗？（文章）",
+          "url": "https://zhuanlan.zhihu.com/p/2094147021359801739"
+        },
+        {
+          "title": "程序员和科研人买 Pro 的理由不同，日常用途感受不到差别",
+          "platform": "知乎",
+          "time": "10-19 01:12",
+          "note": "原帖：chatgpt pro版会比plus版更加聪明么？",
+          "url": "https://www.zhihu.com/question/2036334907346122595/answer/2073426017356605398"
+        },
+        {
+          "title": "Codex 速度慢、可用性下降，Pro 相比 Plus 的性价比打折",
+          "platform": "知乎",
+          "time": "10-19 01:12",
+          "note": "原帖：ChatGPT Pro一个月100美元，到底值不值？",
+          "url": "https://www.zhihu.com/question/2036512969207583318/answer/2078903488675894059"
+        },
+        {
+          "title": "新手在 Windows 上装 Claude Code 各种报错，出问题分不清是工具还是网络",
+          "platform": "知乎",
+          "time": "10-19 01:12",
+          "note": "原帖：新手如何用Claude Code实现代码自动审查和批量文件处理？",
+          "url": "https://www.zhihu.com/question/1985852609215608795/answer/1985970849166164696"
+        },
+        {
+          "title": "科研人读不熟悉领域的英文论文很吃力，想让 Claude Code 自动研读和复现",
+          "platform": "知乎",
+          "time": "10-19 01:12",
+          "note": "原帖：让Claude Code一键自动化实现对论文的研读和复现",
+          "url": "https://zhuanlan.zhihu.com/p/2044513313556517807"
+        },
+        {
+          "title": "Codex 智能强、Plus 额度够，但反应慢，一思考就几十分钟，手机端体验差",
+          "platform": "知乎",
+          "time": "10-19 01:12",
+          "note": "原帖：请问你现在用什么AI 智能体agent？",
+          "url": "https://www.zhihu.com/question/2068994572861154159/answer/2069040142623453292"
+        }
+      ],
+      "items_source": "painpoint_research/2026-10-19_batch11.md"
     },
     {
       "name": "今日热门",
       "count": "20 条",
       "detail": "小红书 4 · 抖音 5 · 知乎 6 · X 资讯 5；含红线的评论只记录不采用",
-      "time": "10-19 08:20"
+      "time": "10-19 08:20",
+      "items": [
+        {
+          "title": "学术论文修改如何求助ai",
+          "platform": "小红书",
+          "time": "10-19 08:20",
+          "note": "作者 MoonViolet · 3343/4184/125",
+          "url": "https://www.xiaohongshu.com/explore/6ac9af9e000000001203a509"
+        },
+        {
+          "title": "用Codex一周赶出初稿",
+          "platform": "小红书",
+          "time": "10-19 08:20",
+          "note": "作者 小确幸制造机 · 1166/1390/208",
+          "url": "https://www.xiaohongshu.com/explore/6ad1c30a0000000018018997"
+        },
+        {
+          "title": "Codex一定要安装Github，能节省85%的token",
+          "platform": "小红书",
+          "time": "10-19 08:20",
+          "note": "作者 猫头鹰开发手记 · 878/887/16",
+          "url": "https://www.xiaohongshu.com/explore/6ad054a9000000000a01da6d"
+        },
+        {
+          "title": "如何用Chatgpt6一周写完小论文（自己实践版）",
+          "platform": "小红书",
+          "time": "10-19 08:20",
+          "note": "作者 芝士好好恰 · 631/753/127",
+          "url": "https://www.xiaohongshu.com/explore/6aceec0f0000000015000af7"
+        },
+        {
+          "title": "OpenAI悄悄解锁新技能！Codex锁屏也能继续干活",
+          "platform": "抖音",
+          "time": "10-19 08:20",
+          "note": "作者 科技AI纪源 · 1.2万/127/612/141",
+          "url": "https://www.douyin.com/video/7695677765856578825"
+        },
+        {
+          "title": "Codex写学术论文一个晚上一个奇迹啊！",
+          "platform": "抖音",
+          "time": "10-19 08:20",
+          "note": "作者 橙叽豆糕 · 331/11/508/71",
+          "url": "https://www.douyin.com/note/7697461945603785445"
+        },
+        {
+          "title": "Cluade写论文真的可以，大抽奖时代！",
+          "platform": "抖音",
+          "time": "10-19 08:20",
+          "note": "作者 Yudi御弟哥哥 · 176/34/52/36",
+          "url": "https://www.douyin.com/note/7696055866021927525"
+        },
+        {
+          "title": "当你codex没跑完…",
+          "platform": "抖音",
+          "time": "10-19 08:20",
+          "note": "作者 不到长城非好汉 · 6天前"
+        },
+        {
+          "title": "用Codex一周赶出初稿。",
+          "platform": "抖音",
+          "time": "10-19 08:20",
+          "note": "作者 桃雾绵绵 · 1天前 图文"
+        },
+        {
+          "title": "如何看待anthropic取消git？",
+          "platform": "知乎",
+          "time": "10-19 08:20",
+          "note": "热榜 #28 · 55万热度",
+          "url": "https://www.zhihu.com/question/2094352602074965020"
+        },
+        {
+          "title": "如何看待有学者提出的慢科研，但是自己一年却写 40 篇论文？",
+          "platform": "知乎",
+          "time": "10-19 08:20",
+          "note": "热榜 #15 · 83万热度（非 AI 话题，可借势）",
+          "url": "https://www.zhihu.com/question/2094727524509131289"
+        },
+        {
+          "title": "对于物理系师生而言，ChatGPT、Gemini、Claude的付费版在科研辅助方面谁更好用？",
+          "platform": "知乎",
+          "time": "10-19 08:20",
+          "note": "赞同 14（搜索页）",
+          "url": "https://www.zhihu.com/search?type=content&q=Claude%20ChatGPT%20%E5%86%99%E8%AE%BA%E6%96%87"
+        },
+        {
+          "title": "Tibo的Codex翻盘记：接手不到一年就吞掉了ChatGPT",
+          "platform": "知乎",
+          "time": "10-19 08:20",
+          "note": "机器之心 · 赞同 15 · 10-17"
+        },
+        {
+          "title": "一夜之间，ChatGPT与Codex合并了",
+          "platform": "知乎",
+          "time": "10-19 08:20",
+          "note": "机器之心 · 赞同 20 · 06-03"
+        },
+        {
+          "title": "一文讲清楚 ChatGPT、Codex、Work 模式到底有什么区别",
+          "platform": "知乎",
+          "time": "10-19 08:20",
+          "note": "赞同 9 / 评 8（搜索页）",
+          "url": "https://www.zhihu.com/search?type=content&q=Codex%20ChatGPT%20%E5%85%B3%E7%B3%BB"
+        },
+        {
+          "title": "Claude Cowork 新功能「Teach a Skill」：看你操作一遍屏幕就学会流程、存成可复用技能",
+          "platform": "X",
+          "time": "10-19 08:20",
+          "url": "https://x.com/i/trending/2111830778388873264"
+        },
+        {
+          "title": "Claude Mythos 5 自主连跑 53 小时，设计出门数少 17 倍的量子电路，哈佛/QuEra 研究者验证模拟结果（科研向素材）",
+          "platform": "X",
+          "time": "10-19 08:20",
+          "url": "https://x.com/i/trending/2111157202203426827"
+        },
+        {
+          "title": "Anthropic 弃用 Git 改用自研 Scion，每天合并代码从 2500 次涨到 3 万多次",
+          "platform": "X",
+          "time": "10-19 08:20",
+          "url": "https://x.com/i/trending/2110052518571262272"
+        },
+        {
+          "title": "「Claude 和 ChatGPT 怎么选」热议：Claude 长文档、推理细；ChatGPT 功能面广（语音、图片、定时任务、Codex）；结论是按工作流分",
+          "platform": "X",
+          "time": "10-19 08:20",
+          "url": "https://x.com/i/trending/2111797404546556249"
+        },
+        {
+          "title": "Codex 用量消耗变快被吐槽（额度话题，按要求避开）；Grok Bot 帮用户谈下宽带账单每月省 43 美元、下载量月涨 728.4%",
+          "platform": "X",
+          "time": "10-19 08:20",
+          "url": "https://x.com/i/trending/2111434918643618238"
+        }
+      ],
+      "items_source": "social_hot_2026-10-19/final_report.md"
     },
     {
       "name": "对标账号",
       "count": "49 ＋ 7",
       "detail": "抖音头部候选 49 个 · 低粉爆帖线索 7 条",
-      "time": "10-18"
+      "time": "10-18",
+      "items": [
+        {
+          "title": "解螺旋医学AI",
+          "platform": "抖音",
+          "time": "10-18",
+          "note": "代表作品：拿不到 · 医学科研AI：文献检索、综述/SCI写作、生信分析、科研Skill【科研向】 · 粉丝 127696",
+          "url": "https://www.douyin.com/user/MS4wLjABAAAAWhjFobJFZRbYXZLvJMNUCsnCVW6j2J18W0p13zWkHQ6p4AwuoROXumwL6-F2_5Af"
+        },
+        {
+          "title": "EthanAI工具",
+          "platform": "抖音",
+          "time": "10-18",
+          "note": "代表作品：拿不到 · AI应用与办公神器，标签含科研工具 · 粉丝 459037",
+          "url": "https://www.douyin.com/search/EthanAI%E5%B7%A5%E5%85%B7?type=user"
+        },
+        {
+          "title": "二次螈Ai工具箱",
+          "platform": "抖音",
+          "time": "10-18",
+          "note": "代表作品：拿不到 · AI全栈把玩：每天拆一个开源AI工具/自动化工作流 · 粉丝 96614",
+          "url": "https://www.douyin.com/search/%E4%BA%8C%E6%AC%A1%E8%9E%88Ai%E5%B7%A5%E5%85%B7%E7%AE%B1?type=user"
+        },
+        {
+          "title": "解螺旋医学AI工具",
+          "platform": "抖音",
+          "time": "10-18",
+          "note": "代表作品：拿不到 · 医学科研AI工具：PubMed文献综述、机制图/技术路线图、组会PPT与开题【科研向】 · 粉丝 54722",
+          "url": "https://www.douyin.com/user/MS4wLjABAAAAJ6GpP6-6v9O6TE9hqvZw93M__8oDMYMgeYldl1Jx0hCzwb6zfSkWK3zcZnunFJ_g"
+        },
+        {
+          "title": "程序员小H",
+          "platform": "抖音",
+          "time": "10-18",
+          "note": "代表作品：拿不到 · 中山大学计算机硕士，AI编程/Vibe Coding、科研绘图与保研经验【科研+编程】 · 粉丝 628747",
+          "url": "https://www.douyin.com/user/MS4wLjABAAAA508cJWMDJTh4jauvqGsionWu2cTCKEGGdp5aMteJKl0"
+        },
+        {
+          "title": "艾伦AI工具库",
+          "platform": "抖音",
+          "time": "10-18",
+          "note": "代表作品：拿不到 · AI工具推荐与教程，新模型（DeepSeek/Claude等）解读，AI编程实践 · 粉丝 34704",
+          "url": "https://www.douyin.com/user/MS4wLjABAAAAVNE5PPdl2QMufvz9d9jw6R84OC7UjumsGMpmHa-A9z0zoxb-EVWsyC8h-cth6e-p"
+        },
+        {
+          "title": "孙同学玩AI",
+          "platform": "抖音",
+          "time": "10-18",
+          "note": "代表作品：拿不到 · AI编程与Agent搭建、开源AI工具实测、Skill开发 · 粉丝 17766",
+          "url": "https://www.douyin.com/user/MS4wLjABAAAAaLY7QduqOSXlnn9qfJR-LwsYZ28c46Ca8aej7jyFduNav83SyHx0hwYapXCzxQf3"
+        },
+        {
+          "title": "汤姆CC的AI工具箱",
+          "platform": "抖音",
+          "time": "10-18",
+          "note": "代表作品：拿不到 · AI工具教程，含Claude Code与AI编程教学（同名另有号 75368528348，粉丝212557） · 粉丝 210009",
+          "url": "https://www.douyin.com/search/%E6%B1%A4%E5%A7%86CC%E7%9A%84AI%E5%B7%A5%E5%85%B7%E7%AE%B1?type=user"
+        },
+        {
+          "title": "秋叶AIExcel",
+          "platform": "抖音",
+          "time": "10-18",
+          "note": "代表作品：拿不到 · 秋叶系：AI提示词与AI+Excel办公效率 · 粉丝 5694705",
+          "url": "https://www.douyin.com/search/%E7%A7%8B%E5%8F%B6AIExcel?type=user"
+        },
+        {
+          "title": "星探AI",
+          "platform": "抖音",
+          "time": "10-18",
+          "note": "代表作品：拿不到 · 微软算法工程师/中山大学计算机博士，GitHub热榜Agent项目、Claude等模型新功能 · 粉丝 16583",
+          "url": "https://www.douyin.com/user/MS4wLjABAAAA1D-PU5sB7wU3Le0Zut37b-Vk9kiHPsH1mA3wPPfq7_XgIKDMQ24XLQvhqCKPDs4O"
+        },
+        {
+          "title": "杰森的效率工坊",
+          "platform": "抖音",
+          "time": "10-18",
+          "note": "代表作品：拿不到 · Obsidian+AI Agent、Claude Code配置、本地大模型与知识库 · 粉丝 12930",
+          "url": "https://www.douyin.com/user/MS4wLjABAAAAML6vt8UstUMWeKKStFAJo3b59dzFdz8wUHNQzCLQROw"
+        },
+        {
+          "title": "AI产品美洋",
+          "platform": "抖音",
+          "time": "10-18",
+          "note": "代表作品：拿不到 · AI产品经理视角讲Skill、AI工作流，OpenClaw/Claude/NotebookLM实操 · 粉丝 12300",
+          "url": "https://www.douyin.com/user/MS4wLjABAAAApRJV4wVppkRFtY9xoILELxP9DXnWSbZMrVXIPfiHH2k"
+        },
+        {
+          "title": "Geek Leo独立开发者",
+          "platform": "抖音",
+          "time": "10-18",
+          "note": "代表作品：拿不到 · 全栈开发者，Claude Code/Cursor编程实战、Agent架构拆解 · 粉丝 10356",
+          "url": "https://www.douyin.com/user/MS4wLjABAAAA9gFK3svaIbgmVJkZ-6ecpBzORdsiBA_XAEbYIxhWMQp83NpeYhaevtHCjcBoe_R0"
+        },
+        {
+          "title": "小玖哥AI工作室",
+          "platform": "抖音",
+          "time": "10-18",
+          "note": "代表作品：拿不到 · AI Agent与多智能体搭建、OPC一人公司、企业AI落地 · 粉丝 126451",
+          "url": "https://www.douyin.com/user/MS4wLjABAAAAQzoi51EuOwqk0EzlDZm3jHIZQoMUyK0sLASxkHxRSx4"
+        },
+        {
+          "title": "编程两年半（用ai开发100个应用）",
+          "platform": "抖音",
+          "time": "10-18",
+          "note": "代表作品：拿不到 · AI编程教程（Cursor/Claude/Windsurf），小程序与全栈从0到1 · 粉丝 25006",
+          "url": "https://www.douyin.com/user/MS4wLjABAAAAECiMJyH-rH-sZCgxHZJHUGZ0366yw8skubFtNOVh2vIlUuR5K1ujs6qCGPfHFHkw"
+        },
+        {
+          "title": "程序员鱼皮",
+          "platform": "抖音",
+          "time": "10-18",
+          "note": "代表作品：拿不到 · 前腾讯程序员，AI编程工具评测与教程、Claude Code技巧、编程学习路线 · 粉丝 478001",
+          "url": "https://www.douyin.com/user/MS4wLjABAAAAkGPUlxhANi-quQ-g2HAFIHVArZmHUNeyutqfY_bKvS0"
+        },
+        {
+          "title": "Ai风向标",
+          "platform": "抖音",
+          "time": "10-18",
+          "note": "代表作品：拿不到 · AI讲师，AI巨头新闻解读（Claude/GPT等）与AI工具应用 · 粉丝 1055888",
+          "url": "https://www.douyin.com/user/MS4wLjABAAAAGrTy3ILgw1-eMw_GDP88SrHAQ-xZcZC-BpwzetqDcUw"
+        },
+        {
+          "title": "产品经理胡笛笛🥝",
+          "platform": "抖音",
+          "time": "10-18",
+          "note": "代表作品：拿不到 · 大厂AI产品经理，Agent/Skill概念、Codex/Claude Code办公与编程应用 · 粉丝 18824",
+          "url": "https://www.douyin.com/user/MS4wLjABAAAAAaiQmXTnVitWO9_2loyITZvKbS3rZYVocuQa-UgLd5E"
+        },
+        {
+          "title": "乐天玩AI",
+          "platform": "抖音",
+          "time": "10-18",
+          "note": "代表作品：拿不到 · AI Skills与Agent工具、AI生产力工具（调研自动化等） · 粉丝 34170",
+          "url": "https://www.douyin.com/user/MS4wLjABAAAAtnecJ7EhCWSwnOxewdi14FOxb1FDu1etmit1eS9fkyptYukCBxCIwOmdc78Lzmm1"
+        },
+        {
+          "title": "秋叶AI",
+          "platform": "抖音",
+          "time": "10-18",
+          "note": "代表作品：拿不到 · 秋叶系：DeepSeek等AI办公应用教程 · 粉丝 368706",
+          "url": "https://www.douyin.com/user/MS4wLjABAAAAPZKGCni11ZvxRP3RLHtXe4893FKj3cPQ2F1O4aTak9d7gVmgAdpB-yIBmjGoLhWv"
+        },
+        {
+          "title": "李不白的AIGC",
+          "platform": "抖音",
+          "time": "10-18",
+          "note": "代表作品：拿不到 · AI新闻+AI工具实测+Prompt技巧+vibecoding实战 · 粉丝 501902",
+          "url": "https://www.douyin.com/user/MS4wLjABAAAANrzf_nCfC4i3ggKW37aMyiwANx_FECdwMQT0OsXReq0"
+        },
+        {
+          "title": "掌舵者AI实验室",
+          "platform": "抖音",
+          "time": "10-18",
+          "note": "代表作品：拿不到 · AI实操教程，含Claude Code零基础安装与VS Code使用（公开视频） · 粉丝 163045",
+          "url": "https://www.douyin.com/user/MS4wLjABAAAAcRBovvYQmxCrmQeU-ED6-iH8mISWFIq_u5KUICGcD9Y"
+        },
+        {
+          "title": "白强学AI",
+          "platform": "抖音",
+          "time": "10-18",
+          "note": "代表作品：拿不到 · 40岁零基础学编程，LangChain与本地Agent/数字员工搭建 · 粉丝 749133",
+          "url": "https://www.douyin.com/user/MS4wLjABAAAA4pOyS_KVq47x3dI6Zh6lqpVJVZI5uPyK2Dg8mXDFpho"
+        },
+        {
+          "title": "冯飞飞Ai",
+          "platform": "抖音",
+          "time": "10-18",
+          "note": "代表作品：拿不到 · 前大厂产品经理，AI产品测评、提示词合集、Agent工具 · 粉丝 214420",
+          "url": "https://www.douyin.com/user/MS4wLjABAAAAHSOmUlGGahn0MEXdVj5s0VSI0Gybpqih4X4ON0UipY42jNHdg9u6CFyPF51XTyc9"
+        },
+        {
+          "title": "AI周周酱",
+          "platform": "抖音",
+          "time": "10-18",
+          "note": "代表作品：拿不到 · AI软硬件体验官，Agent/Workflow搭建、Skill教程、提示词工程 · 粉丝 1533434",
+          "url": "https://www.douyin.com/user/MS4wLjABAAAAw3pI-0LfWNxTRyQzJ4_losO3WEECZ1pWl9olMsuhe7Y"
+        },
+        {
+          "title": "AI课代表小明",
+          "platform": "抖音",
+          "time": "10-18",
+          "note": "代表作品：拿不到 · AI工具测评：已测68款，Agent/Claw类工具与视频模型横评 · 粉丝 2197862",
+          "url": "https://www.douyin.com/user/MS4wLjABAAAAu1K73eFXi73h02uPPbNu9OWbncWhkZaPfgvbjC4nCUo"
+        },
+        {
+          "title": "丰年AICEO",
+          "platform": "抖音",
+          "time": "10-18",
+          "note": "代表作品：拿不到 · AI老板编程/一人公司，Codex+Workbuddy组合、国产模型评测 · 粉丝 509600",
+          "url": "https://www.douyin.com/user/MS4wLjABAAAAe-ctKXoAtpDhj_-i4HONH-dxo0oB-pbbuDwJsZpsAzgzQN-zWL7VQZVnWYgLHYOT"
+        },
+        {
+          "title": "编程导师菲菲",
+          "platform": "抖音",
+          "time": "10-18",
+          "note": "代表作品：拿不到 · Python/数据分析/AI工具教学，电脑手机技巧（蝉妈妈另有「AI导师菲菲」152.4万，是否同一号待核实） · 粉丝 1299576",
+          "url": "https://www.douyin.com/user/MS4wLjABAAAAF4n-gcdigGM6oBZizo_wFOi9pMJUwMN9Mhgk5w8WwYt-QHwgFV5oEia8rVK87phm"
+        },
+        {
+          "title": "AI新榜",
+          "platform": "抖音",
+          "time": "10-18",
+          "note": "代表作品：拿不到 · 新榜旗下，做内容从业者关心的AI研究、发布AI产品榜 · 粉丝 535586",
+          "url": "https://www.douyin.com/user/MS4wLjABAAAA9XhCa42ntA1PztjKgA7h2qQ6K84ko0OZGwK2oLYc9B2vVwBWOKbDJeh9NF409wLz"
+        },
+        {
+          "title": "马力AI和商业思维",
+          "platform": "抖音",
+          "time": "10-18",
+          "note": "代表作品：拿不到 · AI趋势与商业思维，著《OpenClaw龙虾零基础入门》 · 粉丝 1428675",
+          "url": "https://www.douyin.com/user/MS4wLjABAAAAfgtDMrszkJL6elz6G9g_C0PBVKnxx0PgnbLNj9OLyMm9xfRHBD-WlvgbinUGoH8v"
+        },
+        {
+          "title": "电脑办公轻松上手",
+          "platform": "抖音",
+          "time": "10-18",
+          "note": "涉及敏感词，已隐去",
+          "url": "https://www.douyin.com/user/MS4wLjABAAAAs_wyevLgElxxtEJJ7fgFD9EK_o0FogfjgTNrxN7ZVVU"
+        },
+        {
+          "title": "熠辉Indie",
+          "platform": "抖音",
+          "time": "10-18",
+          "note": "代表作品：拿不到 · 独立开发者，Vibe Coding、Codex等工具教学、Loop Engineering · 粉丝 61824",
+          "url": "https://www.douyin.com/user/MS4wLjABAAAA76Z4XIX113nrtkZPqmKDSY1AR0GllqUao-wlqOnSUBo"
+        },
+        {
+          "title": "AI 信息官",
+          "platform": "抖音",
+          "time": "10-18",
+          "note": "代表作品：拿不到 · 前产品经理，ChatGPT/OpenAI新功能与AI办公工具 · 粉丝 611675",
+          "url": "https://www.douyin.com/user/MS4wLjABAAAAfCnrducfWy8VwbUWpmjjMKYetmWmJCepkDJi7j4wOvI"
+        },
+        {
+          "title": "艾克ai分享",
+          "platform": "抖音",
+          "time": "10-18",
+          "note": "代表作品：拿不到 · AI视频/多模态、Agent自动化、vibecoding与AI编程 · 粉丝 75684",
+          "url": "https://www.douyin.com/search/%E8%89%BE%E5%85%8Bai%E5%88%86%E4%BA%AB?type=user"
+        },
+        {
+          "title": "稀土掘金开发者社区",
+          "platform": "抖音",
+          "time": "10-18",
+          "note": "代表作品：拿不到 · 稀土掘金开发者社区（机构号），AI编程工具与LLM应用 · 粉丝 37069",
+          "url": "https://www.douyin.com/user/MS4wLjABAAAAXoIXbaDSuGJljgg6k8Vk0Ask6m-iAhjRkVvI2G1EMas"
+        },
+        {
+          "title": "数字游牧人Samuel",
+          "platform": "抖音",
+          "time": "10-18",
+          "note": "代表作品：拿不到 · 前微软工程师，本地AI部署、AI辅助编程、Agent与技能搭建 · 粉丝 897985",
+          "url": "https://www.douyin.com/user/MS4wLjABAAAAcBGY4RqDTLberZGiFTk-nG_L0hVwrFC7Bii_20YdBgBDGu-9JoA2L6jtkpdnpBpr"
+        },
+        {
+          "title": "秋芝2046",
+          "platform": "抖音",
+          "time": "10-18",
+          "note": "代表作品：拿不到 · AI工具测评与科普头部，「让更多人用好AI」；全网约245万粉（虎嗅） · 粉丝 157.3万"
+        },
+        {
+          "title": "林粒粒呀",
+          "platform": "抖音",
+          "time": "10-18",
+          "note": "代表作品：拿不到 · 前北美亚马逊软件工程师，好懂的AI与编程教程 · 粉丝 39.8万"
+        },
+        {
+          "title": "林亦LYi",
+          "platform": "抖音",
+          "time": "10-18",
+          "note": "代表作品：拿不到 · 硬核AI与前沿技术实验/科普 · 粉丝 84.2万",
+          "url": "https://www.douyin.com/user/MS4wLjABAAAAtSFk_pO6mcT_31WOWK60mRDvh_0Op6UvYT9dm77bCT20dADpgjU8ccRfj-VgY-qU"
+        },
+        {
+          "title": "数字生命卡兹克",
+          "platform": "抖音",
+          "time": "10-18",
+          "note": "代表作品：拿不到 · AI工具与工作流、模型实测（公众号头部，抖音多为长视频同步）"
+        },
+        {
+          "title": "秋叶AIPTT",
+          "platform": "抖音",
+          "time": "10-18",
+          "note": "代表作品：拿不到 · 「学AI办公找秋叶，学AI编程找秋叶」，AI办公教程 · 粉丝 289.2万"
+        },
+        {
+          "title": "小蔡博士AI工具箱",
+          "platform": "抖音",
+          "time": "10-18",
+          "note": "代表作品：拿不到 · AI方向女博士，科研论文/文献综述/参考文献+DeepSeek、智能体实操【科研向】",
+          "url": "https://www.douyin.com/user/MS4wLjABAAAA0OWfcA2rBs9smsNtxmz20DCqGKP4dqGXXn9Aihsg-EGlIJWw0gw-YSYMAVMfd836"
+        },
+        {
+          "title": "搞科研的小萝卜",
+          "platform": "抖音",
+          "time": "10-18",
+          "note": "代表作品：拿不到 · 中科大博士，用GPT/DeepSeek读文献、文献笔记、AI幻觉与可靠引用【科研向】",
+          "url": "https://www.douyin.com/user/MS4wLjABAAAAm6JtMKrwU4si78hhqgYlDolH4Y5syXt1FDFiXR7eSX2QvR0WJ6zMU3yuchJg2vtE"
+        },
+        {
+          "title": "美辑编译科研助手",
+          "platform": "抖音",
+          "time": "10-18",
+          "note": "代表作品：拿不到 · SCI论文写作、科研工具、文献检索、投稿模板【科研向】 · 粉丝 8000",
+          "url": "https://www.douyin.com/user/MS4wLjABAAAAIgiFWtpebFNvqhPsERy9pm4D1rdNFnPOtdhQLaHJJoQ"
+        },
+        {
+          "title": "FangBro_Talks",
+          "platform": "抖音",
+          "time": "10-18",
+          "note": "代表作品：拿不到 · Claude Code技巧、Skills、营销自动化（搬运讲解Boris Cherny技巧）",
+          "url": "https://www.douyin.com/user/MS4wLjABAAAAYLs-oyHpqTjwDzBFsWeoOV4LXUVnM5gB9u0g7gqhYxYJMh6vxnx00sa0692ZMl3x"
+        },
+        {
+          "title": "图寻AI",
+          "platform": "抖音",
+          "time": "10-18",
+          "note": "代表作品：拿不到 · Claude Code小白入门教程"
+        },
+        {
+          "title": "钟老师AI全栈编程",
+          "platform": "抖音",
+          "time": "10-18",
+          "note": "代表作品：拿不到 · AI编程工具横评（Cursor/Claude Code/Codex）"
+        },
+        {
+          "title": "西西聊AI",
+          "platform": "抖音",
+          "time": "10-18",
+          "note": "代表作品：拿不到 · Claude Code+Obsidian+LM Studio 本地知识库实操"
+        },
+        {
+          "title": "checkjie论文",
+          "platform": "抖音",
+          "time": "10-18",
+          "note": "代表作品：拿不到 · 论文写作速成：AI写文献综述、开题、DeepSeek写论文【科研向】 · 粉丝 7735",
+          "url": "https://www.douyin.com/user/MS4wLjABAAAAaD7auY4-RphfNiwRDii9OeWD_8BaPkNfG64wo6l-N4Y5Y0nyWcn-EWRjr06bbXO_"
+        },
+        {
+          "title": "checkjie论文",
+          "platform": "抖音",
+          "time": "10-18",
+          "note": "低粉爆帖线索 · 代表作品：ai写文献综述 #文献综述 #论文 #checkjie",
+          "url": "https://www.douyin.com/user/MS4wLjABAAAAaD7auY4-RphfNiwRDii9OeWD_8BaPkNfG64wo6l-N4Y5Y0nyWcn-EWRjr06bbXO_"
+        },
+        {
+          "title": "小蔡博士AI工具箱",
+          "platform": "抖音",
+          "time": "10-18",
+          "note": "低粉爆帖线索 · 代表作品：麻省理工学霸48小时用AI通过考试 #openclaw #AI学习 #麻省理工",
+          "url": "https://www.douyin.com/user/MS4wLjABAAAA0OWfcA2rBs9smsNtxmz20DCqGKP4dqGXXn9Aihsg-EGlIJWw0gw-YSYMAVMfd836"
+        },
+        {
+          "title": "小蔡博士AI工具箱",
+          "platform": "抖音",
+          "time": "10-18",
+          "note": "低粉爆帖线索 · 代表作品：一个投稿神器让文献接收概率翻倍！ #ai #论文 #ai工具 #科研"
+        },
+        {
+          "title": "Geek Leo独立开发者",
+          "platform": "抖音",
+          "time": "10-18",
+          "note": "低粉爆帖线索 · 代表作品：拿不到（Koinon 只给账号级「最高单条互动」）",
+          "url": "https://www.douyin.com/user/MS4wLjABAAAA9gFK3svaIbgmVJkZ-6ecpBzORdsiBA_XAEbYIxhWMQp83NpeYhaevtHCjcBoe_R0"
+        },
+        {
+          "title": "作者：拿不到",
+          "platform": "抖音",
+          "time": "10-18",
+          "note": "低粉爆帖线索 · 代表作品：VibeCoding大赏 | 文献阅读整理skill（Zotero+Codex+Obsidian 联动整理文献笔记）",
+          "url": "https://www.douyin.com/video/7637357137320658395"
+        },
+        {
+          "title": "作者：拿不到",
+          "platform": "抖音",
+          "time": "10-18",
+          "note": "低粉爆帖线索 · 代表作品：终于学会 Zotero + AI ！！ #zotero#科研#研究生#ai#文献整理",
+          "url": "https://www.douyin.com/video/7617512463604469002"
+        },
+        {
+          "title": "作者：拿不到",
+          "platform": "抖音",
+          "time": "10-18",
+          "note": "低粉爆帖线索 · 代表作品：搭配好AI，Zotero也眉清目秀了！ #文献阅读#组会#研究生#文献综述#zotero",
+          "url": "https://www.douyin.com/video/7645695166212361506"
+        }
+      ],
+      "items_source": "benchmark/候选名单_抖音头部.csv ＋ 候选名单_抖音低粉爆帖线索.csv"
     },
     {
       "name": "痛点池累计",
       "count": "286 条",
       "detail": "去重后的原帖链接总数",
-      "time": "截至 10-19"
+      "time": "截至 10-19",
+      "items": []
     }
   ],
   "mechanisms": {
@@ -1125,22 +1926,10 @@
         "status": "active"
       },
       {
-        "key": "朋友圈",
-        "label": "朋友圈",
-        "path": "存量好友转化",
-        "status": "active"
-      },
-      {
         "key": "小红书",
         "label": "小红书",
         "path": "后续再做，届时先定合规方案",
         "status": "not_started"
-      },
-      {
-        "key": "未知",
-        "label": "来源未知",
-        "path": "报数时说不清从哪来的",
-        "status": "active"
       }
     ],
     "monthly_target": {
