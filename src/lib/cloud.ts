@@ -4,7 +4,8 @@ export const configured = Boolean(
   import.meta.env.VITE_CLOUDBASE_PUBLISHABLE_KEY,
 );
 let appPromise: Promise<any> | undefined;
-async function cloud() {
+/** 同一个云开发连接和登录状态，内容录入页（content 函数）也复用它 */
+export async function cloud() {
   if (!configured) throw new Error("云端账本尚未连接");
   if (!appPromise)
     appPromise = import("@cloudbase/js-sdk").then(({ default: cloudbase }) =>
@@ -48,7 +49,7 @@ export async function session() {
   return Boolean(r.data?.session);
 }
 export async function login() {
-  if (/^#\/(calendar|customer)(\?|$)/.test(location.hash)) sessionStorage.setItem("zhangyuge-return-route", location.hash);
+  if (/^#\/(calendar|customer|content-entry)(\?|$)/.test(location.hash)) sessionStorage.setItem("zhangyuge-return-route", location.hash);
   const app = await cloud();
   const { error } = await app.auth.signInWithOAuth({
     provider: "github",
