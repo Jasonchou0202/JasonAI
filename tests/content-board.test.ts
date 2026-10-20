@@ -15,9 +15,63 @@ import { contentOnly } from "../server/content/guard";
 import { executeContent } from "../server/content/service";
 import type { PublishableExport } from "../src/domain/content";
 
-// 看板脚本固定用北京时间判断新鲜度；测试里固定「现在」
-const env = { ...process.env, BOARD_NOW: "2026-10-19 22:00" };
 const hash = async (s: string) => createHash("sha256").update(s).digest("hex");
+
+/** 与 validate.py 的 parse_time 相同：只有日期时按当天 23:59。 */
+function parseStamp(value: string, year: number): string | null {
+  const t = value.trim();
+  if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/.test(t)) return t;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(t)) return `${t} 23:59`;
+  const m = /^(\d{2})-(\d{2})(?: (\d{2}):(\d{2}))?$/.exec(t);
+  if (!m) return null;
+  const day = `${year}-${m[1]}-${m[2]}`;
+  return m[3] ? `${day} ${m[3]}:${m[4]}` : `${day} 23:59`;
+}
+function plusOneHour(stamp: string): string {
+  const m = /^(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2})$/.exec(stamp);
+  if (!m) throw new Error(`无法把 ${stamp} 往后推一小时`);
+  const utc = Date.UTC(+m[1], +m[2] - 1, +m[3], +m[4] + 1, +m[5]);
+  const d = new Date(utc);
+  const p = (n: number) => String(n).padStart(2, "0");
+  return `${d.getUTCFullYear()}-${p(d.getUTCMonth() + 1)}-${p(d.getUTCDate())} ${p(d.getUTCHours())}:${p(d.getUTCMinutes())}`;
+}
+/**
+ * 新鲜度对照的「现在」取这份看板里最晚的采集时间再加 1 小时。
+ * 只看 validate.py 会核对的那些字段，这样以后的快照不会被写死的日期挡下。
+ */
+function boardNow(dir: string): string {
+  const data = JSON.parse(readFileSync(join(dir, "data/dashboard.json"), "utf8")) as {
+    updated_at?: string;
+    kpis?: { time?: string }[];
+    accounts?: { time?: string }[];
+    collection?: { time?: string }[];
+    topics?: { snapshots?: { time?: string }[] }[];
+    acquisition?: {
+      daily?: { reported_at?: string }[];
+      deals_daily?: { provided_at?: string }[];
+      funnel_inputs?: Record<string, { time?: string } | undefined>;
+    };
+  };
+  const year = Number(String(data.updated_at ?? "").slice(0, 4)) || 2026;
+  const stamps: string[] = [];
+  const add = (t: unknown) => {
+    if (typeof t !== "string") return;
+    const parsed = parseStamp(t, year);
+    if (parsed) stamps.push(parsed);
+  };
+  add(data.updated_at);
+  for (const k of data.kpis ?? []) if (k?.time) add(k.time);
+  for (const a of data.accounts ?? []) add(a?.time);
+  for (const c of data.collection ?? []) add(c?.time);
+  for (const topic of data.topics ?? [])
+    for (const snap of topic.snapshots ?? []) add(snap?.time);
+  const acq = data.acquisition ?? {};
+  for (const row of acq.daily ?? []) add(row?.reported_at);
+  for (const row of acq.deals_daily ?? []) add(row?.provided_at);
+  for (const item of Object.values(acq.funnel_inputs ?? {})) add(item?.time);
+  const latest = stamps.reduce((a, b) => (a > b ? a : b));
+  return plusOneHour(latest);
+}
 let dirs: string[] = [];
 afterEach(() => {
   for (const d of dirs) rmSync(d, { recursive: true, force: true });
@@ -31,6 +85,7 @@ function board() {
   return dir;
 }
 function py(dir: string, args: string[]) {
+  const env = { ...process.env, BOARD_NOW: boardNow(dir) };
   try {
     return {
       code: 0,
