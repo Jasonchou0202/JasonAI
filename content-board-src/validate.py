@@ -244,8 +244,8 @@ def _banned_keys(o, path, E):
     elif isinstance(o, list):
         for i, v in enumerate(o): _banned_keys(v, f'{path}[{i}]', E)
 
-def _sources(obj, path, E, total=None, allow_missing=True, exact=False):
-    """渠道拆分可以不填、可以是 {}（= 渠道未填）；只要填了，exact=True 时合计必须正好等于总数，exact=False 时不能大于总数"""
+def _sources(obj, path, E, total=None, allow_missing=True, exact=False, what='当天总数'):
+    """渠道拆分可以不填、可以是 {}（= 渠道未填）；只要填了，exact=True 时合计必须正好等于总数（daily、deals_daily 都用这个口径），exact=False 时不能大于总数"""
     if obj is None and allow_missing: return
     if not isinstance(obj, dict): E.append(f'{path}：必须是对象，例 {{"抖音": 2, "视频号": 1}}；没拆分可以不写或写 {{}}'); return
     sm = 0
@@ -255,7 +255,7 @@ def _sources(obj, path, E, total=None, allow_missing=True, exact=False):
         else: sm += v
     if total is None or not _int(total) or not obj: return
     if exact and sm != total:
-        E.append(f'{path}：4 个渠道合计 {sm} ≠ 当天总数 {total}，渠道合计必须正好等于总数（说不清渠道就整项不写 sources）')
+        E.append(f'{path}：4 个渠道合计 {sm} ≠ {what} {total}，渠道合计必须正好等于{what}（说不清渠道就整项不写 sources）')
     elif not exact and sm > total:
         E.append(f'{path}：渠道合计 {sm} 大于总数 {total}，请核对')
 
@@ -344,7 +344,7 @@ def validate_acquisition(d, E, topic_ids):
             else: seen.add(dt)
             nc = r.get('new_customers')
             if not _int(nc) or nc < 0: E.append(f'{p}.new_customers：必须是 ≥0 的整数')
-            if 'sources' in r: _sources(r['sources'], f'{p}.sources', E, total=nc)
+            if 'sources' in r: _sources(r['sources'], f'{p}.sources', E, total=nc, exact=True, what='成交客户数')  # 10-19 16:24 章鱼哥：必须正好相等
             pa = r.get('provided_at')
             if not (isinstance(pa, str) and RE_DT.match(pa)): E.append(f'{p}.provided_at：必填，统计时间 YYYY-MM-DD HH:MM')
             if r.get('provided_by') not in DEAL_PROVIDERS: E.append(f'{p}.provided_by：只能是「销售看板Bot」或「章鱼哥」（第二大脑和大管家都不读销售数据）')
