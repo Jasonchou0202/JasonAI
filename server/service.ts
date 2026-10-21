@@ -36,7 +36,7 @@ import {
   monthlyTotals,
 } from "../src/domain/finance";
 import { today, validDate } from "../src/domain/dates";
-import { validateProfile } from "../src/domain/profile";
+import { mergeProfiles, validateProfile } from "../src/domain/profile";
 import { signature, validateBackup } from "../src/domain/import";
 import {
   customerChoices,
@@ -253,6 +253,39 @@ interface MutationReceipt<T> {
   result: T;
 }
 /** Durable receipts keep older retries harmless even after later edits. */
+/**
+ * 合并时把来源客户的 profile 并到目标所在的根客户（同一事务内）。来源档案保持原样，
+ * 所以撤销合并后来源仍有自己的原始信息；目标保留合并后的结果。
+ */
+async function absorbProfile(
+  tx: Transaction,
+  targetId: string,
+  source: Customer,
+  time: string,
+  requestId: string,
+) {
+  if (!source.profile) return;
+  let id = targetId;
+  for (let i = 0; i < 1000; i++) {
+    const c = await tx.get<Customer>("customers", id);
+    if (!c) throw new Error("客户不存在");
+    if (c.mergedInto) {
+      id = c.mergedInto;
+      continue;
+    }
+    const profile = mergeProfiles(c.profile, source.profile);
+    if (JSON.stringify(profile) === JSON.stringify(c.profile)) return;
+    await tx.put("customers", id, {
+      ...c,
+      profile,
+      updatedAt: time,
+      revision: c.revision + 1,
+      lastMutation: requestId,
+    });
+    return;
+  }
+  throw new Error("客户合并形成循环");
+}
 async function mutation<T>(
   tx: Transaction,
   ctx: Context,
@@ -386,6 +419,8 @@ export async function execute(
               lastMutation: recordId(p.requestId),
             };
             await tx.put("customers", sourceId, row);
+            if (targetId)
+              await absorbProfile(tx, targetId, source, now(), recordId(p.requestId));
             return row;
           },
         );
@@ -396,6 +431,7 @@ export async function execute(
       await initializeCustomers(store, ctx, now());
       const id = recordId(p.id);
       const profile = validateProfile(p.profile);
+      if (!Number.isInteger(p.revision) || p.revision < 1) throw new Error("客户版本无效");
       return store.transaction(async (tx) => {
         await writable(tx);
         return mutation(tx, ctx, p.requestId, action, { id, profile, revision: p.revision }, async () => {
@@ -459,6 +495,7 @@ export async function execute(
                 revision: row.revision + 1,
                 lastMutation: recordId(p.requestId),
               });
+              await absorbProfile(tx, targetId, row, now(), recordId(p.requestId));
               merged++;
             }
             return { merged };

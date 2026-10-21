@@ -1,12 +1,12 @@
 import { ClipboardList } from "lucide-react";
-import { needShares } from "../domain/profile";
+import { needSharesByRoot } from "../domain/profile";
 import { useInsights } from "../lib/insights-ui";
 
 /** 客户需求占比：分母为记录了至少一项需求的客户数（合并后的客户只算一次） */
 export function NeedShareChart() {
   const { customers, insights } = useInsights();
   if (!insights) return null;
-  const { total, rows } = needShares(customers.filter((c) => !c.mergedInto && !c.archivedAt).map((c) => c.profile));
+  const { total, rows } = needSharesByRoot(customers);
   return (
     <section className="panel need-chart" aria-labelledby="need-title">
       <div className="panel-heading">

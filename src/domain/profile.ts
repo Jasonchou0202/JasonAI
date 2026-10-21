@@ -34,7 +34,9 @@ export function validateProfile(raw: unknown): CustomerProfile {
   }
   if (p.needNote !== undefined && p.needNote !== "") {
     if (typeof p.needNote !== "string" || p.needNote.length > 2000) throw new Error("需求记录最多 2000 字");
-    out.needNote = p.needNote;
+    // 去掉换行和制表符以外的控制字符
+    const note = p.needNote.replace(/[\u0000-\u0008\u000b-\u001f\u007f]/g, "");
+    if (note.trim()) out.needNote = note;
   }
   if (p.payment !== undefined && p.payment !== "") {
     if (!PAYMENT_METHODS.includes(p.payment as PaymentMethod)) throw new Error("付款方式无效");
@@ -94,4 +96,45 @@ export function needShares(profiles: readonly (CustomerProfile | undefined)[]) {
       .map(([need, count]) => ({ need, count, pct: total ? Math.round((count / total) * 1000) / 10 : 0 }))
       .sort((a, b) => b.count - a.count || a.need.localeCompare(b.need)),
   };
+}
+
+/**
+ * 客户合并时把来源客户的信息并入目标：需求取并集（最多 30 项）；目标已有的职业、付款方式保留，
+ * 没有才用来源的；需求记录按「目标 —— 来源」顺序拼接（最多 2000 字）。
+ */
+export function mergeProfiles(target?: CustomerProfile, source?: CustomerProfile): CustomerProfile | undefined {
+  if (!source) return target;
+  if (!target) return { ...source };
+  const out: CustomerProfile = {};
+  const occupation = target.occupation || source.occupation;
+  if (occupation) out.occupation = occupation;
+  const needs = [...new Set([...(target.needs ?? []), ...(source.needs ?? [])])].slice(0, 30);
+  if (needs.length) out.needs = needs;
+  const notes = [target.needNote, source.needNote].filter((n) => n?.trim());
+  if (notes.length) out.needNote = notes.join("\n——\n").slice(0, 2000);
+  const payment = target.payment || source.payment;
+  if (payment) out.payment = payment;
+  return out;
+}
+
+/** 需求占比按合并后的根客户统计，并入已合并客户的信息（兼容云端更新前就合并的客户） */
+export function needSharesByRoot(
+  customers: readonly { id: string; mergedInto: string | null; archivedAt?: string | null; profile?: CustomerProfile }[],
+) {
+  const byId = new Map(customers.map((c) => [c.id, c]));
+  const rootOf = (id: string) => {
+    for (let i = 0; i < 1000; i++) {
+      const c = byId.get(id);
+      if (!c?.mergedInto) return id;
+      id = c.mergedInto;
+    }
+    return id;
+  };
+  const byRoot = new Map<string, CustomerProfile | undefined>();
+  for (const c of customers) {
+    if (c.archivedAt) continue;
+    const root = rootOf(c.id);
+    byRoot.set(root, mergeProfiles(byRoot.get(root), c.profile));
+  }
+  return needShares([...byRoot.values()]);
 }
