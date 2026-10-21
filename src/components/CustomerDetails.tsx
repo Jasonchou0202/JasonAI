@@ -149,7 +149,7 @@ function CustomerProfile({
             <p className="customer-insight-line">
               <TierBadge profit={insights.customerProfit.get(data.customer.id) ?? 0} />
               <QuadrantBlocks has={insights.customerQuadrants.get(data.customer.id)} />
-              <small>客户等级 · 四象限</small>
+              <small>客户等级 · 客户产品矩阵</small>
             </p>
           )}
           <p className="subtle">成交记录与每一次跟进，放在一起看。</p>

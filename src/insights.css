@@ -1,13 +1,17 @@
 /* 客户等级 · 四象限 · 有效动作 */
 .tier-badge{display:inline-flex;align-items:center;justify-content:center;min-width:26px;height:20px;padding:0 6px;border-radius:var(--radius-pill);font-size:11px;font-weight:700;letter-spacing:.02em;margin-right:6px;flex:none}
-.tier-P0{background:#1d1d1f;color:#fff}.tier-P1{background:#0071e3;color:#fff}.tier-P2{background:#e8f1fc;color:#0058b0}.tier-P3{background:#f2f2f4;color:#3a3a3c}.tier-P4{background:#f5f5f7;color:#86868b}
+.tier-P0{--t:#1E9E5A;--tf:#fff;--ts:#E4F5EB;--td:#11683A}.tier-P1{--t:#D93B3B;--tf:#fff;--ts:#FCE8E8;--td:#A32222}.tier-P2{--t:#C9650C;--tf:#fff;--ts:#FDEEDD;--td:#8F4505}.tier-P3{--t:#F5C518;--tf:#3D2E00;--ts:#FFF6CC;--td:#6B5000}.tier-P4{--t:#2F7BD8;--tf:#fff;--ts:#E5EFFC;--td:#1A5BA8}
+.tier-badge{background:var(--t);color:var(--tf)}
+.tier-chips button.tier-chip{background:var(--ts);color:var(--td);border-color:transparent}.tier-chips button.tier-chip b{color:var(--td)}
+.tier-chips button.tier-chip.selected{background:var(--t);color:var(--tf);border-color:var(--t)}.tier-chips button.tier-chip.selected b{color:var(--tf)}
+.tier-legend li{background:var(--ts);color:var(--td);border-radius:10px;padding:6px 8px}
 .tier-summary{display:grid;gap:8px;margin:4px 0 12px}
 .tier-chips{display:flex;flex-wrap:wrap;gap:6px}
 .tier-chips button{border:1px solid var(--line);background:var(--surface);border-radius:var(--radius-pill);padding:4px 12px;font:inherit;font-size:13px;color:var(--text-2);cursor:pointer}
 .tier-chips button b{font-weight:600;margin-left:2px;color:var(--text-1)}
 .tier-chips button.selected{background:var(--text-1);color:#fff;border-color:var(--text-1)}.tier-chips button.selected b{color:#fff}
 .tier-legend{font-size:13px;color:var(--text-2)}.tier-legend summary{cursor:pointer;color:var(--accent,#0071e3);width:max-content}
-.tier-legend ul{list-style:none;padding:0;margin:8px 0;display:grid;gap:6px}.tier-legend li{display:flex;align-items:center}.tier-legend p{margin:0;line-height:1.6}
+.tier-legend ul{list-style:none;padding:0;margin:8px 0;display:grid;gap:6px;max-width:360px}.tier-legend li{display:flex;align-items:center}.tier-legend p{margin:0;line-height:1.6}
 .quad-blocks{display:inline-grid;grid-template-columns:repeat(2,8px);gap:2px;vertical-align:middle}
 .quad-blocks i{width:8px;height:8px;border-radius:2px;background:#e3e3e6}
 .customer-rank-profit .quad-blocks{margin-bottom:4px;align-self:flex-end}

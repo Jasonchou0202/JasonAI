@@ -178,10 +178,10 @@ export function CustomerRanking({
         {counts && (
           <div className="tier-summary">
             <div className="tier-chips" role="group" aria-label="按客户等级筛选">
-              <button className={tier === "all" ? "selected" : ""} aria-pressed={tier === "all"} onClick={() => setTier("all")}>全部等级</button>
+              <button className={tier === "all" ? "selected" : ""} aria-pressed={tier === "all"} onClick={() => setTier("all")}>全部 · <b>{TIERS.reduce((n, t) => n + counts[t], 0)}</b></button>
               {TIERS.map((t) => (
                 <button key={t} className={`tier-chip tier-${t} ${tier === t ? "selected" : ""}`} aria-pressed={tier === t} onClick={() => setTier(tier === t ? "all" : t)}>
-                  {t} <b>{counts[t]}</b>
+                  {t} · <b>{counts[t]}</b>
                 </button>
               ))}
             </div>
@@ -189,10 +189,10 @@ export function CustomerRanking({
               <summary>客户等级说明</summary>
               <ul>
                 {TIER_RULES.map((r) => (
-                  <li key={r.tier}><span className={`tier-badge tier-${r.tier}`}>{r.tier}</span>{r.label}</li>
+                  <li key={r.tier} className={`tier-${r.tier}`}><span className={`tier-badge tier-${r.tier}`}>{r.tier}</span>{r.label}</li>
                 ))}
               </ul>
-              <p>按每位客户（合并后）全部有效销售的累计纯利划分，不随上方周期变化。右侧四个色块表示该客户在四象限是否有成交，灰色为待开拓；{NEW_RULE_TEXT}。</p>
+              <p>按每位客户（合并后）全部有效销售的累计纯利划分，不随上方周期变化。右侧四个色块表示该客户在客户 × 产品矩阵的四个色块是否有成交，灰色为待开拓；{NEW_RULE_TEXT}。</p>
             </details>
           </div>
         )}

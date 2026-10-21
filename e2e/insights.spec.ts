@@ -4,6 +4,7 @@ import { test, expect, type Page } from "@playwright/test";
 const instant = "2026-10-22T04:00:00.000Z";
 const shots = process.env.TIER_SHOTS;
 async function shot(page: Page, name: string) {
+  if (shots) await page.addStyleTag({ content: "*{transition:none!important;animation:none!important}" });
   if (shots) await page.screenshot({ path: `${shots}/${name}.png`, fullPage: false });
 }
 test.beforeEach(async ({ page }) => {
@@ -12,7 +13,7 @@ test.beforeEach(async ({ page }) => {
 });
 
 for (const [label, size] of [["桌面", { width: 1366, height: 900 }], ["手机390", { width: 390, height: 844 }]] as const) {
-  test(`客户等级、四象限、每月图表与有效动作（${label}）`, async ({ page }) => {
+  test(`客户等级、客户产品矩阵、每月图表与有效动作（${label}）`, async ({ page }) => {
     await page.setViewportSize(size);
     await page.goto("./#/dashboard");
     const ranking = page.locator(".customer-ranking");
@@ -20,21 +21,28 @@ for (const [label, size] of [["桌面", { width: 1366, height: 900 }], ["手机3
     await expect(ranking.locator(".customer-ranks .tier-badge").first()).toBeVisible();
     await ranking.getByText("客户等级说明").click();
     await expect(ranking.getByText("纯利 ≥ ¥10,000")).toBeVisible();
-    await ranking.locator(".tier-summary").scrollIntoViewIfNeeded();
-    await shot(page, `${label}-客户等级与说明`);
-    await ranking.getByRole("button", { name: /^P4/ }).click();
+    await expect(ranking.getByRole("button", { name: /^P0 · \d+/ })).toBeVisible();
+    await ranking.locator(".tier-chips").scrollIntoViewIfNeeded();
+    await shot(page, `${label}-核心客户等级筛选`);
+    await ranking.locator(".tier-legend").scrollIntoViewIfNeeded();
+    await shot(page, `${label}-客户等级说明`);
+    await ranking.getByRole("button", { name: /^P4 · \d+/ }).click();
     await expect(ranking.getByText("示例新客 · 小周")).toBeVisible();
     await expect(ranking.getByText("示例客户 · 木木")).toHaveCount(0);
-    await ranking.getByRole("button", { name: "全部等级" }).click();
+    await ranking.getByRole("button", { name: /^全部 · \d+/ }).click();
 
     const matrix = page.locator(".quad-panel");
-    await expect(matrix.getByRole("heading", { name: /客户 × 产品四象限/ })).toBeVisible();
+    await expect(matrix.getByRole("heading", { name: /客户 × 产品矩阵/ })).toBeVisible();
     for (const q of ["newOld", "newNew", "oldOld", "oldNew"])
       await expect(matrix.locator(`[data-quadrant="${q}"]`)).toHaveClass(/on/);
     await matrix.scrollIntoViewIfNeeded();
-    await shot(page, `${label}-四象限矩阵`);
-    await matrix.getByRole("tab", { name: "全部" }).click();
-    await expect(matrix.locator('[data-quadrant="oldOld"]')).toContainText("笔");
+    await shot(page, `${label}-客户产品矩阵-本月`);
+    for (const tab of ["本季度", "本年"]) {
+      await matrix.getByRole("tab", { name: tab }).click();
+      await expect(matrix.getByRole("tab", { name: tab })).toHaveAttribute("aria-selected", "true");
+      await expect(matrix.locator('[data-quadrant="oldOld"]')).toContainText("笔");
+      await shot(page, `${label}-客户产品矩阵-${tab}`);
+    }
 
     const trend = page.locator(".monthly-chart").first();
     await expect(trend.getByText("每月新进客户数（按首次购买月份")).toBeVisible();

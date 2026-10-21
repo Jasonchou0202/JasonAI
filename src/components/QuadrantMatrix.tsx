@@ -2,17 +2,24 @@ import { useState } from "react";
 import { ArrowUpRight, LayoutGrid } from "lucide-react";
 import type { Api } from "../domain/model";
 import { money } from "../domain/finance";
-import { today, addDays } from "../domain/dates";
+import { today } from "../domain/dates";
 import { QUADRANT_INFO, NEW_RULE_TEXT, quadrantTotals, type Quadrant } from "../domain/insights";
 import { apiMode } from "../lib/customer-ui";
 import { useActionLibrary, useInsights } from "../lib/insights-ui";
 
-type Range = "month" | "recent" | "all";
+type Range = "month" | "quarter" | "year";
 const RANGES: { id: Range; label: string }[] = [
   { id: "month", label: "本月" },
-  { id: "recent", label: "近 90 天" },
-  { id: "all", label: "全部" },
+  { id: "quarter", label: "本季度" },
+  { id: "year", label: "本年" },
 ];
+/** 北京时间的自然月 / 季度 / 年起始日（today() 已按北京时间取日期） */
+export function rangeStart(day: string, range: Range): string {
+  const [y, m] = day.split("-").map(Number);
+  if (range === "year") return `${y}-01-01`;
+  if (range === "quarter") return `${y}-${String(Math.floor((m - 1) / 3) * 3 + 1).padStart(2, "0")}-01`;
+  return day.slice(0, 7) + "-01";
+}
 // 按附件布局：上排新客户，下排老客户；左列老产品，右列新产品
 const GRID: Quadrant[] = ["newOld", "newNew", "oldOld", "oldNew"];
 
@@ -22,17 +29,17 @@ export function QuadrantMatrix({ api }: { api: Api }) {
   const [range, setRange] = useState<Range>("month");
   if (!insights) return null;
   const day = today();
-  const from = range === "month" ? day.slice(0, 7) + "-01" : range === "recent" ? addDays(day, -89) : "";
+  const from = rangeStart(day, range);
   const rows = sales.filter((s) => !s.deletedAt && s.date >= from && s.date <= day);
   const t = quadrantTotals(rows, insights.quadrantOf);
   return (
     <section className="panel quad-panel" aria-labelledby="quad-title">
       <div className="panel-heading">
         <div>
-          <h2 id="quad-title"><LayoutGrid size={17} /> 客户 × 产品四象限</h2>
+          <h2 id="quad-title"><LayoutGrid size={17} /> 客户 × 产品矩阵</h2>
           <p>{NEW_RULE_TEXT}；灰色象限是待开拓的增长方向</p>
         </div>
-        <div className="period-tabs" role="tablist" aria-label="四象限周期">
+        <div className="period-tabs" role="tablist" aria-label="矩阵周期">
           {RANGES.map((r) => (
             <button key={r.id} role="tab" aria-selected={range === r.id} className={range === r.id ? "selected" : ""} onClick={() => setRange(r.id)}>{r.label}</button>
           ))}

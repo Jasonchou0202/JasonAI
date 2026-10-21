@@ -34,7 +34,7 @@ export function TierBadge({ profit }: { profit?: number }) {
 /** 四个小色块：有该象限成交就上色，没有显示灰色（待开拓） */
 export function QuadrantBlocks({ has }: { has?: Set<Quadrant> }) {
   return (
-    <span className="quad-blocks" role="img" aria-label={"四象限：" + QUADRANTS.map((q) => `${QUADRANT_INFO[q].label}${has?.has(q) ? "有成交" : "待开拓"}`).join("，")}>
+    <span className="quad-blocks" role="img" aria-label={"客户 × 产品矩阵：" + QUADRANTS.map((q) => `${QUADRANT_INFO[q].label}${has?.has(q) ? "有成交" : "待开拓"}`).join("，")}>
       {QUADRANTS.map((q) => (
         <i key={q} title={`${QUADRANT_INFO[q].label} · ${has?.has(q) ? "有成交" : "待开拓"}`}
           style={{ background: has?.has(q) ? QUADRANT_INFO[q].color : undefined }} />

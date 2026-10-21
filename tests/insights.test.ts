@@ -80,3 +80,13 @@ describe("每月图表", () => {
     expect(pct(1, 0)).toBe(0);
   });
 });
+
+import { rangeStart } from "../src/components/QuadrantMatrix";
+describe("矩阵周期", () => {
+  it("本月 / 本季度 / 本年按自然周期起算", () => {
+    expect(rangeStart("2026-10-22", "month")).toBe("2026-10-01");
+    expect(rangeStart("2026-10-22", "quarter")).toBe("2026-10-01");
+    expect(rangeStart("2026-08-31", "quarter")).toBe("2026-07-01");
+    expect(rangeStart("2026-03-05", "year")).toBe("2026-01-01");
+  });
+});

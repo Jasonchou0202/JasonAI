@@ -4,7 +4,7 @@ import { QUADRANTS, QUADRANT_INFO, type Quadrant } from "../domain/insights";
 import { PRESET_ACTIONS, type EffectiveAction } from "../domain/actions";
 import { useActionLibrary } from "../lib/insights-ui";
 
-/** 日程管理里的「有效动作库」：按四象限分组，可增改删，可一键加入日程 */
+/** 日程管理里的「有效动作库」：按客户 × 产品矩阵分组，可增改删，可一键加入日程 */
 export function ActionLibrary({ mode, focus, onSchedule }: { mode: string; focus?: Quadrant; onSchedule: (a: EffectiveAction) => void }) {
   const { actions, save } = useActionLibrary(mode);
   const [adding, setAdding] = useState<Quadrant | null>(null);
@@ -27,7 +27,7 @@ export function ActionLibrary({ mode, focus, onSchedule }: { mode: string; focus
       <div className="panel-heading">
         <div>
           <h2 id="action-lib-title"><Sparkles size={17} /> 有效动作库</h2>
-          <p>按四象限整理的打法，新增日程时可直接引用；保存在本机浏览器</p>
+          <p>按客户 × 产品矩阵整理的打法，新增日程时可直接引用；保存在本机浏览器</p>
         </div>
         <button className="text-button" onClick={() => confirm("恢复为预设动作？自定义的动作会被清除。") && save(PRESET_ACTIONS.map((a) => ({ ...a })))}>
           <RotateCcw size={14} /> 恢复预设
