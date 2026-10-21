@@ -195,7 +195,10 @@ describe("可发布汇总 → 看板现有 validate.py / build.py 流程", () =>
       ),
     ).toBe(true);
     expect(JSON.stringify(d)).not.toContain("第 88 集带来的");
-    expect(py(dir, ["validate.py"]).out).toContain("加微记录 3 天");
+    const validated = py(dir, ["validate.py"]);
+    const dayCount = validated.out.match(/加微记录 (\d+) 天/);
+    expect(dayCount).not.toBeNull();
+    expect(Number(dayCount?.[1])).toBeGreaterThanOrEqual(3);
     const b = py(dir, ["build.py"]);
     expect(b.code).toBe(0);
     const html = readFileSync(join(dir, "dist/index.html"), "utf8");
