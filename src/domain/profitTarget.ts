@@ -45,8 +45,11 @@ export function targetSeries(
 /** 按固定起点（PROFIT_TARGET.startMonth）从月度数据算目标线；与当前月份无关 */
 export function fixedTarget(months: { key: string; profit: number }[]) {
   const start = PROFIT_TARGET.startMonth;
-  const startProfit = months.find((b) => b.key.slice(0, 7) === start)?.profit ?? 0;
-  return { startMonth: start, ...targetSeries(start, startProfit) };
+  const startBucket = months.find((b) => b.key.slice(0, 7) === start);
+  // 找不到起点利润（例如已不在返回的月份数据里）时，不从 0 画线，只保留终点目标
+  if (!startBucket)
+    return { startMonth: start, hasStart: false, points: [{ month: PROFIT_TARGET.endMonth, value: PROFIT_TARGET.endProfit }], step: 0 };
+  return { startMonth: start, hasStart: true, ...targetSeries(start, startBucket.profit) };
 }
 
 /** 窗口锚点月份：过了终点月后停在终点月 */

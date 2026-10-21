@@ -157,7 +157,9 @@ function ProfitTargetInner({ months, current }: { months: Bucket[]; current: str
         )}
       </div>
       <p className="pt-note">
-        目标从 {startMonth.replace("-", " 年 ")} 月实际利润起，每月增加约 ¥{money(Math.round(target.step))}，到 {PROFIT_TARGET.endMonth.replace("-", " 年 ")} 月达到 ¥{money(PROFIT_TARGET.endProfit)}
+        {target.hasStart
+          ? <>目标从 {startMonth.replace("-", " 年 ")} 月实际利润起，每月增加约 ¥{money(Math.round(target.step))}，到 {PROFIT_TARGET.endMonth.replace("-", " 年 ")} 月达到 ¥{money(PROFIT_TARGET.endProfit)}</>
+          : <>暂无 {startMonth.replace("-", " 年 ")} 月的起点利润数据，只显示终点目标：{PROFIT_TARGET.endMonth.replace("-", " 年 ")} 月达到 ¥{money(PROFIT_TARGET.endProfit)}</>}
       </p>
     </div>
   );

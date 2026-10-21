@@ -23,6 +23,13 @@ describe("利润目标走势", () => {
     expect(inNov.points[0]).toEqual({ month: "2026-09", value: 1_000_000 });
     expect(inNov.points.find((p) => p.month === "2026-10")!.value).toBe(1_600_000);
   });
+  it("找不到 2026-09 起点利润时不从 0 画线，只保留 2027-12 终点", () => {
+    const t = fixedTarget([{ key: "2026-12-01", profit: 2_000_000 }, { key: "2027-01-01", profit: 2_500_000 }]);
+    expect(t.hasStart).toBe(false);
+    expect(t.points).toEqual([{ month: "2027-12", value: 10_000_000 }]);
+    expect(t.points.some((p) => p.value === 0)).toBe(false);
+    expect(fixedTarget(months).hasStart).toBe(true);
+  });
   it("过了 2027-12 后窗口停在最后一个月", () => {
     expect(anchorMonth("2026-11")).toBe("2026-11");
     expect(anchorMonth("2028-03")).toBe("2027-12");
