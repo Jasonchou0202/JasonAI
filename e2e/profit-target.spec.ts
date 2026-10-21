@@ -17,7 +17,7 @@ for (const [plan, curve] of [["方案A-线性", "linear"], ["方案B-复合增�
       await expect(chart.getByText("实际利润走势（线）")).toBeVisible();
       await expect(chart.locator(".pt-end text")).toHaveText("2027.12 ¥10万");
       await expect(chart.locator(".pt-note")).toContainText(curve === "compound" ? "每月增长" : "每月增加约");
-      await chart.locator(".pt-col").nth(10).click();
+      await chart.locator(".pt-col").nth(11).click();
       await expect(chart.locator(".pt-readout")).toContainText("差距");
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
       if (shots) {

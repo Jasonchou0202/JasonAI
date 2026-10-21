@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { Bucket } from "../domain/model";
 import { money } from "../domain/finance";
 import { PROFIT_TARGET, addMonth, monthDiff, targetSeries } from "../domain/profitTarget";
@@ -15,7 +15,13 @@ export function ProfitTargetChart({ months, current }: { months: Bucket[]; curre
   const all = Array.from({ length: monthDiff(first, PROFIT_TARGET.endMonth) + 1 }, (_, i) => addMonth(first, i));
   const [sel, setSel] = useState<string>(current);
   const W = 30, H = 220, top = 26, bottom = 30, left = 46;
-  const width = left + all.length * W + 12;
+  const width = left + all.length * W + 40;
+  const scroller = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    // 窄屏需要横向滑动时，默认把本月放在左侧三分之一处，后面的目标线和终点一眼可见
+    const el = scroller.current;
+    if (el && el.scrollWidth > el.clientWidth) el.scrollLeft = Math.max(0, (el.scrollWidth / width) * x(all.indexOf(current)) - el.clientWidth / 3);
+  }, []);
   const max = Math.max(PROFIT_TARGET.endProfit, ...months.map((b) => b.profit)) * 1.08;
   const min = Math.min(0, ...months.map((b) => b.profit));
   const y = (v: number) => top + ((max - v) / (max - min)) * (H - top - bottom);
@@ -40,8 +46,8 @@ export function ProfitTargetChart({ months, current }: { months: Bucket[]; curre
           <span className={a - t >= 0 ? "pt-ok" : "pt-gap"}>{a - t >= 0 ? "超出" : "差距"} ¥{money(Math.abs(a - t))}</span>
         )}
       </div>
-      <div className="pt-scroll">
-        <svg width={width} height={H} viewBox={`0 0 ${width} ${H}`} role="img" aria-label={`每月利润与目标走势，目标 ${PROFIT_TARGET.endMonth} 达到每月 ¥${money(PROFIT_TARGET.endProfit)}`}>
+      <div className="pt-scroll" ref={scroller}>
+        <svg style={{ minWidth: 760 }} width="100%" viewBox={`0 0 ${width} ${H}`} role="img" aria-label={`每月利润与目标走势，目标 ${PROFIT_TARGET.endMonth} 达到每月 ¥${money(PROFIT_TARGET.endProfit)}`}>
           {ticks.map((v) => (
             <g key={v}>
               <line x1={left - 4} x2={width - 8} y1={y(v)} y2={y(v)} className="pt-grid" />
@@ -65,7 +71,7 @@ export function ProfitTargetChart({ months, current }: { months: Bucket[]; curre
           {endI >= 0 && (
             <g className="pt-end">
               <circle cx={x(endI)} cy={y(PROFIT_TARGET.endProfit)} r={5} />
-              <text x={x(endI) - 6} y={y(PROFIT_TARGET.endProfit) - 10}>{PROFIT_TARGET.endMonth.replace("-", ".")} ¥10万</text>
+              <text x={x(endI) + 4} y={y(PROFIT_TARGET.endProfit) - 10}>{PROFIT_TARGET.endMonth.replace("-", ".")} ¥10万</text>
             </g>
           )}
         </svg>
