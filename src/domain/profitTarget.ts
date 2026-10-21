@@ -6,6 +6,8 @@ export const PROFIT_TARGET = {
   endProfit: 100_000_00,
   /** 目标曲线：linear = 每月等额增加；compound = 每月按固定增长率 */
   curve: "linear" as "linear" | "compound",
+  /** 默认可见月数（半年 = 最近 5 个完整月 + 本月），其余横向滑动 */
+  visibleMonths: 6,
 };
 
 export function addMonth(month: string, n: number): string {

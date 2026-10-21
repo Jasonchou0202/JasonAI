@@ -20,8 +20,16 @@ for (const [plan, curve] of [["方案A-线性", "linear"], ["方案B-复合增�
       await chart.locator(".pt-col").nth(11).click();
       await expect(chart.locator(".pt-readout")).toContainText("差距");
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+      // 默认可见半年：本月是可见区最后一列，5 个月前那列也在可见区内
+      const vis = await chart.locator(".pt-scroll").evaluate((el) => {
+        const r = el.getBoundingClientRect();
+        const cols = [...el.querySelectorAll(".pt-hit")].map((c) => c.getBoundingClientRect());
+        return cols.map((c, i) => (c.left >= r.left - 1 && c.right <= r.right + 1 ? i : -1)).filter((i) => i >= 0);
+      });
+      expect(vis).toEqual([6, 7, 8, 9, 10, 11]);
       if (shots) {
         await page.addStyleTag({ content: "*{transition:none!important;animation:none!important}" });
+        await page.waitForTimeout(300);
         await page.locator(".trend-panel").screenshot({ path: `${shots}/${plan}-${label}.png` });
         console.log("NOTE", await chart.locator(".pt-note").innerText());
       }

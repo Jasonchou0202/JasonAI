@@ -15,3 +15,4 @@
 .pt-target{fill:none;stroke:#E8813A;stroke-width:2.5;stroke-dasharray:6 5;stroke-linecap:round}
 .pt-end circle{fill:#E8813A;stroke:#fff;stroke-width:2}.pt-end text{font-size:11px;font-weight:700;fill:#B5601F;text-anchor:end}
 .pt-note{font-size:12px;color:var(--text-3);margin:8px 0 0}
+.pt-frame{position:relative}.pt-yaxis{position:absolute;left:0;top:0;z-index:1;pointer-events:none}

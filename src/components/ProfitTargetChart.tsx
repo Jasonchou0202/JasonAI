@@ -14,14 +14,24 @@ export function ProfitTargetChart({ months, current }: { months: Bucket[]; curre
   const targetBy = new Map(target.points.map((p) => [p.month, p.value]));
   const all = Array.from({ length: monthDiff(first, PROFIT_TARGET.endMonth) + 1 }, (_, i) => addMonth(first, i));
   const [sel, setSel] = useState<string>(current);
-  const W = 30, H = 220, top = 26, bottom = 30, left = 46;
-  const width = left + all.length * W + 40;
   const scroller = useRef<HTMLDivElement>(null);
+  const [cw, setCw] = useState(720);
   useEffect(() => {
-    // 窄屏需要横向滑动时，默认把本月放在左侧三分之一处，后面的目标线和终点一眼可见
     const el = scroller.current;
-    if (el && el.scrollWidth > el.clientWidth) el.scrollLeft = Math.max(0, (el.scrollWidth / width) * x(all.indexOf(current)) - el.clientWidth / 3);
+    if (!el) return;
+    const ro = new ResizeObserver(() => setCw(el.clientWidth || 720));
+    ro.observe(el);
+    return () => ro.disconnect();
   }, []);
+  const H = 220, top = 26, bottom = 30, left = 46, right = 8;
+  // 默认可见半年：最近 5 个完整月 + 本月，其余左右滑动查看
+  const W = Math.max(24, (cw - left - right) / PROFIT_TARGET.visibleMonths);
+  const width = left + all.length * W + right;
+  const bw = Math.min(36, W * 0.45);
+  useEffect(() => {
+    const el = scroller.current;
+    if (el) el.scrollLeft = Math.max(0, x(all.indexOf(current)) + W / 2 + right - el.clientWidth);
+  }, [cw]);
   const max = Math.max(PROFIT_TARGET.endProfit, ...months.map((b) => b.profit)) * 1.08;
   const min = Math.min(0, ...months.map((b) => b.profit));
   const y = (v: number) => top + ((max - v) / (max - min)) * (H - top - bottom);
@@ -46,12 +56,15 @@ export function ProfitTargetChart({ months, current }: { months: Bucket[]; curre
           <span className={a - t >= 0 ? "pt-ok" : "pt-gap"}>{a - t >= 0 ? "超出" : "差距"} ¥{money(Math.abs(a - t))}</span>
         )}
       </div>
+      <div className="pt-frame">
+      <svg className="pt-yaxis" width={left} height={H} aria-hidden="true">
+        {ticks.map((v) => <text key={v} x={left - 8} y={y(v) + 4} className="pt-ytick">{v ? `${v / 1_000_000}万` : "0"}</text>)}
+      </svg>
       <div className="pt-scroll" ref={scroller}>
-        <svg style={{ minWidth: 760 }} width="100%" viewBox={`0 0 ${width} ${H}`} role="img" aria-label={`每月利润与目标走势，目标 ${PROFIT_TARGET.endMonth} 达到每月 ¥${money(PROFIT_TARGET.endProfit)}`}>
+        <svg width={width} height={H} viewBox={`0 0 ${width} ${H}`} role="img" aria-label={`每月利润与目标走势，目标 ${PROFIT_TARGET.endMonth} 达到每月 ¥${money(PROFIT_TARGET.endProfit)}`}>
           {ticks.map((v) => (
             <g key={v}>
               <line x1={left - 4} x2={width - 8} y1={y(v)} y2={y(v)} className="pt-grid" />
-              <text x={left - 8} y={y(v) + 4} className="pt-ytick">{v ? `${v / 1_000_000}万` : "0"}</text>
             </g>
           ))}
           {all.map((m, i) => {
@@ -59,8 +72,8 @@ export function ProfitTargetChart({ months, current }: { months: Bucket[]; curre
             return (
               <g key={m} className={`pt-col ${sel === m ? "sel" : ""}`} onMouseEnter={() => setSel(m)} onClick={() => setSel(m)}>
                 <rect x={x(i) - W / 2} y={top} width={W} height={H - top - bottom} className="pt-hit" />
-                {b && <rect x={x(i) - 8} width={16} y={Math.min(y(b.profit), y(0))} height={Math.max(Math.abs(y(b.profit) - y(0)), b.count ? 2 : 0)} rx={4} className={`pt-bar ${m === current ? "cur" : ""} ${b.profit < 0 ? "loss" : ""}`} />}
-                {(m.endsWith("-01") || i === 0 || m === PROFIT_TARGET.endMonth || i % 3 === 0) && (
+                {b && <rect x={x(i) - bw / 2} width={bw} y={Math.min(y(b.profit), y(0))} height={Math.max(Math.abs(y(b.profit) - y(0)), b.count ? 2 : 0)} rx={4} className={`pt-bar ${m === current ? "cur" : ""} ${b.profit < 0 ? "loss" : ""}`} />}
+                {(W >= 40 || m.endsWith("-01") || i % 3 === 0) && (
                   <text x={x(i)} y={H - 12} className="pt-xtick">{m.endsWith("-01") || i === 0 ? `${m.slice(2, 4)}年${Number(m.slice(5))}月` : `${Number(m.slice(5))}月`}</text>
                 )}
               </g>
@@ -71,10 +84,11 @@ export function ProfitTargetChart({ months, current }: { months: Bucket[]; curre
           {endI >= 0 && (
             <g className="pt-end">
               <circle cx={x(endI)} cy={y(PROFIT_TARGET.endProfit)} r={5} />
-              <text x={x(endI) + 4} y={y(PROFIT_TARGET.endProfit) - 10}>{PROFIT_TARGET.endMonth.replace("-", ".")} ¥10万</text>
+              <text x={x(endI) + W / 2 - 2} y={y(PROFIT_TARGET.endProfit) - 10}>{PROFIT_TARGET.endMonth.replace("-", ".")} ¥10万</text>
             </g>
           )}
         </svg>
+      </div>
       </div>
       <p className="pt-note">
         目标从 {startMonth.replace("-", " 年 ")} 月实际利润起，{target.curve === "compound" ? `每月增长 ${(target.rate * 100).toFixed(1)}%` : `每月增加约 ¥${money(Math.round(target.step))}`}，到 {PROFIT_TARGET.endMonth.replace("-", " 年 ")} 月达到 ¥{money(PROFIT_TARGET.endProfit)}
