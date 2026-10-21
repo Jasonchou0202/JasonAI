@@ -171,7 +171,7 @@ export function Dashboard({
                 ? "最近 7 天"
                 : period === "week"
                   ? "最近 8 周"
-                  : "默认显示近半年，左右滑动看更早月份和目标至 2027 年 12 月"}{" "}
+                  : "默认显示本月前后半年，拖动下方进度条查看其他月份（目标至 2027 年 12 月）"}{" "}
               ·{" "}
               <span className="hint-pointer">指向柱形看金额，点击查看明细</span>
               <span className="hint-touch">点柱形看金额，再点一次看明细</span>

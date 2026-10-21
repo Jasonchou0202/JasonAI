@@ -15,24 +15,26 @@ for (const [plan, curve] of [["方案A-线性", "linear"], ["方案B-复合增�
       const chart = page.locator(".profit-target");
       await expect(chart.getByText("目标走势（虚线）")).toBeVisible();
       await expect(chart.getByText("实际利润走势（线）")).toBeVisible();
-      await expect(chart.locator(".pt-end text")).toHaveText("2027.12 ¥10万");
       await expect(chart.locator(".pt-note")).toContainText(curve === "compound" ? "每月增长" : "每月增加约");
-      await chart.locator(".pt-col").nth(11).click();
+      await expect(chart.locator(".pt-xtick")).toHaveText(["26年8月", "9月", "10月", "11月", "12月", "27年1月"]);
+      await expect(chart.locator(".pt-ghost")).toHaveCount(3);
+      await expect(chart.locator(".pt-progress")).toContainText("距 2027.12 月利 10万 目标：本月完成");
       await expect(chart.locator(".pt-readout")).toContainText("差距");
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-      // 默认可见半年：本月是可见区最后一列，5 个月前那列也在可见区内
-      const vis = await chart.locator(".pt-scroll").evaluate((el) => {
-        const r = el.getBoundingClientRect();
-        const cols = [...el.querySelectorAll(".pt-hit")].map((c) => c.getBoundingClientRect());
-        return cols.map((c, i) => (c.left >= r.left - 1 && c.right <= r.right + 1 ? i : -1)).filter((i) => i >= 0);
-      });
-      expect(vis).toEqual([6, 7, 8, 9, 10, 11]);
-      if (shots) {
+      const snap = async (name: string) => {
+        if (!shots) return;
         await page.addStyleTag({ content: "*{transition:none!important;animation:none!important}" });
         await page.waitForTimeout(300);
-        await page.locator(".trend-panel").screenshot({ path: `${shots}/${plan}-${label}.png` });
-        console.log("NOTE", await chart.locator(".pt-note").innerText());
-      }
+        await page.locator(".trend-panel").screenshot({ path: `${shots}/${plan}-${label}-${name}.png` });
+      };
+      await snap("默认");
+      const slider = chart.getByRole("slider", { name: "选择显示的月份范围" });
+      await slider.fill(await slider.getAttribute("max") as string);
+      await expect(chart.locator(".pt-end text")).toHaveText("2027.12 目标 ¥10万");
+      await expect(chart.locator(".pt-xtick").last()).toHaveText("12月");
+      await snap("滑到2027年12月");
+      await chart.getByRole("button", { name: "回到本月" }).click();
+      await expect(chart.locator(".pt-xtick").first()).toHaveText("26年8月");
     });
 
 test("公开看板没有金额，也没有利润目标图", async ({ page }) => {
