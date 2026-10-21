@@ -13,6 +13,8 @@ import {
   type CustomerRankingData,
 } from "../lib/customer-ui";
 import { Empty, ErrorNote, Loading, Money } from "./ui";
+import { TIERS, TIER_RULES, tierCounts, tierOf, NEW_RULE_TEXT, type Tier } from "../domain/insights";
+import { QuadrantBlocks, TierBadge, useInsights } from "../lib/insights-ui";
 import "../customer.css";
 
 const PERIOD_TABS: { type: RankPeriodType; label: string }[] = [
@@ -82,15 +84,20 @@ export function CustomerRanking({
       setPeriod({ type: "month", value });
     }
   }
+  const { insights } = useInsights();
+  const [tier, setTier] = useState<Tier | "all">("all");
+  const counts = insights ? tierCounts(insights.customerProfit) : undefined;
+  const profitOf = (id: string) => insights?.customerProfit.get(id);
   const query = search.trim().toLocaleLowerCase();
   const items = data?.items.filter((row) => {
+    if (tier !== "all" && (profitOf(row.customerId) === undefined || tierOf(profitOf(row.customerId)!) !== tier)) return false;
     if (!query) return true;
     return [row.name, ...row.aliases, ...row.products.map((p) => p.name)]
       .map((text) => text.toLocaleLowerCase())
       .join(" ")
       .includes(query);
   });
-  const rows = expanded || query ? items : items?.slice(0, 20);
+  const rows = expanded || query || tier !== "all" ? items : items?.slice(0, 20);
   return (
     <section className="panel customer-ui customer-ranking">
       <div className="panel-heading customer-heading">
@@ -168,6 +175,27 @@ export function CustomerRanking({
             onChange={(e) => setSearch(e.target.value)}
           />
         </div>
+        {counts && (
+          <div className="tier-summary">
+            <div className="tier-chips" role="group" aria-label="按客户等级筛选">
+              <button className={tier === "all" ? "selected" : ""} aria-pressed={tier === "all"} onClick={() => setTier("all")}>全部 · <b>{TIERS.reduce((n, t) => n + counts[t], 0)}</b></button>
+              {TIERS.map((t) => (
+                <button key={t} className={`tier-chip tier-${t} ${tier === t ? "selected" : ""}`} aria-pressed={tier === t} onClick={() => setTier(tier === t ? "all" : t)}>
+                  {t} · <b>{counts[t]}</b>
+                </button>
+              ))}
+            </div>
+            <details className="tier-legend">
+              <summary>客户等级说明</summary>
+              <ul>
+                {TIER_RULES.map((r) => (
+                  <li key={r.tier} className={`tier-${r.tier}`}><span className={`tier-badge tier-${r.tier}`}>{r.tier}</span>{r.label}</li>
+                ))}
+              </ul>
+              <p>按每位客户（合并后）全部有效销售的累计纯利划分，不随上方周期变化。右侧四个色块表示该客户在客户 × 产品矩阵的四个色块是否有成交，灰色为待开拓；{NEW_RULE_TEXT}。</p>
+            </details>
+          </div>
+        )}
         {error && (
           <>
             <ErrorNote>{error}</ErrorNote>
@@ -211,6 +239,7 @@ export function CustomerRanking({
                       </span>
                       <span className="customer-rank-name">
                         <span className="customer-name-with-badge">
+                          <TierBadge profit={profitOf(row.customerId)} />
                           <strong>{displayCustomerName(row.name)}</strong>
                           {(row.pendingTaskCount ?? 0) > 0 && (
                             <span
@@ -235,6 +264,7 @@ export function CustomerRanking({
                         </small>
                       </span>
                       <span className="customer-rank-profit">
+                        {insights && <QuadrantBlocks has={insights.customerQuadrants.get(row.customerId)} />}
                         <Money value={row.totals.profit} />
                         <span className="customer-rank-action">
                           管理日程 <ArrowUpRight size={13} />
@@ -256,7 +286,7 @@ export function CustomerRanking({
               </ol>
             ) : (
               <Empty
-                title={query ? "没有匹配的客户" : "这个周期还没有客户成交"}
+                title={query || tier !== "all" ? "没有匹配的客户" : "这个周期还没有客户成交"}
               >
                 {query
                   ? "换个关键词，或清空搜索。"

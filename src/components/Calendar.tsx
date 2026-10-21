@@ -32,6 +32,8 @@ import {
   type CustomerTask,
 } from "../lib/customer-ui";
 import { TaskForm, type TaskDraft } from "./TaskForm";
+import { ActionLibrary } from "./ActionLibrary";
+import { QUADRANT_INFO, type Quadrant } from "../domain/insights";
 import { Empty, ErrorNote, Loading, Modal } from "./ui";
 import "../customer.css";
 
@@ -576,6 +578,22 @@ function CustomerCalendar({
           </button>
         )}
       </section>
+      {!customerId && (
+        <ActionLibrary
+          mode={mode}
+          focus={(new URLSearchParams(location.hash.split("?")[1] || "").get("actions") || undefined) as Quadrant | undefined}
+          onSchedule={(a) =>
+            setEditor({
+              draftId: `action-${a.id}-${selected}`,
+              draft: {
+                customerId: effectiveCustomerId,
+                at: beijingToUTC(`${selected}T09:00`),
+                title: `【${QUADRANT_INFO[a.quadrant].short}】${a.text}`.slice(0, 200),
+              },
+            })
+          }
+        />
+      )}
       {editor && (
         <Modal
           title={editor.edit ? "编辑跟进日程" : "新增跟进日程"}

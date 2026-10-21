@@ -1,6 +1,7 @@
 import { MemoryStore } from "../../server/memory-store";
 import { execute } from "../../server/service";
 import { addDays, today } from "../domain/dates";
+import { NEW_CUTOFF } from "../domain/insights";
 import type { Api, AppState, Product, Sale } from "../domain/model";
 export async function sha256(value: string | ArrayBuffer): Promise<string> {
   const buffer =
@@ -69,6 +70,21 @@ export function createDemo(): Api {
         store.data.sales[r.id] = r;
       }
     }
+    // 演示四象限：分界日后新增的客户和商品（虚构）
+    if (today() < NEW_CUTOFF) return;
+    const fresh: Product = { id: "demo-p-new", name: "AI 新品体验课", price: 19900, cost: 6000, active: true, order: 5 };
+    store.data.products[fresh.id] = fresh;
+    const day = today();
+    (
+      [
+        ["demo-new-1", "demo-p-0", names[0], "示例新客 · 小周", prices[0], costs[0]],
+        ["demo-new-2", fresh.id, fresh.name, "示例客户 · 小林", fresh.price, fresh.cost],
+        ["demo-new-3", fresh.id, fresh.name, "示例新客 · 阿杰", fresh.price, fresh.cost],
+      ] as const
+    ).forEach(([id, productId, productName, customer, revenue, cost], j) => {
+      const time = `${day}T0${j + 1}:30:00.000Z`;
+      store.data.sales[id] = { id, productId, productName, customer, date: day, revenue, cost, note: "虚构演示记录", createdAt: time, updatedAt: time, deletedAt: null, revision: 1 };
+    });
   }
   return {
     async call<T>(action: string, payload: unknown = {}) {

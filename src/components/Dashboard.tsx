@@ -20,6 +20,8 @@ import { money, totals } from "../domain/finance";
 import { today, periodRange } from "../domain/dates";
 import { useQuery, ErrorNote, Loading, Money, Empty, SaleRows } from "./ui";
 import { CustomerRanking } from "./CustomerRanking";
+import { QuadrantMatrix } from "./QuadrantMatrix";
+import { MonthlyQuadrantChart, NewCustomerTrend } from "./MonthlyCharts";
 import { lastMonthSamePeriod, samePeriodGrowth } from "./growth";
 import heroArt800 from "../assets/hero-octopus-800.webp";
 import heroArt1200 from "../assets/hero-octopus-1200.webp";
@@ -258,6 +260,11 @@ export function Dashboard({
         allProfit={data.all.profit}
         onAllProfit={() => onFilter({})}
       />
+      <QuadrantMatrix api={api} />
+      <div className="monthly-charts">
+        <NewCustomerTrend />
+        <MonthlyQuadrantChart />
+      </div>
       <div className="dashboard-bottom">
         <section className="panel">
           <div className="panel-heading">

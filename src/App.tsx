@@ -1,3 +1,4 @@
+import { InsightsProvider } from "./lib/insights-ui";
 import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 import {
   LayoutDashboard,
@@ -605,6 +606,7 @@ export default function App() {
           </div>
         )}
         <main className="main-content" id="main-content" tabIndex={-1}>
+          <InsightsProvider api={api} version={version}>
           <UpdateBoundary key={page}>
             <Suspense fallback={<Loading />}>
               {page === "dashboard" && (
@@ -698,6 +700,7 @@ export default function App() {
               )}
             </Suspense>
           </UpdateBoundary>
+          </InsightsProvider>
           <footer className="app-footer">
             <span>章鱼哥 AI 工作室</span>
             <span>认真记账，轻松经营。</span>
