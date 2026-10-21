@@ -36,6 +36,7 @@ import {
   monthlyTotals,
 } from "../src/domain/finance";
 import { today, validDate } from "../src/domain/dates";
+import { validateProfile } from "../src/domain/profile";
 import { signature, validateBackup } from "../src/domain/import";
 import {
   customerChoices,
@@ -388,6 +389,29 @@ export async function execute(
             return row;
           },
         );
+      });
+    }
+    case "customers.profile.save": {
+      // 只改这一位客户档案上的可选 profile 字段，其他字段原样保留
+      await initializeCustomers(store, ctx, now());
+      const id = recordId(p.id);
+      const profile = validateProfile(p.profile);
+      return store.transaction(async (tx) => {
+        await writable(tx);
+        return mutation(tx, ctx, p.requestId, action, { id, profile, revision: p.revision }, async () => {
+          const old = await tx.get<Customer>("customers", id);
+          if (!old || old.archivedAt) throw new Error("客户不存在");
+          if (old.revision !== p.revision) throw new Error("客户已在另一处修改，请刷新后重试");
+          const row: Customer = {
+            ...old,
+            profile,
+            updatedAt: now(),
+            revision: old.revision + 1,
+            lastMutation: recordId(p.requestId),
+          };
+          await tx.put("customers", id, row);
+          return row;
+        });
       });
     }
     case "customers.mergeMany": {

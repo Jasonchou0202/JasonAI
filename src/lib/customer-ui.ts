@@ -16,6 +16,7 @@ export interface Customer {
   mergedInto: string | null;
   revision: number;
   aliases?: string[];
+  profile?: import("../domain/profile").CustomerProfile;
 }
 export type CustomerTask = TaskRecord;
 export type TaskInput = Pick<
@@ -178,7 +179,7 @@ interface PendingMutation {
 const mutationLocks = new Set<string>();
 export function isRejectedMutation(error: unknown) {
   const text = error instanceof Error ? error.message : "";
-  return /已在另一处修改|请先恢复日程|客户不存在|日程不存在|形成循环|编号无效|标题、反馈或下一步无效|提醒选项无效|时间须为有效|目标客户|来源客户|回收站|合并数量|版本无效/.test(
+  return /已在另一处修改|请先恢复日程|客户不存在|日程不存在|形成循环|编号无效|标题、反馈或下一步无效|提醒选项无效|时间须为有效|目标客户|来源客户|回收站|合并数量|版本无效|不支持的操作|客户画像|职业标签|客户需求|需求记录|付款方式/.test(
     text,
   );
 }
