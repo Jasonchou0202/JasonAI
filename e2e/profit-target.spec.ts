@@ -1,14 +1,11 @@
 import { test, expect } from "@playwright/test";
 
 const shots = process.env.PROFIT_SHOTS;
-for (const [plan, curve] of [["方案A-线性", "linear"], ["方案B-复合增长", "compound"]] as const)
+for (const [plan, curve] of [["方案A-线性", "linear"]] as const)
   for (const [label, size] of [["桌面", { width: 1366, height: 900 }], ["手机390", { width: 390, height: 844 }]] as const)
     test(`每月利润目标走势 ${plan}（${label}）`, async ({ page }) => {
       await page.clock.setFixedTime(new Date("2026-10-22T04:00:00.000Z"));
-      await page.addInitScript((c) => {
-        sessionStorage.setItem("zhangyuge-demo", "true");
-        if (c === "compound") localStorage.setItem("zhangyuge-profit-target-curve", "compound");
-      }, curve);
+      await page.addInitScript(() => sessionStorage.setItem("zhangyuge-demo", "true"));
       await page.setViewportSize(size);
       await page.goto("./#/dashboard");
       await page.getByRole("button", { name: "每月" }).click();

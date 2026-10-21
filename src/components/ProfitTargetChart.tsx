@@ -19,8 +19,7 @@ function niceScale(v: number): { max: number; steps: number } {
 
 /** 每月利润：实际柱 + 实际走势线 + 目标虚线；默认显示本月前 2 个月到后 3 个月，下方滑杆切换 */
 export function ProfitTargetChart({ months, current }: { months: Bucket[]; current: string }) {
-  // 预览用：localStorage 里 zhangyuge-profit-target-curve=compound 时显示方案 B
-  const curve = typeof localStorage !== "undefined" && localStorage.getItem("zhangyuge-profit-target-curve") === "compound" ? "compound" : PROFIT_TARGET.curve;
+  const curve = PROFIT_TARGET.curve;
   const first = months[0].key.slice(0, 7);
   const startMonth = addMonth(current, -1);
   const actual = new Map(months.map((b) => [b.key.slice(0, 7), b]));
