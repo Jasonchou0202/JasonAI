@@ -11,14 +11,18 @@ describe("复购 / 断购", () => {
     expect(purchaseStatus(["2026-08-03", "2026-09-10", "2026-10-01"], t)).toBe("repeat");
     expect(purchaseStatus(["2026-08-03", "2026-09-10"], t)).toBe("repeat");
   });
-  it("只有一个月、或中间空月 → 无标签", () => {
-    expect(purchaseStatus(["2026-10-01", "2026-10-05"], t)).toBeNull();
+  it("只有一个付款月份且未断购 → 新客", () => {
+    expect(purchaseStatus(["2026-10-01", "2026-10-05"], t)).toBe("new");
+    expect(purchaseStatus(["2026-08-21"], t)).toBe("new");
+  });
+  it("中间空月、或最近付款不在本月/上月 → 无标签", () => {
+    expect(purchaseStatus(["2026-08-25", "2026-09-01"], "2026-11-01")).toBeNull();
     expect(purchaseStatus(["2026-07-01", "2026-09-10", "2026-10-01"], t)).toBeNull();
   });
   it("最近付款早于两个月前的同一天 → 断购；恰好两个月整不算", () => {
     expect(monthsAgo(t, 2)).toBe("2026-08-21");
     expect(purchaseStatus(["2026-08-20"], t)).toBe("lapsed");
-    expect(purchaseStatus(["2026-08-21"], t)).toBeNull();
+    expect(purchaseStatus(["2026-08-21"], t)).toBe("new");
     expect(purchaseStatus(["2026-06-01", "2026-07-01", "2026-08-01"], t)).toBe("lapsed");
     expect(monthsAgo("2026-12-31", 2)).toBe("2026-10-31");
     expect(monthsAgo("2026-04-30", 2)).toBe("2026-02-28");
@@ -40,7 +44,8 @@ describe("客户画像", () => {
     expect(NEED_PRESETS.concat(OCCUPATION_PRESETS).join()).not.toMatch(/梯子|翻墙|VPN|科学上网/i);
   });
   it("校验：丢弃多余字段、去重、拒绝非法付款方式", () => {
-    expect(validateProfile({ occupation: " 律师 ", needs: ["A", "A"], payment: "微信", x: 1 })).toEqual({ occupation: "律师", needs: ["A"], payment: "微信" });
+    expect(validateProfile({ occupation: " 律师 ", needs: ["A", "A"], payment: "微信支付", x: 1 })).toEqual({ occupation: "律师", needs: ["A"], payment: "微信支付" });
+    expect(() => validateProfile({ payment: "微信" })).toThrow("付款方式无效");
     expect(() => validateProfile({ payment: "比特币" })).toThrow("付款方式无效");
     expect(() => validateProfile([])).toThrow();
   });
@@ -52,8 +57,8 @@ describe("客户画像", () => {
     const list = await execute(store, ctx, "customers.list", {}) as Customer[];
     expect(list).toHaveLength(1);
     const c = list[0];
-    const saved = await execute(store, ctx, "customers.profile.save", { id: c.id, revision: c.revision, requestId: "p1", profile: { occupation: "律师", needs: ["Agent 学习"], payment: "支付宝" } }) as Customer;
-    expect(saved).toEqual({ ...c, profile: { occupation: "律师", needs: ["Agent 学习"], payment: "支付宝" }, revision: c.revision + 1, updatedAt: "2026-10-21T10:00:00.000Z", lastMutation: "p1" });
+    const saved = await execute(store, ctx, "customers.profile.save", { id: c.id, revision: c.revision, requestId: "p1", profile: { occupation: "律师", needs: ["Agent 学习"], payment: "支付宝支付" } }) as Customer;
+    expect(saved).toEqual({ ...c, profile: { occupation: "律师", needs: ["Agent 学习"], payment: "支付宝支付" }, revision: c.revision + 1, updatedAt: "2026-10-21T10:00:00.000Z", lastMutation: "p1" });
     await expect(execute(store, { ...ctx, uid: "other" }, "customers.profile.save", { id: c.id, revision: saved.revision, requestId: "p2", profile: {} })).rejects.toThrow();
     await expect(execute(store, ctx, "customers.profile.save", { id: c.id, revision: c.revision, requestId: "p3", profile: {} })).rejects.toThrow("另一处修改");
     const backup = await execute(store, ctx, "backup", {}) as { customers: Customer[] };

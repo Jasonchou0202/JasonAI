@@ -2,13 +2,12 @@ import { useState } from "react";
 import { Plus, Save, UserRound } from "lucide-react";
 import type { Api, Sale } from "../domain/model";
 import { today } from "../domain/dates";
-import { QUADRANTS, QUADRANT_INFO, tierOf } from "../domain/insights";
 import {
   NEED_PRESETS, OCCUPATION_PRESETS, PAYMENT_METHODS, PURCHASE_STATUS_RULE,
   mergeOptions, purchaseStatus, type CustomerProfile,
 } from "../domain/profile";
 import { apiMode, readLocal, writeLocal, useCustomerMutation, type Customer } from "../lib/customer-ui";
-import { useInsights } from "../lib/insights-ui";
+import { QuadrantBlocks, TierBadge, useInsights } from "../lib/insights-ui";
 import { ErrorNote } from "./ui";
 
 interface LocalOptions { occupations: string[]; needs: string[] }
@@ -39,14 +38,13 @@ export function CustomerChips({ customer, sales }: { customer: Customer; sales: 
   const p = customer.profile;
   return (
     <div className="profile-chips" aria-label="客户标签">
-      {profit !== undefined && (() => { const t = tierOf(profit); return <span className={`p-chip tier-chip-solid tier-${t}`} title={`按累计纯利划分为 ${t}`}>{t}</span>; })()}
-      {QUADRANTS.filter((q) => quads?.has(q)).map((q) => (
-        <span key={q} className="p-chip" style={{ background: QUADRANT_INFO[q].color, color: "#fff" }} title={QUADRANT_INFO[q].label}>{QUADRANT_INFO[q].label.replace(/ × /, "")}</span>
-      ))}
+      {profit !== undefined && <TierBadge profit={profit} />}
+      {insights && <span className="p-blocks"><QuadrantBlocks has={quads} /></span>}
       {status === "repeat" && <span className="p-chip status-repeat" title={PURCHASE_STATUS_RULE.repeat}>复购客户</span>}
+      {status === "new" && <span className="p-chip status-new" title={PURCHASE_STATUS_RULE.new}>新客</span>}
       {status === "lapsed" && <span className="p-chip status-lapsed" title={PURCHASE_STATUS_RULE.lapsed}>断购客户</span>}
       {p?.occupation && <span className="p-chip neutral">{p.occupation}</span>}
-      {p?.payment && <span className="p-chip neutral">偏好{p.payment}</span>}
+      {p?.payment && <span className="p-chip neutral">{p.payment}</span>}
     </div>
   );
 }
@@ -71,20 +69,20 @@ export function CustomerProfileEditor({ api, customer, onSaved }: { api: Api; cu
     if (profile.occupation && !options.occupations.includes(profile.occupation)) options.add("occupations", profile.occupation);
     if (await mutation.run("customers.profile.save", { id: customer.id, revision: customer.revision, profile })) {
       setOpen(false);
-      onSaved("客户画像已保存");
+      onSaved("客户信息和需求已保存");
     }
   }
   const err = /不支持的操作/.test(mutation.error)
-    ? "云端账本还没有更新到支持客户画像的版本，暂时无法保存；部署更新后即可使用。"
+    ? "云端账本还没有更新到支持「客户信息收集和需求收集」的版本，暂时无法保存；部署更新后即可使用。"
     : mutation.error;
   return (
     <section className="panel profile-editor">
       <div className="panel-heading">
         <div>
-          <h2><UserRound size={17} /> 客户画像</h2>
+          <h2><UserRound size={17} /> 客户信息收集和需求收集</h2>
           <p>职业、需求和付款习惯，方便跟进时对症下药</p>
         </div>
-        {!open && <button className="button secondary" onClick={() => setOpen(true)}>编辑画像</button>}
+        {!open && <button className="button secondary" onClick={() => setOpen(true)}>编辑客户信息和需求</button>}
       </div>
       {!open ? (
         <dl className="profile-view">
@@ -130,7 +128,7 @@ export function CustomerProfileEditor({ api, customer, onSaved }: { api: Api; cu
           {err && <ErrorNote>{err}</ErrorNote>}
           <div className="customer-actions">
             <button type="button" className="button secondary" onClick={() => { setOpen(false); setForm({ needs: [], ...customer.profile }); }}>取消</button>
-            <button type="submit" className="button primary" disabled={mutation.busy}><Save size={16} />{mutation.busy ? "保存中…" : "保存画像"}</button>
+            <button type="submit" className="button primary" disabled={mutation.busy}><Save size={16} />{mutation.busy ? "保存中…" : "保存客户信息和需求"}</button>
           </div>
         </form>
       )}

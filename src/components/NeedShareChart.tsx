@@ -26,7 +26,7 @@ export function NeedShareChart() {
           ))}
         </ol>
       ) : (
-        <p className="need-empty">还没有客户记录需求。在客户详情的「客户画像」里勾选需求后，这里会显示占比。</p>
+        <p className="need-empty">还没有客户记录需求。在客户详情的「客户信息收集和需求收集」里勾选需求后，这里会显示占比。</p>
       )}
     </section>
   );

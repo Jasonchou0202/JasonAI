@@ -58,7 +58,7 @@ for (const [label, size] of [["桌面", { width: 1366, height: 900 }], ["手机3
     await shot(page, `${label}-每月四色块客户数与占比`);
 
     await ranking.getByText("示例客户 · 小林").click();
-    await expect(page.locator(".profile-chips .p-chip").first()).toHaveText(/^P[0-4]$/);
+    await expect(page.locator(".profile-chips .tier-badge")).toHaveText(/^P[0-4]$/);
     await shot(page, `${label}-客户详情等级与色块`);
 
     await page.goto("./#/calendar");

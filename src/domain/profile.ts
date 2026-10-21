@@ -1,5 +1,5 @@
 /** 客户画像：职业、需求、偏好付款方式（均为可选，旧客户档案无需迁移） */
-export const PAYMENT_METHODS = ["支付宝", "微信", "银行转账", "现金", "其他"] as const;
+export const PAYMENT_METHODS = ["微信支付", "支付宝支付", "闲鱼支付", "对公账户支付"] as const;
 export type PaymentMethod = (typeof PAYMENT_METHODS)[number];
 export const OCCUPATION_PRESETS = [
   "律师", "大学体育老师", "心理咨询师", "在读博士生", "在读研究生",
@@ -19,7 +19,7 @@ const label = (v: unknown, max = 40) =>
 
 /** 校验并规范化画像；只接受这几个字段，其余一律丢弃 */
 export function validateProfile(raw: unknown): CustomerProfile {
-  if (!raw || typeof raw !== "object" || Array.isArray(raw)) throw new Error("客户画像格式无效");
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) throw new Error("客户信息格式无效");
   const p = raw as Record<string, unknown>;
   const out: CustomerProfile = {};
   if (p.occupation !== undefined && p.occupation !== "") {
@@ -48,10 +48,11 @@ export function mergeOptions(presets: readonly string[], ...more: (readonly stri
   return [...new Set([...presets, ...more.flat().filter((v) => label(v)).map((v) => v.trim())])];
 }
 
-export type PurchaseStatus = "repeat" | "lapsed" | null;
+export type PurchaseStatus = "repeat" | "lapsed" | "new" | null;
 export const PURCHASE_STATUS_RULE = {
-  repeat: "复购客户：至少 2 个月有付款，且从首次购买月份起每个月都有付款、没有空月，最近一次付款在本月或上月",
+  repeat: "复购客户：至少 2 个月有付款，从首次购买月份到最近购买月份每个月都有付款、没有空月，且最近一次付款在本月或上月",
   lapsed: "断购客户：最近一次付款距今超过 2 个月（最近付款日早于今天往前推 2 个月的同一天）",
+  new: "新客：只有一个月份有付款，且不属于断购",
 };
 function shiftMonth(month: string, n: number) {
   let [y, m] = month.split("-").map(Number);
@@ -73,7 +74,7 @@ export function purchaseStatus(dates: readonly string[], today: string): Purchas
   const last = sorted.at(-1)!;
   if (last < monthsAgo(today, 2)) return "lapsed";
   const months = new Set(sorted.map((d) => d.slice(0, 7)));
-  if (months.size < 2) return null;
+  if (months.size < 2) return "new";
   const thisMonth = today.slice(0, 7);
   if (last.slice(0, 7) !== thisMonth && last.slice(0, 7) !== shiftMonth(thisMonth, -1)) return null;
   for (let m = sorted[0].slice(0, 7); m <= last.slice(0, 7); m = shiftMonth(m, 1))
