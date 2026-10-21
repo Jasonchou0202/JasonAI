@@ -47,7 +47,7 @@ export function QuadrantMatrix({ api }: { api: Api }) {
       </div>
       <div className="quad-wrap">
         <div className="quad-matrix">
-          <div className="qx-yaxis" aria-hidden="true"><span className="qx-arrow-up" /><b>Y轴 · 客户</b></div>
+          <div className="qx-yaxis" aria-hidden="true"><span className="qx-arrow-up" /><b>Y轴 · 客户</b><span className="qx-yline" /></div>
           {GRID.map((q, i) => {
             const info = QUADRANT_INFO[q], v = t[q], on = v.count > 0;
             const hints = actions.filter((a) => a.quadrant === q).slice(0, 2);

@@ -71,3 +71,10 @@
 .quad-cell strong{font-size:24px;font-weight:700;letter-spacing:-.01em;margin-top:2px}.quad-cell small{font-size:12px;opacity:.92}
 .qx-yaxis b{order:1}.qx-yaxis::after{order:2}
 @media (max-width:520px){.quad-cell strong{font-size:17px}.quad-cell small{font-size:11px}.quad-todo{font-size:14px!important}}
+.qx-yaxis::after{content:none}.qx-yaxis>*{order:0!important}
+.qx-yline{flex:1;width:1.5px;background:var(--text-3);margin-top:-2px}
+.qx-yaxis{gap:4px}.qx-arrow-up{margin-bottom:-4px}
+.qx-yaxis b{position:static;padding:4px 0}
+.qx-yaxis .qx-arrow-up{margin-bottom:2px}
+.quad-cell{text-align:left;align-items:flex-start}
+.quad-matrix .quad-cell.empty{text-align:left;align-items:flex-start;justify-content:flex-start;padding:14px}@media (max-width:520px){.quad-matrix .quad-cell.empty{padding:10px}}
