@@ -1,7 +1,7 @@
 import { test, expect } from "@playwright/test";
 
 const shots = process.env.PROFIT_SHOTS;
-for (const [plan, curve] of [["方案A-线性", "linear"]] as const)
+for (const plan of ["方案A-线性"] as const)
   for (const [label, size] of [["桌面", { width: 1366, height: 900 }], ["手机390", { width: 390, height: 844 }]] as const)
     test(`每月利润目标走势 ${plan}（${label}）`, async ({ page }) => {
       await page.clock.setFixedTime(new Date("2026-10-22T04:00:00.000Z"));
@@ -12,10 +12,10 @@ for (const [plan, curve] of [["方案A-线性", "linear"]] as const)
       const chart = page.locator(".profit-target");
       await expect(chart.getByText("目标走势（虚线）")).toBeVisible();
       await expect(chart.getByText("实际利润走势（线）")).toBeVisible();
-      await expect(chart.locator(".pt-note")).toContainText(curve === "compound" ? "每月增长" : "每月增加约");
+      await expect(chart.locator(".pt-note")).toContainText("目标从 2026 年 09 月实际利润起，每月增加约");
       await expect(chart.locator(".pt-xtick")).toHaveText(["26年8月", "9月", "10月", "11月", "12月", "27年1月"]);
       await expect(chart.locator(".pt-ghost")).toHaveCount(3);
-      await expect(chart.locator(".pt-progress")).toContainText("距 2027.12 月利 10万 目标：本月完成");
+      await expect(chart.locator(".pt-progress")).toContainText("距 2027.12 月利 10万 目标：本月截至今日完成");
       await expect(chart.locator(".pt-readout")).toContainText("差距");
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
       const snap = async (name: string) => {

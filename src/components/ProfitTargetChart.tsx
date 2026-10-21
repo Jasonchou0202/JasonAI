@@ -2,7 +2,7 @@ import { useEffect, useId, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import type { Bucket } from "../domain/model";
 import { money } from "../domain/finance";
-import { PROFIT_TARGET, addMonth, monthDiff, targetSeries } from "../domain/profitTarget";
+import { PROFIT_TARGET, addMonth, anchorMonth, fixedTarget, monthDiff } from "../domain/profitTarget";
 
 const wan = (v: number) => {
   const y = v / 1_000_000;
@@ -19,16 +19,22 @@ function niceScale(v: number): { max: number; steps: number } {
 
 /** 每月利润：实际柱 + 实际走势线 + 目标虚线；默认显示本月前 2 个月到后 3 个月，下方滑杆切换 */
 export function ProfitTargetChart({ months, current }: { months: Bucket[]; current: string }) {
-  const curve = PROFIT_TARGET.curve;
-  const first = months[0].key.slice(0, 7);
-  const startMonth = addMonth(current, -1);
+  if (!months.length) return <div className="profit-target"><p className="pt-note">暂无月度利润数据</p></div>;
+  return <ProfitTargetInner months={months} current={current} />;
+}
+
+function ProfitTargetInner({ months, current }: { months: Bucket[]; current: string }) {
+  const firstData = months[0].key.slice(0, 7);
+  const first = firstData < PROFIT_TARGET.startMonth ? firstData : PROFIT_TARGET.startMonth;
   const actual = new Map(months.map((b) => [b.key.slice(0, 7), b]));
-  const target = targetSeries(startMonth, actual.get(startMonth)?.profit ?? 0, curve);
+  const target = fixedTarget(months);
+  const startMonth = target.startMonth;
   const targetBy = new Map(target.points.map((p) => [p.month, p.value]));
   const all = Array.from({ length: monthDiff(first, PROFIT_TARGET.endMonth) + 1 }, (_, i) => addMonth(first, i));
   const N = Math.min(PROFIT_TARGET.visibleMonths, all.length);
   const maxStart = all.length - N;
-  const curI = all.indexOf(current);
+  const anchor = anchorMonth(current);
+  const curI = Math.max(0, all.indexOf(anchor));
   const [start, setStart] = useState(Math.min(maxStart, Math.max(0, curI - PROFIT_TARGET.monthsBefore)));
   const [sel, setSel] = useState(current);
   const box = useRef<HTMLDivElement>(null);
@@ -66,8 +72,8 @@ export function ProfitTargetChart({ months, current }: { months: Bucket[]; curre
     <div className="profit-target">
       <div className="pt-progress" role="status">
         <span>距 {endLabel} 月利 {wan(PROFIT_TARGET.endProfit)} 目标：</span>
-        <b>本月完成 {pctMonth}%</b>
-        <small>（本月实际 ¥{money(curActual)} ÷ 本月目标 ¥{money(curTarget ?? 0)}）</small>
+        <b>本月截至今日完成 {pctMonth}%</b>
+        <small>（本月截至今日实际 ¥{money(curActual)} ÷ 本月目标 ¥{money(curTarget ?? 0)}）</small>
         <span className="pt-progress-bar" aria-hidden="true"><i style={{ width: `${Math.min(100, pctEnd)}%` }} /></span>
         <small>已达终点目标 {pctEnd}%（本月实际 ÷ ¥{money(PROFIT_TARGET.endProfit)}）</small>
       </div>
@@ -151,7 +157,7 @@ export function ProfitTargetChart({ months, current }: { months: Bucket[]; curre
         )}
       </div>
       <p className="pt-note">
-        目标从 {startMonth.replace("-", " 年 ")} 月实际利润起，{target.curve === "compound" ? `每月增长 ${(target.rate * 100).toFixed(1)}%` : `每月增加约 ¥${money(Math.round(target.step))}`}，到 {PROFIT_TARGET.endMonth.replace("-", " 年 ")} 月达到 ¥{money(PROFIT_TARGET.endProfit)}
+        目标从 {startMonth.replace("-", " 年 ")} 月实际利润起，每月增加约 ¥{money(Math.round(target.step))}，到 {PROFIT_TARGET.endMonth.replace("-", " 年 ")} 月达到 ¥{money(PROFIT_TARGET.endProfit)}
       </p>
     </div>
   );

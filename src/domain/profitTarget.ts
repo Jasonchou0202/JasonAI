@@ -4,8 +4,8 @@ export const PROFIT_TARGET = {
   endMonth: "2027-12",
   /** 终点月利润（分）：¥100,000 */
   endProfit: 100_000_00,
-  /** 目标曲线：linear = 每月等额增加；compound = 每月按固定增长率 */
-  curve: "linear" as "linear" | "compound",
+  /** 目标起点月份（固定）：用这个月的实际利润作为起点，不随当前月份变化 */
+  startMonth: "2026-09",
   /** 默认可见月数（半年）：本月前 monthsBefore 个月 + 本月 + 之后的月份，其余用滑杆切换 */
   visibleMonths: 6,
   monthsBefore: 2,
@@ -24,24 +24,32 @@ export function monthDiff(a: string, b: string): number {
 }
 
 /**
- * 目标走势：起点 = 最近一个完整月（本月的上一个月）的实际利润，终点 = endMonth 的 endProfit。
- * compound 在起点 ≤ 0 时无法计算增长率，自动改用 linear。
+ * 目标走势（线性，每月等额增加）：起点 = startMonth 的实际利润，终点 = endMonth 的 endProfit。
  */
 export function targetSeries(
   startMonth: string,
   startProfit: number,
-  curve = PROFIT_TARGET.curve,
   endMonth = PROFIT_TARGET.endMonth,
   endProfit = PROFIT_TARGET.endProfit,
 ) {
   const n = monthDiff(startMonth, endMonth);
-  if (n <= 0) return { points: [{ month: endMonth, value: endProfit }], step: 0, rate: 0, curve };
-  const useCompound = curve === "compound" && startProfit > 0;
+  if (n <= 0) return { points: [{ month: endMonth, value: endProfit }], step: 0 };
   const step = (endProfit - startProfit) / n;
-  const rate = useCompound ? Math.pow(endProfit / startProfit, 1 / n) - 1 : 0;
   const points = Array.from({ length: n + 1 }, (_, i) => ({
     month: addMonth(startMonth, i),
-    value: Math.round(useCompound ? startProfit * Math.pow(1 + rate, i) : startProfit + step * i),
+    value: Math.round(startProfit + step * i),
   }));
-  return { points, step, rate, curve: useCompound ? "compound" : "linear" };
+  return { points, step };
+}
+
+/** 按固定起点（PROFIT_TARGET.startMonth）从月度数据算目标线；与当前月份无关 */
+export function fixedTarget(months: { key: string; profit: number }[]) {
+  const start = PROFIT_TARGET.startMonth;
+  const startProfit = months.find((b) => b.key.slice(0, 7) === start)?.profit ?? 0;
+  return { startMonth: start, ...targetSeries(start, startProfit) };
+}
+
+/** 窗口锚点月份：过了终点月后停在终点月 */
+export function anchorMonth(current: string) {
+  return current > PROFIT_TARGET.endMonth ? PROFIT_TARGET.endMonth : current;
 }
