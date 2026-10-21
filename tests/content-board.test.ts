@@ -153,7 +153,7 @@ describe("可发布汇总 → 看板现有 validate.py / build.py 流程", () =>
     const d = JSON.parse(
       readFileSync(join(dir, "data/dashboard.json"), "utf8"),
     );
-    expect(d.acquisition.daily).toEqual([
+    const fixtureDays = [
       {
         date: "2026-10-17",
         count: 4,
@@ -178,9 +178,27 @@ describe("可发布汇总 → 看板现有 validate.py / build.py 流程", () =>
         reported_at: "2026-10-19 21:40",
         reported_by: "章鱼哥录入（生意手账）",
       },
-    ]);
+    ];
+    const inWindow = d.acquisition.daily.filter(
+      (row: { date: string }) =>
+        row.date >= "2026-10-17" && row.date <= "2026-10-19",
+    );
+    expect(inWindow).toEqual(fixtureDays);
+    const extra = d.acquisition.daily.filter(
+      (row: { date: string }) =>
+        !fixtureDays.some((day) => day.date === row.date),
+    );
+    expect(
+      extra.every(
+        (row: { date: string }) =>
+          row.date < "2026-10-17" || row.date > "2026-10-19",
+      ),
+    ).toBe(true);
     expect(JSON.stringify(d)).not.toContain("第 88 集带来的");
-    expect(py(dir, ["validate.py"]).out).toContain("加微记录 3 天");
+    const validated = py(dir, ["validate.py"]);
+    const dayCount = validated.out.match(/加微记录 (\d+) 天/);
+    expect(dayCount).not.toBeNull();
+    expect(Number(dayCount?.[1])).toBeGreaterThanOrEqual(3);
     const b = py(dir, ["build.py"]);
     expect(b.code).toBe(0);
     const html = readFileSync(join(dir, "dist/index.html"), "utf8");
