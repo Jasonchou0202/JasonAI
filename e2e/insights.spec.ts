@@ -42,6 +42,10 @@ for (const [label, size] of [["桌面", { width: 1366, height: 900 }], ["手机3
       await expect(matrix.getByRole("tab", { name: tab })).toHaveAttribute("aria-selected", "true");
       await expect(matrix.locator('[data-quadrant="oldOld"]')).toContainText("笔");
       await shot(page, `${label}-客户产品矩阵-${tab}`);
+      if (shots && tab === "本季度") await matrix.screenshot({ path: `${shots}/${label}-客户产品矩阵卡片-本季度.png` });
+      const b = (await matrix.locator('[data-quadrant="oldOld"]').boundingBox())!;
+      expect(Math.abs(b.width - b.height)).toBeLessThan(2);
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     }
 
     const trend = page.locator(".monthly-chart").first();
@@ -86,4 +90,16 @@ test("灰色象限显示待开拓和动作提示", async ({ page }) => {
   await expect(cell).toHaveClass(/empty/);
   await expect(cell).toContainText("待开拓");
   await expect(cell.getByRole("link", { name: /有效动作/ })).toHaveAttribute("href", "#/calendar?actions=newNew");
+  const box = (await cell.boundingBox())!;
+  expect(Math.abs(box.width - box.height)).toBeLessThan(2);
+  await expect(page.locator(".quad-panel")).toContainText("Y轴 · 客户");
+  await expect(page.locator(".quad-panel")).toContainText("X轴 · 产品");
+  if (shots) {
+    await page.addStyleTag({ content: "*{transition:none!important;animation:none!important}" });
+    for (const [label, size] of [["桌面", { width: 1366, height: 900 }], ["手机390", { width: 390, height: 844 }]] as const) {
+      await page.setViewportSize(size);
+      await page.locator(".quad-panel").scrollIntoViewIfNeeded();
+      await page.locator(".quad-panel").screenshot({ path: `${shots}/${label}-客户产品矩阵-待开拓灰色.png` });
+    }
+  }
 });

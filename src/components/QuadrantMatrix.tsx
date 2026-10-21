@@ -46,12 +46,13 @@ export function QuadrantMatrix({ api }: { api: Api }) {
         </div>
       </div>
       <div className="quad-wrap">
-        <div className="quad-axis-y" aria-hidden="true"><span>新</span><b>客户</b><span>老</span></div>
-        <div className="quad-grid">
-          {GRID.map((q) => {
+        <div className="quad-matrix">
+          <div className="qx-yaxis" aria-hidden="true"><span className="qx-arrow-up" /><b>Y轴 · 客户</b></div>
+          {GRID.map((q, i) => {
             const info = QUADRANT_INFO[q], v = t[q], on = v.count > 0;
             const hints = actions.filter((a) => a.quadrant === q).slice(0, 2);
-            return (
+            return [
+              i % 2 === 0 && <span key={"y" + i} className="qx-ylab">{i === 0 ? "新客户" : "老客户"}</span>,
               <div key={q} className={`quad-cell ${on ? "on" : "empty"}`} style={on ? { background: info.color } : undefined} data-quadrant={q}>
                 <span className="quad-name">{info.label}</span>
                 {on ? (
@@ -67,11 +68,13 @@ export function QuadrantMatrix({ api }: { api: Api }) {
                     <a className="quad-link" href={`#/calendar?actions=${q}`}>有效动作 · 加入日程 <ArrowUpRight size={12} /></a>
                   </>
                 )}
-              </div>
-            );
+              </div>,
+            ];
           })}
+          <span className="qx-xlab qx-c1">老产品</span>
+          <span className="qx-xlab qx-c2">新产品</span>
+          <div className="qx-xaxis" aria-hidden="true"><b>X轴 · 产品</b><span className="qx-arrow-right" /></div>
         </div>
-        <div className="quad-axis-x" aria-hidden="true"><span>老</span><b>产品</b><span>新</span></div>
       </div>
     </section>
   );
