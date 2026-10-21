@@ -1,3 +1,4 @@
+import { QuadrantDot, useInsights } from "../lib/insights-ui";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { AlertCircle, ArrowUpRight, LoaderCircle, X } from "lucide-react";
 import type { Api, Sale } from "../domain/model";
@@ -112,6 +113,7 @@ export function SaleRows({
   rows: Sale[];
   onEdit: (sale: Sale) => void;
 }) {
+  const { insights } = useInsights();
   return (
     <div className="sale-rows">
       {rows.map((r, i) => (
@@ -120,7 +122,10 @@ export function SaleRows({
             {r.productName.slice(0, 1).toUpperCase()}
           </span>
           <span className="sale-info">
-            <strong>{r.productName}</strong>
+            <strong>
+              <QuadrantDot q={insights?.quadrantOf.get(r.id)} />
+              {r.productName}
+            </strong>
             <small>
               {displayCustomerName(r.customer) || "未填写客户"}
               <i>·</i>

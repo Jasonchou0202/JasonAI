@@ -21,6 +21,7 @@ import {
 } from "../lib/customer-ui";
 import { Calendar } from "./Calendar";
 import { Empty, ErrorNote, Loading, Money } from "./ui";
+import { QuadrantDot, QuadrantBlocks, TierBadge, useInsights } from "../lib/insights-ui";
 import "../customer.css";
 
 export interface CustomerDetailsProps {
@@ -99,6 +100,7 @@ function CustomerProfile({
     setView(v);
   }
   const allTotals = totals(allSales);
+  const { insights } = useInsights();
   const latestSale = allSales.reduce(
     (latest, s) => (s.date > latest ? s.date : latest),
     "",
@@ -143,6 +145,13 @@ function CustomerProfile({
             返回
           </button>
           <h1>{data ? displayCustomerName(data.customer.name) : "客户详情"}</h1>
+          {data && insights && (
+            <p className="customer-insight-line">
+              <TierBadge profit={insights.customerProfit.get(data.customer.id) ?? 0} />
+              <QuadrantBlocks has={insights.customerQuadrants.get(data.customer.id)} />
+              <small>客户等级 · 四象限</small>
+            </p>
+          )}
           <p className="subtle">成交记录与每一次跟进，放在一起看。</p>
         </div>
         {data && !loading && allSales.length > 0 && (
@@ -335,7 +344,10 @@ function CustomerProfile({
                         const content = (
                           <>
                             <span className="customer-sale-info">
-                              <strong>{sale.productName}</strong>
+                              <strong>
+                                <QuadrantDot q={insights?.quadrantOf.get(sale.id)} />
+                                {sale.productName}
+                              </strong>
                               <small>
                                 {sale.date} ·{" "}
                                 {sale.customer

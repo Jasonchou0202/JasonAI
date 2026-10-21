@@ -8,6 +8,7 @@ import "./tokens.css";
 import "./styles.css";
 import "./customer.css";
 import "./pages.css";
+import "./insights.css";
 ReactDOM.createRoot(document.getElementById("root")!).render(<App />);
 if ("serviceWorker" in navigator && import.meta.env.PROD) {
   window.addEventListener("load", () => {

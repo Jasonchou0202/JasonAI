@@ -16,6 +16,9 @@ import {
   type TaskInput,
 } from "../lib/customer-ui";
 import { ErrorNote, message } from "./ui";
+import { ActionPicker } from "./ActionLibrary";
+import { insertAction } from "../domain/actions";
+import { QUADRANT_INFO } from "../domain/insights";
 import "../customer.css";
 
 export type TaskDraft = Partial<TaskInput>;
@@ -250,6 +253,17 @@ function TaskEditor({
           onChange={(e) => {
             dirty.current = true;
             setAt(e.target.value);
+          }}
+        />
+        <ActionPicker
+          mode={mode}
+          onPick={(a) => {
+            const label = QUADRANT_INFO[a.quadrant].short;
+            // 「要做什么」为空时直接填入；已有内容就追加到「下一步」，不覆盖已写的字
+            if (!form.input.title.trim())
+              change("title", `【${label}】${a.text}`.slice(0, 200));
+            else
+              change("nextAction", insertAction(form.input.nextAction, label, a).slice(0, 2000));
           }}
         />
         <label htmlFor={`${prefix}-title`}>要做什么</label>

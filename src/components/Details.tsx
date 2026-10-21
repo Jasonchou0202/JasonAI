@@ -37,6 +37,7 @@ import {
   message,
 } from "./ui";
 import { downloadCsv } from "../lib/files";
+import { QuadrantDot, QuadrantBlocks, TierBadge, useInsights } from "../lib/insights-ui";
 export function Details({
   api,
   version,
@@ -68,6 +69,7 @@ export function Details({
     {},
     version,
   );
+  const { insights } = useInsights();
   const [confirm, setConfirm] = useState<Sale | null>(null);
   const { data: customerRecords } = useQuery<Customer[]>(
     api,
@@ -305,7 +307,10 @@ export function Details({
                       title="点按编辑这笔销售"
                       onClick={() => onEdit(r)}
                     >
-                      <strong>{r.productName}</strong>
+                      <strong>
+                        <QuadrantDot q={insights?.quadrantOf.get(r.id)} />
+                        {r.productName}
+                      </strong>
                       <span>
                         {r.customer
                           ? displayCustomerName(r.customer)
