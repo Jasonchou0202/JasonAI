@@ -86,6 +86,8 @@ export interface ImportPreview {
 }
 export interface Customer {
   archivedAt?: string | null;
+  /** 可选客户画像（职业、需求、偏好付款方式）；旧档案没有这个字段 */
+  profile?: import("./profile").CustomerProfile;
   id: string;
   name: string;
   mergedInto: string | null;

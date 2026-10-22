@@ -1,3 +1,4 @@
+import { validateProfile } from "./profile";
 import type {
   ImportRow,
   ImportIssue,
@@ -243,6 +244,7 @@ export function validateBackup(value: unknown): Backup {
       updatedAt: c.updatedAt,
       ...(c.lastMutation ? { lastMutation: c.lastMutation } : {}),
       ...(c.archivedAt !== undefined ? { archivedAt: c.archivedAt } : {}),
+      ...(c.profile !== undefined ? { profile: validateProfile(c.profile) } : {}),
     };
   });
   customerRoots(customers);

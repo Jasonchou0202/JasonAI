@@ -21,7 +21,8 @@ import {
 } from "../lib/customer-ui";
 import { Calendar } from "./Calendar";
 import { Empty, ErrorNote, Loading, Money } from "./ui";
-import { QuadrantDot, QuadrantBlocks, TierBadge, useInsights } from "../lib/insights-ui";
+import { QuadrantDot, useInsights } from "../lib/insights-ui";
+import { CustomerChips, CustomerProfileEditor } from "./CustomerProfile";
 import "../customer.css";
 
 export interface CustomerDetailsProps {
@@ -145,13 +146,7 @@ function CustomerProfile({
             返回
           </button>
           <h1>{data ? displayCustomerName(data.customer.name) : "客户详情"}</h1>
-          {data && insights && (
-            <p className="customer-insight-line">
-              <TierBadge profit={insights.customerProfit.get(data.customer.id) ?? 0} />
-              <QuadrantBlocks has={insights.customerQuadrants.get(data.customer.id)} />
-              <small>客户等级 · 客户产品矩阵</small>
-            </p>
-          )}
+          {data && !loading && <CustomerChips customer={data.customer} sales={data.sales} />}
           <p className="subtle">成交记录与每一次跟进，放在一起看。</p>
         </div>
         {data && !loading && allSales.length > 0 && (
@@ -190,6 +185,9 @@ function CustomerProfile({
       {loading && <Loading />}
       {data && !loading && (
         <>
+          {!data.customer.mergedInto && (
+            <CustomerProfileEditor key={data.customer.id + ":" + data.customer.revision} api={api} customer={data.customer} onSaved={onChange} />
+          )}
           {data.customer.mergedInto && (
             <div className="customer-merged">
               <span>该名称已合并到另一位客户。</span>
