@@ -20,6 +20,8 @@ import { money, totals } from "../domain/finance";
 import { today, periodRange } from "../domain/dates";
 import { useQuery, ErrorNote, Loading, Money, Empty, SaleRows } from "./ui";
 import { CustomerRanking } from "./CustomerRanking";
+import { ProfitTargetChart } from "./ProfitTargetChart";
+import "../profit-target.css";
 import { QuadrantMatrix } from "./QuadrantMatrix";
 import { MonthlyQuadrantChart, NewCustomerTrend } from "./MonthlyCharts";
 import { NeedShareChart } from "./NeedShareChart";
@@ -169,7 +171,7 @@ export function Dashboard({
                 ? "最近 7 天"
                 : period === "week"
                   ? "最近 8 周"
-                  : "最近 12 个月"}{" "}
+                  : "默认显示本月前后半年，拖动下方进度条查看其他月份（目标至 2027 年 12 月）"}{" "}
               ·{" "}
               <span className="hint-pointer">指向柱形看金额，点击查看明细</span>
               <span className="hint-touch">点柱形看金额，再点一次看明细</span>
@@ -213,6 +215,9 @@ export function Dashboard({
             </button>
           )}
         </div>
+        {period === "month" ? (
+          <ProfitTargetChart months={data.months} current={today().slice(0, 7)} />
+        ) : (
         <div
           className={`bar-chart dash-chart period-${period} ${anyNegative ? "has-negative" : ""}`}
           role="group"
@@ -253,6 +258,7 @@ export function Dashboard({
             ))}
           </div>
         </div>
+        )}
       </section>
       <CustomerRanking
         api={api}
