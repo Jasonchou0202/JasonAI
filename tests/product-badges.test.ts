@@ -227,3 +227,9 @@ it("counts all pending tasks once per merged root regardless of ranking period, 
   )) as CustomerRankingResult;
   expect(rank.items.map((i) => i.pendingTaskCount)).toEqual([1, 1]);
 });
+it("offers Grok as the 3rd category, accepts it server-side, and never auto-assigns it", async () => {
+  const { productCategories, productCategory } = await import("../src/domain/catalog");
+  expect(productCategories.slice(0, 4)).toEqual(["ChatGPT", "Claude", "Grok", "Gemini"]);
+  expect(validateProduct({ ...product, category: "Grok" }).category).toBe("Grok");
+  expect(productCategory("Grok 会员")).toBe("其他");
+});

@@ -36,6 +36,7 @@ export function matchesCustomer(c: CustomerChoice, search: string): boolean {
 export const productCategories = [
   "ChatGPT",
   "Claude",
+  "Grok",
   "Gemini",
   "Verizon 网络",
   "常规网络",
