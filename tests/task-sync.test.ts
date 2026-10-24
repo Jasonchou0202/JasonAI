@@ -37,6 +37,17 @@ function seed() {
   };
   return s;
 }
+function seedFuture() {
+  const s = seed();
+  Object.assign(s.data.tasks, {
+    money: task("money", "2026-10-28T02:00:00.000Z", {
+      title: "续费，费用：1899元", feedback: "预算1.5万，定金3k", nextAction: "报价 ¥1,299.00 待确认",
+    }),
+    exactNow: task("exactNow", NOW),
+    justPast: task("justPast", "2026-10-24T03:59:59.000Z"),
+  });
+  return s;
+}
 const run = (
   s: MemoryStore, action: string, payload: any = {},
   opts: { key?: unknown; envKey?: string | undefined; now?: string; limit?: ReturnType<typeof rateLimiter> } = {},
@@ -49,14 +60,16 @@ const done = (id: string, revision: number, completedAt: string | null, extra: o
   ({ id, revision, completedAt, requestId: "r" + ++req, ...extra });
 
 describe("tasks.sync.list", () => {
-  it("只返回未删除、过去7天到未来90天的日程，客户名取合并后的根客户", async () => {
-    const r = await run(seed(), "tasks.sync.list");
+  it("只返回未删除、晚于服务器 now 且不超过未来90天的日程，客户名取合并后的根客户", async () => {
+    const r = await run(seedFuture(), "tasks.sync.list");
     expect(r.ok).toBe(true);
-    expect(r.data.tasks.map((t: any) => t.id)).toEqual(["pastEdge", "inside"]);
+    expect(r.data.tasks.map((t: any) => t.id)).toEqual(["money", "inside"]);
+    for (const t of r.data.tasks) expect(Date.parse(t.at)).toBeGreaterThan(Date.parse(NOW));
+    expect(r.data.from).toBe(NOW);
     expect(r.data.tasks[0].customer).toBe("李德嘉");
   });
   it("返回字段固定；title/feedback/nextAction/客户名都去掉金额", async () => {
-    const r = await run(seed(), "tasks.sync.list");
+    const r = await run(seedFuture(), "tasks.sync.list");
     for (const t of r.data.tasks)
       expect(Object.keys(t).sort()).toEqual(
         ["at", "atLocal", "completedAt", "customer", "feedback", "id", "nextAction", "reminder", "revision", "title"],
@@ -292,4 +305,11 @@ atTest("atLocal is Asia/Shanghai yyyy-MM-dd HH:mm", () => {
   atExpect(toShanghaiLocal("2026-10-24T17:30:00.000Z")).toBe("2026-10-25 01:30");
   atExpect(toShanghaiLocal("")).toBe("");
   atExpect(toShanghaiLocal("bad")).toBe("");
+});
+
+atTest("tasks.sync.list 只返回 at > now（iPhone 提醒事项拒收过去时间），atLocal 不变", async () => {
+  const r = await run(seed(), "tasks.sync.list", {}, { now: "2026-10-30T02:00:00.000Z" });
+  atExpect(r.data.tasks.map((t: any) => t.id)).toEqual(["tooFar"]); // inside 恰好等于 now，不返回
+  const r2 = await run(seed(), "tasks.sync.list", {}, { now: "2026-10-30T01:59:59.000Z" });
+  atExpect(r2.data.tasks.map((t: any) => [t.id, t.atLocal])).toEqual([["inside", "2026-10-30 10:00"], ["tooFar", "2027-01-25 08:00"]]);
 });

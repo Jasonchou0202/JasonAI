@@ -120,13 +120,14 @@ export async function syncList(store: Store, nowIso: string) {
   const roots = customerRoots(customers);
   const byId = new Map(customers.map((c) => [c.id, c]));
   const now = Date.parse(nowIso);
-  const from = now - 7 * DAY,
+  // iPhone 提醒事项拒收过去时间：只返回 at 严格晚于服务器 now 的日程
+  const from = now,
     to = now + 90 * DAY;
   const rows: SyncTask[] = tasks
     .filter((t) => {
       if (t.deletedAt) return false;
       const at = Date.parse(t.at);
-      return !Number.isNaN(at) && at >= from && at <= to;
+      return !Number.isNaN(at) && at > from && at <= to;
     })
     .sort((a, b) => Date.parse(a.at) - Date.parse(b.at) || a.id.localeCompare(b.id))
     .map((t) => {
