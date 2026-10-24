@@ -53,7 +53,8 @@ export type Collection =
   | "customers"
   | "tasks"
   | "subscriptions"
-  | "deliveries";
+  | "deliveries"
+  | "taskSyncLog";
 export interface Transaction {
   get<T>(collection: Collection, id: string): Promise<T | null>;
   put<T>(collection: Collection, id: string, value: T): Promise<void>;

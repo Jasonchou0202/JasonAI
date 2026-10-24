@@ -8,6 +8,7 @@ export class MemoryStore implements Store {
     tasks: {},
     subscriptions: {},
     deliveries: {},
+    taskSyncLog: {},
   };
   private queue = Promise.resolve();
   async get<T>(c: Collection, id: string): Promise<T | null> {
