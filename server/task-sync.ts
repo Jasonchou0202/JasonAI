@@ -58,16 +58,19 @@ export function checkSyncKey(expected: string | undefined, given: unknown) {
     throw new SyncError("SYNC_UNAUTHORIZED", "同步密钥无效");
 }
 
-/** 简单的单实例内存限流（固定窗口）；控制台限流是主防线，这里兜底。 */
+/**
+ * 单实例内存限流（固定窗口），只统计密钥校验失败的请求；正确密钥的请求不占额度。
+ * 超过上限后，密钥错误的请求返回 SYNC_RATE_LIMITED。控制台限流是主防线，这里兜底。
+ */
 export function rateLimiter(limit = RATE_LIMIT) {
   let windowStart = 0,
-    count = 0;
+    failures = 0;
   return (nowMs: number) => {
     if (nowMs - windowStart >= limit.windowMs) {
       windowStart = nowMs;
-      count = 0;
+      failures = 0;
     }
-    if (++count > limit.max)
+    if (++failures > limit.max)
       throw new SyncError("SYNC_RATE_LIMITED", "请求太频繁，请稍后再试");
   };
 }
@@ -203,14 +206,19 @@ export function syncFailure(error: unknown) {
 
 export async function handleSync(
   store: () => Store,
-  env: { key: string | undefined; now: () => string; hash: Context["hash"]; limit?: (nowMs: number) => void },
+  env: { key: string | undefined; now: () => string; hash: Context["hash"]; /** 密钥校验失败时调用；超限时抛出 SYNC_RATE_LIMITED */
+    limit?: (nowMs: number) => void },
   parsed: { action: unknown; payload: Record<string, unknown>; key: unknown },
 ) {
   try {
     const nowIso = env.now();
-    // 先限流再验密钥，猜密钥的请求同样受限。
-    env.limit?.(Date.parse(nowIso));
-    checkSyncKey(env.key, parsed.key);
+    try {
+      checkSyncKey(env.key, parsed.key);
+    } catch (error) {
+      // 只有密钥校验失败才计入限流
+      env.limit?.(Date.parse(nowIso));
+      throw error;
+    }
     const ctx: Context = { uid: null, ownerUid: "", now: () => nowIso, hash: env.hash };
     if (parsed.action === "tasks.sync.list")
       return { ok: true, data: await syncList(store(), nowIso) };

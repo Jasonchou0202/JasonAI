@@ -1,24 +1,40 @@
 // 唯一实现：客户日程 → iPhone 提醒事项文本去金额、拼标题。
 // 服务端（server/task-sync.ts）和 scripts/task-sync-title.mjs 都从这里引用。
-const NUM = String.raw`\d+(?:[.,，]\d+)*`;
-const UNIT = String.raw`(?:万元|万|千|[wWkK](?![A-Za-z])|块钱|块|元|美元|刀)`;
-const KEYWORD = String.raw`(?:费用|报价|定金|订金|预算|尾款|价格|金额|总价|单价)`;
-const MONEY = [
-  // 关键词 + 数字：费用：1899元 / 定金3k / 预算 1.5万 / 报价¥99
-  new RegExp(String.raw`${KEYWORD}\s*[:：]?\s*(?:约|共)?\s*[¥￥$]?\s*${NUM}\s*${UNIT}?`, "g"),
-  // 货币符号 + 数字：¥1,299.00 / $20 / ￥3k
-  new RegExp(String.raw`[¥￥$]\s*${NUM}\s*${UNIT}?`, "g"),
-  // 数字 + 单位：500 元 / 1.5万 / 3k / 20块
-  new RegExp(String.raw`${NUM}\s*${UNIT}`, "g"),
+// 做法：只要命中金额写法，就把整段金额片段换成「（含金额，已隐藏）」。
+export const MONEY_MASK = "（含金额，已隐藏）";
+const D = "[0-9０-９]";
+const CN = "[零〇一二两三四五六七八九十百千万亿]";
+const DIGNUM = String.raw`${D}+(?:[.,，．]${D}+)*`;
+const CNNUM = `${CN}+`;
+const NUM = `(?:${DIGNUM}|${CNNUM})`;
+const CUR_PREFIX = String.raw`(?:HK\$|US\$|[¥￥$€£]|RMB|CNY|USD|HKD|EUR)`;
+const CUR_UNIT = String.raw`(?:万元|千元|块钱|块|元|圆|美元|美金|港币|刀|RMB|CNY|USD|HKD|EUR|€)`;
+// 千/万/k/w 量级，可带尾数（2千5）和币种（1.5万元）
+const SCALE = String.raw`(?:[千万][0-9０-９一二三四五六七八九]*|[kKwW](?![A-Za-z]))`;
+const PER = String.raw`(?:\s*/\s*(?:月|年|季|周|天|次|人|个|台|份))`;
+const APPROX = String.raw`(?:约|共|大约|大概|合计|共计|总共)`;
+const KEYWORD = String.raw`(?:费用|报价|定金|订金|预算|尾款|首款|价格|金额|总价|单价|付款|收款|转账|打款|回款|到账|成交|收了|付了|收|付|[0-9一二三四五六七八九.]+折后?)`;
+// 金额主体：数字 + 可选量级 + 可选币种 + 可选 /月 /年
+const AMOUNT = `${NUM}\\s*${SCALE}?\\s*${CUR_UNIT}?${PER}?\\.?`;
+const SEP = String.raw`\s*[:：]?\s*`;
+const RULES = [
+  // 关键词 + （约）+（币种）+ 数字：收了1899 / 付款 1899 / 收款：3000 / 八折后1200 / 定金3k
+  new RegExp(`${KEYWORD}${SEP}${APPROX}?\\s*${CUR_PREFIX}?\\s*${AMOUNT}`, "g"),
+  // 币种前缀 + 数字：¥１８９９ / CNY 1899 / USD20 / €20 / HK$50
+  new RegExp(`${APPROX}?\\s*${CUR_PREFIX}\\s*${AMOUNT}`, "g"),
+  // 数字 + 量级/币种（必须有其一）：1.5万 / 2千5 / 999元/年 / 1899RMB / 三千块 / 一千八百元
+  new RegExp(`${APPROX}?\\s*${DIGNUM}\\s*(?:${SCALE}\\s*${CUR_UNIT}?|${CUR_UNIT})${PER}?`, "g"),
+  new RegExp(`${APPROX}?\\s*${CNNUM}\\s*${CUR_UNIT}${PER}?`, "g"),
+  // 数字/月、数字/年：499/月
+  new RegExp(`${APPROX}?\\s*${DIGNUM}\\s*/\\s*(?:月|年)`, "g"),
 ];
 export function stripMoney(text) {
   let out = String(text ?? "");
-  for (const re of MONEY) out = out.replace(re, " ");
+  for (const re of RULES) out = out.replace(re, `\u0000`);
   return out
-    .replace(/[（(【\[]\s*[）)】\]]/g, " ")
-    .replace(/\s*[,，;；、|]\s*(?=[,，;；、|]|$)/g, "")
-    .replace(/^\s*[,，;；、|·:：-]+\s*/, "")
-    .replace(/\s*[:：]\s*$/, "")
+    .replace(/[（(]\s*\u0000\s*[）)]/g, "\u0000")
+    .replace(/\u0000(?:[\s+＋]*\u0000)*/g, MONEY_MASK)
+    .replace(/\s*（含金额，已隐藏）\s*/g, MONEY_MASK)
     .replace(/[ \t]+/g, " ")
     .trim();
 }

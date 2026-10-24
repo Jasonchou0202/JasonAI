@@ -9,7 +9,7 @@ import { runReminders } from "../server/reminders";
 import {
   handleSync, parseSyncEvent, rateLimiter, syncFailure, SyncError, SYNC_LOG,
 } from "../server/task-sync";
-import { stripMoney, taskSyncTitle } from "../src/domain/taskSyncTitle.mjs";
+import { MONEY_MASK as M, stripMoney, taskSyncTitle } from "../src/domain/taskSyncTitle.mjs";
 import type { Customer, CustomerTask } from "../src/domain/model";
 
 const NOW = "2026-10-24T04:00:00.000Z";
@@ -61,7 +61,7 @@ describe("tasks.sync.list", () => {
       expect(Object.keys(t).sort()).toEqual(
         ["at", "completedAt", "customer", "feedback", "id", "nextAction", "reminder", "revision", "title"],
       );
-    expect(r.data.tasks[0]).toMatchObject({ title: "续费", feedback: "", nextAction: "待确认" });
+    expect(r.data.tasks[0]).toMatchObject({ title: "续费，" + M, feedback: M + "，" + M, nextAction: M + "待确认" });
     const text = JSON.stringify(r);
     for (const word of ["revenue", "cost", "profit", "tier", "payment", "189900", "100000", "1899", "1.5万", "3k", "¥", "元"])
       expect(text).not.toContain(word);
@@ -97,13 +97,15 @@ describe("鉴权与限流", () => {
     expect(b).toMatchObject({ action: "tasks.sync.list", key: KEY });
     expect(() => parseSyncEvent({ httpMethod: "GET", headers: {} })).toThrow(SyncError);
   });
-  it("内存限流：超过每分钟上限拒绝，下个窗口恢复", async () => {
+  it("内存限流只统计密钥错误的请求；正确密钥不占额度，下个窗口恢复", async () => {
     const limit = rateLimiter({ windowMs: 60_000, max: 2 });
     const s = seed();
+    for (let i = 0; i < 5; i++) expect((await run(s, "tasks.sync.list", {}, { limit })).ok).toBe(true);
+    expect(await run(s, "tasks.sync.list", {}, { limit, key: "bad" })).toMatchObject({ code: "SYNC_UNAUTHORIZED" });
+    expect(await run(s, "tasks.sync.list", {}, { limit, key: "bad" })).toMatchObject({ code: "SYNC_UNAUTHORIZED" });
+    expect(await run(s, "tasks.sync.list", {}, { limit, key: "bad" })).toMatchObject({ ok: false, code: "SYNC_RATE_LIMITED" });
     expect((await run(s, "tasks.sync.list", {}, { limit })).ok).toBe(true);
-    expect((await run(s, "tasks.sync.list", {}, { limit })).ok).toBe(true);
-    expect(await run(s, "tasks.sync.list", {}, { limit })).toMatchObject({ ok: false, code: "SYNC_RATE_LIMITED" });
-    expect((await run(s, "tasks.sync.list", {}, { limit, now: "2026-10-24T04:01:00.000Z" })).ok).toBe(true);
+    expect(await run(s, "tasks.sync.list", {}, { limit, key: "bad", now: "2026-10-24T04:01:00.000Z" })).toMatchObject({ code: "SYNC_UNAUTHORIZED" });
   });
   it("非 SyncError 不外泄原始报错", () => {
     expect(syncFailure(new Error("db password=xxx at line 3"))).toEqual({ ok: false, code: "SYNC_FAILED", error: "云端操作未完成，请稍后重试" });
@@ -203,18 +205,45 @@ describe("与提醒推送联动", () => {
 describe("提醒事项标题（唯一实现）", () => {
   const cases: [string, string, string][] = [
     ["✅李德嘉", "ChatGPT Pro 到期", "李德嘉 · ChatGPT Pro 到期"],
-    ["王五", "续费，费用：1899元", "王五 · 续费"],
-    ["王五", "报价 ¥1,299.00 待确认", "王五 · 待确认"],
-    ["王五", "尾款 500 元（费用 ¥300）", "王五 · 客户日程"],
-    ["王五", "确认报价", "王五 · 确认报价"],
-    ["王五", "收定金3k", "王五 · 收"],
-    ["王五", "预算1.5万 方案沟通", "王五 · 方案沟通"],
-    ["王五", "年费 2w 续约", "王五 · 年费 续约"],
-    ["王五", "$20 订阅续费", "王五 · 订阅续费"],
-    ["王五", "代付 30块", "王五 · 代付"],
+    ["王五", "续费，费用：1899元", "王五 · 续费，" + M],
+    ["王五", "报价 ¥1,299.00 待确认", "王五 · " + M + "待确认"],
+    ["王五", "尾款 500 元（费用 ¥300）", "王五 · " + M],
+    ["王五", "收定金3k", "王五 · 收" + M],
+    ["王五", "预算1.5万 方案沟通", "王五 · " + M + "方案沟通"],
+    ["王五", "年费 2w 续约", "王五 · 年费" + M + "续约"],
+    ["王五", "$20 订阅续费", "王五 · " + M + "订阅续费"],
+    ["王五", "代付 30块", "王五 · 代" + M],
+    // 中文数字、全角数字
+    ["王五", "续费一千八百元", "王五 · 续费" + M],
+    ["王五", "三千块 尾款", "王五 · " + M + "尾款"],
+    ["王五", "已收¥１８９９", "王五 · 已" + M],
+    // 每月/每年、量级尾数、约
+    ["王五", "999元/年 续费", "王五 · " + M + "续费"],
+    ["王五", "499/月 订阅", "王五 · " + M + "订阅"],
+    ["王五", "报价2千5", "王五 · " + M],
+    ["王五", "单子2千5搞定", "王五 · 单子" + M + "搞定"],
+    ["王五", "约2万的单子", "王五 · " + M + "的单子"],
+    // 无单位的写法
+    ["王五", "收了1899", "王五 · " + M],
+    ["王五", "付款 1899 待确认", "王五 · " + M + "待确认"],
+    ["王五", "转账2000", "王五 · " + M],
+    ["王五", "收款：3000", "王五 · " + M],
+    ["王五", "八折后1200", "王五 · " + M],
+    ["王五", "已付款1899.", "王五 · 已" + M],
+    ["王五", "回款 5000 到账", "王五 · " + M + "到账"],
+    // 币种写法
+    ["王五", "1899RMB 年付", "王五 · " + M + "年付"],
+    ["王五", "CNY 1899", "王五 · " + M],
+    ["王五", "USD20 订阅", "王五 · " + M + "订阅"],
+    ["王五", "€20 订阅", "王五 · " + M + "订阅"],
+    ["王五", "HK$50 充值", "王五 · " + M + "充值"],
+    // 普通数字不误伤
     ["王五", "Claude 3.5 升级", "王五 · Claude 3.5 升级"],
-    ["王五 ¥88", "回访", "王五 · 回访"],
-    ["", "费用：99元", "客户日程"],
+    ["王五", "Grok 4 试用，第3次跟进", "王五 · Grok 4 试用，第3次跟进"],
+    ["王五", "确认报价，收到反馈", "王五 · 确认报价，收到反馈"],
+    ["王五", "10月续费 一次回访", "王五 · 10月续费 一次回访"],
+    ["王五 ¥88", "回访", "王五" + M + " · 回访"],
+    ["", "费用：99元", M],
   ];
   it.each(cases)("%s / %s", (name, title, expected) => {
     expect(taskSyncTitle(name, title)).toBe(expected);
@@ -225,8 +254,9 @@ describe("提醒事项标题（唯一实现）", () => {
       .trim().split("\n").map((l) => JSON.parse(l).title);
     expect(out).toEqual(cases.map(([n, t]) => taskSyncTitle(n, t)));
   });
-  it("没有金额片段残留", () => {
-    for (const t of ["费用1899", "¥88", "共计 12元", "定金3k", "1.5万", "$5", "预算 2000"])
-      expect(stripMoney(t)).not.toMatch(/[¥￥$元万]|费用|定金|预算|\d/);
+  it("没有金额数字残留", () => {
+    for (const t of ["费用1899", "¥88", "共计 12元", "定金3k", "1.5万", "$5", "预算 2000", "999元/年", "2千5", "约2万", "一千八百元", "¥１８９９", "1899RMB", "CNY 1899", "USD20", "€20", "499/月", "收了1899", "转账2000", "八折后1200"])
+      expect(stripMoney(t)).toBe(M);
   });
+
 });
