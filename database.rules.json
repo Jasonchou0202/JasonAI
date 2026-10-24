@@ -8,5 +8,6 @@
   "deliveries": { "read": false, "write": false },
   "content_daily": { "read": false, "write": false },
   "content_audit": { "read": false, "write": false },
-  "content_receipts": { "read": false, "write": false }
+  "content_receipts": { "read": false, "write": false },
+  "taskSyncLog": { "read": false, "write": false }
 }

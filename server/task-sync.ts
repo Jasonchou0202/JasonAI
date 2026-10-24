@@ -1,14 +1,19 @@
 import { timingSafeEqual, createHash } from "node:crypto";
 import type { Customer, CustomerTask } from "../src/domain/model";
 import { customerRoots, displayCustomerName } from "../src/domain/customers";
-import type { Store, Transaction } from "./service";
+import { validateTaskInput } from "../src/domain/tasks";
+import { stripMoney } from "../src/domain/taskSyncTitle.mjs";
+import { mutation, nextTaskRow, type Context, type Store, type Transaction } from "./service";
 
 /**
- * iPhone 提醒事项双向同步接口。只接受专用同步密钥（环境变量 TASK_SYNC_KEY），
- * 不能调用其他任何 action；只读日程，只写 completedAt。
+ * iPhone 提醒事项双向同步接口。只接受专用同步密钥（环境变量 TASK_SYNC_KEY，至少 32 字节），
+ * 不能调用其他任何 action；只读日程，只写 completedAt（连同提醒代次）。
  */
 export const SYNC_ACTIONS = ["tasks.sync.list", "tasks.sync.complete"] as const;
 export const SYNC_LOG = "taskSyncLog" as const;
+export const MIN_SYNC_KEY_BYTES = 32;
+export const MAX_FUTURE_MS = 5 * 60_000;
+export const RATE_LIMIT = { windowMs: 60_000, max: 60 };
 const DAY = 86400000;
 
 export interface SyncTask {
@@ -26,6 +31,7 @@ export interface SyncLogEntry {
   id: string;
   at: string;
   taskId: string;
+  requestId: string;
   before: string | null;
   after: string | null;
   revision: number;
@@ -40,9 +46,10 @@ export function isSyncAction(action: unknown): boolean {
   return typeof action === "string" && action.startsWith("tasks.sync.");
 }
 
-/** 常量时间比较；未配置密钥时一律拒绝。 */
+/** 常量时间比较；未配置或少于 32 字节的密钥一律拒绝。 */
 export function checkSyncKey(expected: string | undefined, given: unknown) {
-  if (!expected) throw new SyncError("SYNC_DISABLED", "同步接口未启用");
+  if (!expected || Buffer.byteLength(expected, "utf8") < MIN_SYNC_KEY_BYTES)
+    throw new SyncError("SYNC_DISABLED", "同步接口未启用");
   if (typeof given !== "string" || !given)
     throw new SyncError("SYNC_UNAUTHORIZED", "同步密钥无效");
   const a = createHash("sha256").update(expected).digest();
@@ -51,7 +58,21 @@ export function checkSyncKey(expected: string | undefined, given: unknown) {
     throw new SyncError("SYNC_UNAUTHORIZED", "同步密钥无效");
 }
 
-function isoOrNull(value: unknown): string | null {
+/** 简单的单实例内存限流（固定窗口）；控制台限流是主防线，这里兜底。 */
+export function rateLimiter(limit = RATE_LIMIT) {
+  let windowStart = 0,
+    count = 0;
+  return (nowMs: number) => {
+    if (nowMs - windowStart >= limit.windowMs) {
+      windowStart = nowMs;
+      count = 0;
+    }
+    if (++count > limit.max)
+      throw new SyncError("SYNC_RATE_LIMITED", "请求太频繁，请稍后再试");
+  };
+}
+
+function completedValue(value: unknown, nowIso: string): string | null {
   if (value === null) return null;
   if (
     typeof value !== "string" ||
@@ -59,6 +80,8 @@ function isoOrNull(value: unknown): string | null {
     Number.isNaN(Date.parse(value))
   )
     throw new SyncError("SYNC_BAD_REQUEST", "完成时间格式无效");
+  if (Date.parse(value) > Date.parse(nowIso) + MAX_FUTURE_MS)
+    throw new SyncError("SYNC_BAD_REQUEST", "完成时间不能晚于现在");
   return new Date(value).toISOString();
 }
 
@@ -84,10 +107,10 @@ export async function syncList(store: Store, nowIso: string) {
       return {
         id: t.id,
         at: t.at,
-        customer: root ? displayCustomerName(root.name) : "",
-        title: t.title,
-        feedback: t.feedback,
-        nextAction: t.nextAction,
+        customer: root ? stripMoney(displayCustomerName(root.name)) : "",
+        title: stripMoney(t.title),
+        feedback: stripMoney(t.feedback),
+        nextAction: stripMoney(t.nextAction),
         reminder: t.reminder,
         completedAt: t.completedAt,
         revision: t.revision,
@@ -98,45 +121,46 @@ export async function syncList(store: Store, nowIso: string) {
 
 export async function syncComplete(
   store: Store,
+  ctx: Context,
   nowIso: string,
   payload: Record<string, unknown>,
-  newId: () => string,
 ) {
-  const id = payload.id;
+  const id = payload.id,
+    requestId = payload.requestId;
   if (typeof id !== "string" || !/^[\w-]{1,128}$/.test(id))
     throw new SyncError("SYNC_BAD_REQUEST", "记录编号无效");
+  if (typeof requestId !== "string" || !/^[\w-]{1,128}$/.test(requestId))
+    throw new SyncError("SYNC_BAD_REQUEST", "请求编号无效");
   if (!Number.isInteger(payload.revision) || (payload.revision as number) < 1)
     throw new SyncError("SYNC_BAD_REQUEST", "日程版本无效");
   if (!Object.hasOwn(payload, "completedAt"))
     throw new SyncError("SYNC_BAD_REQUEST", "缺少完成时间");
-  const completedAt = isoOrNull(payload.completedAt);
+  const completedAt = completedValue(payload.completedAt, nowIso);
+  const action = "tasks.sync.complete";
   return store.transaction(async (tx: Transaction) => {
     const ledger = await tx.get<{ restoreId?: string | null }>("batches", "_ledger");
     if (ledger?.restoreId) throw new SyncError("SYNC_BUSY", "正在恢复备份，请稍后再同步");
-    const old = await tx.get<CustomerTask>("tasks", id);
-    if (!old) throw new SyncError("SYNC_NOT_FOUND", "日程不存在");
-    if (old.deletedAt) throw new SyncError("SYNC_DELETED", "日程已删除");
-    if (old.revision !== payload.revision)
-      throw new SyncError("SYNC_CONFLICT", "日程已在另一处修改，请刷新后重试");
-    const mutationId = "sync_" + newId();
-    const row: CustomerTask = {
-      ...old,
-      completedAt,
-      updatedAt: nowIso,
-      revision: old.revision + 1,
-      lastMutation: mutationId,
-    };
-    await tx.put("tasks", id, row);
-    const log: SyncLogEntry = {
-      id: mutationId,
-      at: nowIso,
-      taskId: id,
-      before: old.completedAt,
-      after: completedAt,
-      revision: row.revision,
-    };
-    await tx.put(SYNC_LOG, mutationId, log);
-    return { id, completedAt, revision: row.revision };
+    // 同一 requestId 重放：返回第一次的结果，不重复写库和日志。
+    return mutation(tx, ctx, requestId, action, { id, revision: payload.revision, completedAt }, async () => {
+      const old = await tx.get<CustomerTask>("tasks", id);
+      if (!old) throw new SyncError("SYNC_NOT_FOUND", "日程不存在");
+      if (old.deletedAt) throw new SyncError("SYNC_DELETED", "日程已删除");
+      if (old.revision !== payload.revision)
+        throw new SyncError("SYNC_CONFLICT", "日程已在另一处修改，请刷新后重试");
+      // 与 tasks.complete / tasks.reopen 同一套写法（含 reminderGeneration、reminderStartAt）。
+      const row = await nextTaskRow(
+        ctx, old, validateTaskInput(old), completedAt, old.deletedAt, nowIso, requestId,
+        completedAt ? "tasks.complete" : "tasks.reopen",
+      );
+      await tx.put("tasks", id, row);
+      const logId = "sync_" + (await ctx.hash(requestId)).slice(0, 40);
+      const log: SyncLogEntry = {
+        id: logId, at: nowIso, taskId: id, requestId,
+        before: old.completedAt, after: completedAt, revision: row.revision,
+      };
+      await tx.put(SYNC_LOG, logId, log);
+      return { id, completedAt, revision: row.revision };
+    });
   });
 }
 
@@ -159,7 +183,7 @@ export function parseSyncEvent(event: unknown): { action: string; payload: Recor
     const auth = String(headers["authorization"] ?? "");
     return {
       action: body?.action,
-      payload: body?.payload && typeof body.payload === "object" ? body.payload : {},
+      payload: body?.payload && typeof body.payload === "object" && !Array.isArray(body.payload) ? body.payload : {},
       key: auth.startsWith("Bearer ") ? auth.slice(7) : headers["x-task-sync-key"],
     };
   }
@@ -171,20 +195,29 @@ export function parseSyncEvent(event: unknown): { action: string; payload: Recor
   };
 }
 
+/** 统一的错误出口：只透出 SyncError 的代码和中文提示，其他错误一律通用提示。 */
+export function syncFailure(error: unknown) {
+  if (error instanceof SyncError) return { ok: false, code: error.code, error: error.message };
+  return { ok: false, code: "SYNC_FAILED", error: "云端操作未完成，请稍后重试" };
+}
+
 export async function handleSync(
   store: () => Store,
-  env: { key: string | undefined; now: () => string; newId: () => string },
+  env: { key: string | undefined; now: () => string; hash: Context["hash"]; limit?: (nowMs: number) => void },
   parsed: { action: unknown; payload: Record<string, unknown>; key: unknown },
 ) {
   try {
+    const nowIso = env.now();
+    // 先限流再验密钥，猜密钥的请求同样受限。
+    env.limit?.(Date.parse(nowIso));
     checkSyncKey(env.key, parsed.key);
+    const ctx: Context = { uid: null, ownerUid: "", now: () => nowIso, hash: env.hash };
     if (parsed.action === "tasks.sync.list")
-      return { ok: true, data: await syncList(store(), env.now()) };
+      return { ok: true, data: await syncList(store(), nowIso) };
     if (parsed.action === "tasks.sync.complete")
-      return { ok: true, data: await syncComplete(store(), env.now(), parsed.payload, env.newId) };
+      return { ok: true, data: await syncComplete(store(), ctx, nowIso, parsed.payload) };
     throw new SyncError("SYNC_FORBIDDEN", "同步密钥只能调用同步接口");
   } catch (error) {
-    if (error instanceof SyncError) return { ok: false, code: error.code, error: error.message };
-    return { ok: false, error: "云端操作未完成，请稍后重试" };
+    return syncFailure(error);
   }
 }

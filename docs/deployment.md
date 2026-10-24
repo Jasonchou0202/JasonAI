@@ -8,7 +8,7 @@
 
 默认静态托管域名仅用于虚构数据验收，不作为正式记账入口。[官方限制说明](https://docs.cloudbase.net/service/alias)要求正式浏览器网站使用自定义域名。本项目正式入口仍使用 GitHub Pages；需要套餐允许添加 Pages 的安全域名，购买前核对本人预算、实际总价和自动续费选项。
 
-创建三个集合：`sales`、`products`、`batches`。每个集合设置“所有用户不可读写”，高级规则为 `{"read":false,"write":false}`（分别应用，`database.rules.json` 是集合规则清单）。仅云函数服务端 SDK 使用管理权限读写。不要开放数据库 HTTP 接口或客户端写权限。
+创建三个集合：`sales`、`products`、`batches`（其余集合见 `database.rules.json`，如同步日志 `taskSyncLog`）。每个集合设置“所有用户不可读写”，高级规则为 `{"read":false,"write":false}`（分别应用，`database.rules.json` 是集合规则清单）。仅云函数服务端 SDK 使用管理权限读写。不要开放数据库 HTTP 接口或客户端写权限。
 
 ## 2. GitHub 身份源
 
@@ -28,7 +28,15 @@ npm run build:server
 
 将 `cloudfunctions/sales/` 目录部署为 `sales` 云函数。入口 `index.main`，Node.js 18.15 或环境支持的更新 Node.js 运行时，建议 256 MB、60 秒超时。打包已包含依赖，不需要在云端重新 npm install。
 
-在云函数环境变量配置 `OWNER_UID=<已核对的本人 CloudBase UID>`。使用云函数 SDK 调用，不创建公开 HTTP 触发器。函数中的 UID 仅取 CloudBase `getAuthContext(context)`，不信任前端 payload/header 中的 UID。
+在云函数环境变量配置 `OWNER_UID=<已核对的本人 CloudBase UID>`。网页端使用云函数 SDK 调用；除下面的 `/task-sync` 外，不为 `sales` 创建任何公开 HTTP 路径。函数中的 UID 仅取 CloudBase `getAuthContext(context)`，不信任前端 payload/header 中的 UID。
+
+### iPhone 提醒事项同步（可选，`tasks.sync.list` / `tasks.sync.complete`）
+
+1. **建集合**：新建 `taskSyncLog`（只追加的同步日志），权限设为“所有用户不可读写”，高级规则 `{"read":false,"write":false}`（已写入 `database.rules.json`），只由云函数服务端读写。
+2. **同步密钥**：在 `sales` 的环境变量配置 `TASK_SYNC_KEY`，必须是**至少 32 字节的随机值**（例如 `openssl rand -base64 48` 生成）。未设置或少于 32 字节时，两个同步接口全部拒绝。密钥只保存在控制台和同步端，不要写进仓库或聊天。删掉该变量即关闭同步。
+3. **HTTP 访问**：在 HTTP 访问服务里**只给 `sales` 开 `/task-sync` 这一个路径**，不要开其他路径。经 HTTP 进来的请求只会分派到这两个同步接口，调不到账本的其他操作。
+4. **限流**：如果控制台支持，为 `/task-sync` 配置限流（建议每分钟不超过 60 次）。函数内另有单实例内存限流兜底（每分钟 60 次）。
+5. **调用方式**：`POST /task-sync`，头 `Authorization: Bearer <TASK_SYNC_KEY>`，正文 `{"action":"tasks.sync.list"}` 或 `{"action":"tasks.sync.complete","payload":{"id":"…","revision":4,"completedAt":"2026-10-24T11:30:00+08:00","requestId":"…"}}`。`completedAt` 为 `null` 表示重新打开；不能晚于当前时间 5 分钟以上；`requestId` 用于幂等重试。
 
 若使用 CloudBase CLI，在官方来源安装 CLI、由本人登录，复制 `cloudbase.example.json` 为被 Git 忽略的 `cloudbaserc.json`，填环境 ID 和本人 UID，再按当前 CLI 的函数部署说明部署。模板不会自动创建权限或执行部署。
 
