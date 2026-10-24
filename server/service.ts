@@ -8,6 +8,7 @@ import type {
   Filters,
   Customer,
   CustomerTask,
+  CustomerTaskInput,
 } from "../src/domain/model";
 import {
   customerId,
@@ -53,7 +54,8 @@ export type Collection =
   | "customers"
   | "tasks"
   | "subscriptions"
-  | "deliveries";
+  | "deliveries"
+  | "taskSyncLog";
 export interface Transaction {
   get<T>(collection: Collection, id: string): Promise<T | null>;
   put<T>(collection: Collection, id: string, value: T): Promise<void>;
@@ -286,7 +288,37 @@ async function absorbProfile(
   }
   throw new Error("客户合并形成循环");
 }
-async function mutation<T>(
+/** 日程改动的统一写法：revision+1、updatedAt、lastMutation，并在完成/重开/时间变化时换提醒代次。 */
+export async function nextTaskRow(
+  ctx: Context,
+  old: CustomerTask,
+  input: CustomerTaskInput,
+  completedAt: string | null,
+  deletedAt: string | null,
+  time: string,
+  requestId: string,
+  action: string,
+): Promise<CustomerTask> {
+  const reminderChanged =
+    input.at !== old.at ||
+    input.reminder !== old.reminder ||
+    completedAt !== old.completedAt ||
+    deletedAt !== old.deletedAt;
+  return {
+    ...old,
+    ...input,
+    completedAt,
+    deletedAt,
+    updatedAt: time,
+    revision: old.revision + 1,
+    lastMutation: requestId,
+    reminderGeneration: reminderChanged
+      ? await ctx.hash(JSON.stringify([old.reminderGeneration, requestId, action]))
+      : old.reminderGeneration,
+    reminderStartAt: reminderChanged ? time : old.reminderStartAt,
+  };
+}
+export async function mutation<T>(
   tx: Transaction,
   ctx: Context,
   request: unknown,
@@ -625,26 +657,7 @@ export async function execute(
                 : action === "tasks.restore"
                   ? null
                   : old.deletedAt;
-            const reminderChanged =
-              input.at !== old.at ||
-              input.reminder !== old.reminder ||
-              completedAt !== old.completedAt ||
-              deletedAt !== old.deletedAt;
-            const row: CustomerTask = {
-              ...old,
-              ...input,
-              completedAt,
-              deletedAt,
-              updatedAt: time,
-              revision: old.revision + 1,
-              lastMutation: requestId,
-              reminderGeneration: reminderChanged
-                ? await ctx.hash(
-                    JSON.stringify([old.reminderGeneration, requestId, action]),
-                  )
-                : old.reminderGeneration,
-              reminderStartAt: reminderChanged ? time : old.reminderStartAt,
-            };
+            const row = await nextTaskRow(ctx, old, input, completedAt, deletedAt, time, requestId, action);
             await tx.put("tasks", id, row);
             return row;
           },
