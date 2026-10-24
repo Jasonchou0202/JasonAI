@@ -35,10 +35,10 @@ npm run build:server
 1. **建集合**：新建 `taskSyncLog`（只追加的同步日志），权限设为“所有用户不可读写”，高级规则 `{"read":false,"write":false}`（已写入 `database.rules.json`），只由云函数服务端读写。
 2. **同步密钥**：在 `sales` 的环境变量配置 `TASK_SYNC_KEY`，必须是**至少 32 字节的随机值**（例如 `openssl rand -base64 48` 生成）。未设置或少于 32 字节时，两个同步接口全部拒绝。密钥只保存在控制台和同步端，不要写进仓库或聊天。删掉该变量即关闭同步。
 3. **HTTP 访问**：在 HTTP 访问服务里**只给 `sales` 开 `/task-sync` 这一个路径**，不要开其他路径。经 HTTP 进来的请求只会分派到这两个同步接口，调不到账本的其他操作。
-4. **限流（上线前提）**：必须先在控制台为 `/task-sync` 配好限流（建议每分钟不超过 60 次），没配好不上线。函数内的内存限流只是兜底：只统计密钥校验失败的请求（单实例每分钟 60 次），正确密钥的请求不占这个额度。
+4. **限流（上线前提）**：必须先在控制台为 `/task-sync` 配好限流（建议每分钟不超过 60 次），没配好不上线。**真正的防线是 32 字节随机密钥和控制台限流**；函数内的内存限流只是兜底：只统计密钥校验失败的请求（单实例每分钟 60 次），超限后这一分钟内所有请求（包括正确密钥）都直接拒绝，同步任务下一轮重试。
 5. **调用方式**：`POST /task-sync`，头 `Authorization: Bearer <TASK_SYNC_KEY>`，正文 `{"action":"tasks.sync.list"}` 或 `{"action":"tasks.sync.complete","payload":{"id":"…","revision":4,"completedAt":"2026-10-24T11:30:00+08:00","requestId":"…"}}`。`completedAt` 为 `null` 表示重新打开；不能晚于当前时间 5 分钟以上；`requestId` 用于幂等重试。
 6. **定期清理（待办，本次未实现）**：每次 `complete` 会在 `batches` 集合留一条 `mutation_*` 幂等回执，并在 `taskSyncLog` 追加一条日志，两者都只增不减，以后需要定期清理（例如只保留最近 90 天）。
-7. **去金额**：返回给 iPhone 的客户名、title、feedback、nextAction 中，凡命中金额写法（费用、报价、收款、转账、¥/￥/$/€/RMB/CNY/USD、万/千/k/w、元/块、/月 /年、中文和全角数字等）的整段片段都会替换为「（含金额，已隐藏）」。
+7. **去金额**：返回给 iPhone 的客户名、title、feedback、nextAction 中，凡命中金额写法（费用、报价、收款、转账、¥/￥/$/€/RMB/CNY/USD、万/千/k/w、元/块、/月 /年、中文/大写/全角数字、不带单位的“两千八”、千分位空格、/人 /次、大小写不敏感等）的整段片段都会替换为「（含金额，已隐藏）」。
 
 若使用 CloudBase CLI，在官方来源安装 CLI、由本人登录，复制 `cloudbase.example.json` 为被 Git 忽略的 `cloudbaserc.json`，填环境 ID 和本人 UID，再按当前 CLI 的函数部署说明部署。模板不会自动创建权限或执行部署。
 

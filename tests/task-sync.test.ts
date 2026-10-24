@@ -39,7 +39,7 @@ function seed() {
 }
 const run = (
   s: MemoryStore, action: string, payload: any = {},
-  opts: { key?: unknown; envKey?: string | undefined; now?: string; limit?: (n: number) => void } = {},
+  opts: { key?: unknown; envKey?: string | undefined; now?: string; limit?: ReturnType<typeof rateLimiter> } = {},
 ) =>
   handleSync(() => s, {
     key: "envKey" in opts ? opts.envKey : KEY, now: () => opts.now ?? NOW, hash, limit: opts.limit,
@@ -97,15 +97,20 @@ describe("鉴权与限流", () => {
     expect(b).toMatchObject({ action: "tasks.sync.list", key: KEY });
     expect(() => parseSyncEvent({ httpMethod: "GET", headers: {} })).toThrow(SyncError);
   });
-  it("内存限流只统计密钥错误的请求；正确密钥不占额度，下个窗口恢复", async () => {
+  it("内存限流：正确密钥不计数；失败超限后本分钟全部拒绝（含正确密钥），下个窗口恢复", async () => {
     const limit = rateLimiter({ windowMs: 60_000, max: 2 });
     const s = seed();
     for (let i = 0; i < 5; i++) expect((await run(s, "tasks.sync.list", {}, { limit })).ok).toBe(true);
     expect(await run(s, "tasks.sync.list", {}, { limit, key: "bad" })).toMatchObject({ code: "SYNC_UNAUTHORIZED" });
-    expect(await run(s, "tasks.sync.list", {}, { limit, key: "bad" })).toMatchObject({ code: "SYNC_UNAUTHORIZED" });
-    expect(await run(s, "tasks.sync.list", {}, { limit, key: "bad" })).toMatchObject({ ok: false, code: "SYNC_RATE_LIMITED" });
     expect((await run(s, "tasks.sync.list", {}, { limit })).ok).toBe(true);
-    expect(await run(s, "tasks.sync.list", {}, { limit, key: "bad", now: "2026-10-24T04:01:00.000Z" })).toMatchObject({ code: "SYNC_UNAUTHORIZED" });
+    expect(await run(s, "tasks.sync.list", {}, { limit, key: "bad" })).toMatchObject({ code: "SYNC_UNAUTHORIZED" });
+    // 已锁住：错误和正确密钥都拒绝，写接口也拒绝且不改数据
+    expect(await run(s, "tasks.sync.list", {}, { limit, key: "bad" })).toMatchObject({ ok: false, code: "SYNC_RATE_LIMITED" });
+    expect(await run(s, "tasks.sync.list", {}, { limit })).toMatchObject({ ok: false, code: "SYNC_RATE_LIMITED" });
+    expect(await run(s, "tasks.sync.complete", done("inside", 3, NOW), { limit })).toMatchObject({ ok: false, code: "SYNC_RATE_LIMITED" });
+    expect((s.data.tasks.inside as CustomerTask).revision).toBe(3);
+    // 下个窗口恢复
+    expect((await run(s, "tasks.sync.list", {}, { limit, now: "2026-10-24T04:01:00.000Z" })).ok).toBe(true);
   });
   it("非 SyncError 不外泄原始报错", () => {
     expect(syncFailure(new Error("db password=xxx at line 3"))).toEqual({ ok: false, code: "SYNC_FAILED", error: "云端操作未完成，请稍后重试" });
@@ -208,7 +213,7 @@ describe("提醒事项标题（唯一实现）", () => {
     ["王五", "续费，费用：1899元", "王五 · 续费，" + M],
     ["王五", "报价 ¥1,299.00 待确认", "王五 · " + M + "待确认"],
     ["王五", "尾款 500 元（费用 ¥300）", "王五 · " + M],
-    ["王五", "收定金3k", "王五 · 收" + M],
+    ["王五", "收定金3k", "王五 · " + M],
     ["王五", "预算1.5万 方案沟通", "王五 · " + M + "方案沟通"],
     ["王五", "年费 2w 续约", "王五 · 年费" + M + "续约"],
     ["王五", "$20 订阅续费", "王五 · " + M + "订阅续费"],
@@ -237,7 +242,26 @@ describe("提醒事项标题（唯一实现）", () => {
     ["王五", "USD20 订阅", "王五 · " + M + "订阅"],
     ["王五", "€20 订阅", "王五 · " + M + "订阅"],
     ["王五", "HK$50 充值", "王五 · " + M + "充值"],
+    // 小写币种、无单位中文数字、千分位空格、大写数字
+    ["王五", "1899 rmb 年付", "王五 · " + M + "年付"],
+    ["王五", "usd 20 订阅", "王五 · " + M + "订阅"],
+    ["王五", "cny1899", "王五 · " + M],
+    ["王五", "两千八 搞定", "王五 · " + M + "搞定"],
+    ["王五", "八百八", "王五 · " + M],
+    ["王五", "已收￥1 899", "王五 · 已" + M],
+    ["王五", "壹仟捌佰元", "王五 · " + M],
+    // 新关键词
+    ["王五", "价钱1899", "王五 · " + M],
+    ["王五", "花了1899", "王五 · " + M],
+    ["王五", "交了1899", "王五 · " + M],
+    ["王五", "付定金了 1899", "王五 · " + M],
+    ["王五", "成交价 1899", "王五 · " + M],
+    // 数字/人、数字/次
+    ["王五", "199/人 团购", "王五 · " + M + "团购"],
+    ["王五", "20/次 代办", "王五 · " + M + "代办"],
     // 普通数字不误伤
+    ["王五", "GPT-4o 开通", "王五 · GPT-4o 开通"],
+    ["王五", "4月3日 收到资料", "王五 · 4月3日 收到资料"],
     ["王五", "Claude 3.5 升级", "王五 · Claude 3.5 升级"],
     ["王五", "Grok 4 试用，第3次跟进", "王五 · Grok 4 试用，第3次跟进"],
     ["王五", "确认报价，收到反馈", "王五 · 确认报价，收到反馈"],
@@ -255,7 +279,7 @@ describe("提醒事项标题（唯一实现）", () => {
     expect(out).toEqual(cases.map(([n, t]) => taskSyncTitle(n, t)));
   });
   it("没有金额数字残留", () => {
-    for (const t of ["费用1899", "¥88", "共计 12元", "定金3k", "1.5万", "$5", "预算 2000", "999元/年", "2千5", "约2万", "一千八百元", "¥１８９９", "1899RMB", "CNY 1899", "USD20", "€20", "499/月", "收了1899", "转账2000", "八折后1200"])
+    for (const t of ["费用1899", "¥88", "共计 12元", "定金3k", "1.5万", "$5", "预算 2000", "999元/年", "2千5", "约2万", "一千八百元", "¥１８９９", "1899RMB", "CNY 1899", "USD20", "€20", "499/月", "收了1899", "转账2000", "八折后1200", "1899 rmb", "usd 20", "cny1899", "两千八", "八百八", "￥1 899", "壹仟捌佰元", "价钱1899", "花了1899", "交了1899", "付定金了 1899", "成交价 1899", "199/人", "20/次"])
       expect(stripMoney(t)).toBe(M);
   });
 

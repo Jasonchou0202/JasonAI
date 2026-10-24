@@ -59,21 +59,34 @@ export function checkSyncKey(expected: string | undefined, given: unknown) {
 }
 
 /**
- * 单实例内存限流（固定窗口），只统计密钥校验失败的请求；正确密钥的请求不占额度。
- * 超过上限后，密钥错误的请求返回 SYNC_RATE_LIMITED。控制台限流是主防线，这里兜底。
+ * 单实例内存限流（固定窗口），只统计密钥校验失败的请求。
+ * 失败次数超过上限后锁住本窗口：这一分钟内所有请求（包括正确密钥）直接拒绝，同步任务下一轮重试。
+ * 真正的防线是 32 字节随机密钥和控制台限流，这里只是兜底。
  */
 export function rateLimiter(limit = RATE_LIMIT) {
   let windowStart = 0,
     failures = 0;
-  return (nowMs: number) => {
+  const roll = (nowMs: number) => {
     if (nowMs - windowStart >= limit.windowMs) {
       windowStart = nowMs;
       failures = 0;
     }
-    if (++failures > limit.max)
-      throw new SyncError("SYNC_RATE_LIMITED", "请求太频繁，请稍后再试");
+  };
+  return {
+    /** 验密钥之前调用：已锁住则直接拒绝 */
+    check(nowMs: number) {
+      roll(nowMs);
+      if (failures >= limit.max)
+        throw new SyncError("SYNC_RATE_LIMITED", "请求太频繁，请稍后再试");
+    },
+    /** 密钥校验失败时调用 */
+    fail(nowMs: number) {
+      roll(nowMs);
+      failures++;
+    },
   };
 }
+export type SyncLimiter = ReturnType<typeof rateLimiter>;
 
 function completedValue(value: unknown, nowIso: string): string | null {
   if (value === null) return null;
@@ -207,16 +220,18 @@ export function syncFailure(error: unknown) {
 export async function handleSync(
   store: () => Store,
   env: { key: string | undefined; now: () => string; hash: Context["hash"]; /** 密钥校验失败时调用；超限时抛出 SYNC_RATE_LIMITED */
-    limit?: (nowMs: number) => void },
+    limit?: SyncLimiter },
   parsed: { action: unknown; payload: Record<string, unknown>; key: unknown },
 ) {
   try {
     const nowIso = env.now();
+    const nowMs = Date.parse(nowIso);
+    // 先看是否已锁住（包括正确密钥也拒绝），再验密钥；只有验密钥失败才计数
+    env.limit?.check(nowMs);
     try {
       checkSyncKey(env.key, parsed.key);
     } catch (error) {
-      // 只有密钥校验失败才计入限流
-      env.limit?.(Date.parse(nowIso));
+      env.limit?.fail(nowMs);
       throw error;
     }
     const ctx: Context = { uid: null, ownerUid: "", now: () => nowIso, hash: env.hash };
