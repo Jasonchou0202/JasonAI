@@ -16,9 +16,20 @@ export const MAX_FUTURE_MS = 5 * 60_000;
 export const RATE_LIMIT = { windowMs: 60_000, max: 60 };
 const DAY = 86400000;
 
+export function toShanghaiLocal(iso: string | null | undefined): string {
+  if (!iso) return "";
+  const ms = Date.parse(iso);
+  if (Number.isNaN(ms)) return "";
+  const d = new Date(ms + 8 * 3600_000);
+  const p = (n: number) => String(n).padStart(2, "0");
+  return `${d.getUTCFullYear()}-${p(d.getUTCMonth() + 1)}-${p(d.getUTCDate())} ${p(d.getUTCHours())}:${p(d.getUTCMinutes())}`;
+}
+
 export interface SyncTask {
   id: string;
   at: string;
+  /** Asia/Shanghai "yyyy-MM-dd HH:mm" for iOS Shortcuts; "" when at is empty/invalid. */
+  atLocal: string;
   customer: string;
   title: string;
   feedback: string;
@@ -123,6 +134,7 @@ export async function syncList(store: Store, nowIso: string) {
       return {
         id: t.id,
         at: t.at,
+        atLocal: toShanghaiLocal(t.at),
         customer: root ? stripMoney(displayCustomerName(root.name)) : "",
         title: stripMoney(t.title),
         feedback: stripMoney(t.feedback),

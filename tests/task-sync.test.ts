@@ -59,7 +59,7 @@ describe("tasks.sync.list", () => {
     const r = await run(seed(), "tasks.sync.list");
     for (const t of r.data.tasks)
       expect(Object.keys(t).sort()).toEqual(
-        ["at", "completedAt", "customer", "feedback", "id", "nextAction", "reminder", "revision", "title"],
+        ["at", "atLocal", "completedAt", "customer", "feedback", "id", "nextAction", "reminder", "revision", "title"],
       );
     expect(r.data.tasks[0]).toMatchObject({ title: "续费，" + M, feedback: M + "，" + M, nextAction: M + "待确认" });
     const text = JSON.stringify(r);
@@ -283,4 +283,13 @@ describe("提醒事项标题（唯一实现）", () => {
       expect(stripMoney(t)).toBe(M);
   });
 
+});
+
+import { toShanghaiLocal } from "../server/task-sync";
+import { test as atTest, expect as atExpect } from "vitest";
+atTest("atLocal is Asia/Shanghai yyyy-MM-dd HH:mm", () => {
+  atExpect(toShanghaiLocal("2026-10-24T08:00:00.000Z")).toBe("2026-10-24 16:00");
+  atExpect(toShanghaiLocal("2026-10-24T17:30:00.000Z")).toBe("2026-10-25 01:30");
+  atExpect(toShanghaiLocal("")).toBe("");
+  atExpect(toShanghaiLocal("bad")).toBe("");
 });
