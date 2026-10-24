@@ -3,13 +3,19 @@ import type { Customer, CustomerTask } from "../src/domain/model";
 import { customerRoots, displayCustomerName } from "../src/domain/customers";
 import { validateTaskInput } from "../src/domain/tasks";
 import { stripMoney } from "../src/domain/taskSyncTitle.mjs";
+import { utcInstant } from "../src/domain/tasks";
 import { mutation, nextTaskRow, type Context, type Store, type Transaction } from "./service";
 
 /**
  * iPhone 提醒事项双向同步接口。只接受专用同步密钥（环境变量 TASK_SYNC_KEY，至少 32 字节），
  * 不能调用其他任何 action；只读日程，只写 completedAt（连同提醒代次）。
  */
-export const SYNC_ACTIONS = ["tasks.sync.list", "tasks.sync.complete"] as const;
+export const SYNC_ACTIONS = [
+  "tasks.sync.list", "tasks.sync.complete", "tasks.sync.uncomplete", "tasks.sync.create",
+] as const;
+/** 手机新建日程客户名对不上时挂到的固定客户（只在第一次需要时建一条，不碰销售数据）。 */
+export const SYNC_INBOX_ID = "sync_inbox";
+export const SYNC_INBOX_NAME = "📱手机临时日程";
 export const SYNC_LOG = "taskSyncLog" as const;
 export const MIN_SYNC_KEY_BYTES = 32;
 export const MAX_FUTURE_MS = 5 * 60_000;
@@ -160,21 +166,27 @@ export async function syncComplete(
     throw new SyncError("SYNC_BAD_REQUEST", "记录编号无效");
   if (typeof requestId !== "string" || !/^[\w-]{1,128}$/.test(requestId))
     throw new SyncError("SYNC_BAD_REQUEST", "请求编号无效");
-  if (!Number.isInteger(payload.revision) || (payload.revision as number) < 1)
+  // revision 可选：传了就做并发保护；不传则只按 id 操作（状态已一致时直接返回，不报错）。
+  const revision = payload.revision ?? null;
+  if (revision !== null && (!Number.isInteger(revision) || (revision as number) < 1))
     throw new SyncError("SYNC_BAD_REQUEST", "日程版本无效");
-  if (!Object.hasOwn(payload, "completedAt"))
-    throw new SyncError("SYNC_BAD_REQUEST", "缺少完成时间");
-  const completedAt = completedValue(payload.completedAt, nowIso);
+  // 不传 completedAt 视为“现在完成”
+  const completedAt = Object.hasOwn(payload, "completedAt")
+    ? completedValue(payload.completedAt, nowIso)
+    : nowIso;
   const action = "tasks.sync.complete";
   return store.transaction(async (tx: Transaction) => {
     const ledger = await tx.get<{ restoreId?: string | null }>("batches", "_ledger");
     if (ledger?.restoreId) throw new SyncError("SYNC_BUSY", "正在恢复备份，请稍后再同步");
     // 同一 requestId 重放：返回第一次的结果，不重复写库和日志。
-    return mutation(tx, ctx, requestId, action, { id, revision: payload.revision, completedAt }, async () => {
+    return mutation(tx, ctx, requestId, action, { id, revision, completedAt }, async () => {
       const old = await tx.get<CustomerTask>("tasks", id);
       if (!old) throw new SyncError("SYNC_NOT_FOUND", "日程不存在");
       if (old.deletedAt) throw new SyncError("SYNC_DELETED", "日程已删除");
-      if (old.revision !== payload.revision)
+      // 幂等：已经是目标状态（已完成 / 未完成）就原样返回，不写库、不报冲突
+      if ((old.completedAt === null) === (completedAt === null))
+        return { id, completedAt: old.completedAt, revision: old.revision, unchanged: true };
+      if (revision !== null && old.revision !== revision)
         throw new SyncError("SYNC_CONFLICT", "日程已在另一处修改，请刷新后重试");
       // 与 tasks.complete / tasks.reopen 同一套写法（含 reminderGeneration、reminderStartAt）。
       const row = await nextTaskRow(
@@ -190,6 +202,75 @@ export async function syncComplete(
       await tx.put(SYNC_LOG, logId, log);
       return { id, completedAt, revision: row.revision };
     });
+  });
+}
+
+/** 北京时间 "yyyy-MM-dd HH:mm" 或带时区的 ISO → UTC ISO */
+export function parseSyncAt(value: unknown): string {
+  if (typeof value === "string") {
+    const local = /^(\d{4}-\d{2}-\d{2})[ T](\d{2}:\d{2})$/.exec(value.trim());
+    const iso = local
+      ? `${local[1]}T${local[2]}:00+08:00`
+      : /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2}(\.\d{1,3})?)?(Z|[+-]\d{2}:\d{2})$/.test(value) ? value : "";
+    const ms = Date.parse(iso);
+    if (iso && !Number.isNaN(ms) && (!local || toShanghaiLocal(new Date(ms).toISOString()) === `${local[1]} ${local[2]}`))
+      return new Date(ms).toISOString();
+  }
+  throw new SyncError("SYNC_BAD_REQUEST", "日程时间格式无效（北京时间 yyyy-MM-dd HH:mm 或 ISO）");
+}
+
+/** 手机上临时新建的日程写进账本 tasks。clientRef（如提醒事项 id）决定新日程编号，重复提交返回同一条。 */
+export async function syncCreate(store: Store, ctx: Context, nowIso: string, payload: Record<string, unknown>) {
+  const { title, customer, clientRef, requestId } = payload;
+  if (typeof title !== "string" || !title.trim() || title.length > 500)
+    throw new SyncError("SYNC_BAD_REQUEST", "日程标题无效");
+  if (customer !== undefined && customer !== null && (typeof customer !== "string" || customer.length > 200))
+    throw new SyncError("SYNC_BAD_REQUEST", "客户名无效");
+  const note = payload.note ?? "";
+  if (typeof note !== "string" || note.length > 4000)
+    throw new SyncError("SYNC_BAD_REQUEST", "备注无效");
+  const reminder = payload.reminder ?? "both";
+  if (!["both", "due", "off"].includes(reminder as string))
+    throw new SyncError("SYNC_BAD_REQUEST", "提醒选项无效");
+  if (clientRef !== undefined && (typeof clientRef !== "string" || !clientRef || clientRef.length > 256))
+    throw new SyncError("SYNC_BAD_REQUEST", "客户端编号无效");
+  if (clientRef === undefined && (typeof requestId !== "string" || !/^[\w-]{1,128}$/.test(requestId)))
+    throw new SyncError("SYNC_BAD_REQUEST", "缺少 clientRef 或 requestId");
+  const at = parseSyncAt(payload.at);
+  const id = "sync_" + (await ctx.hash(clientRef !== undefined ? "ref:" + clientRef : "req:" + requestId)).slice(0, 40);
+  const want = typeof customer === "string" ? customer.trim() : "";
+  const customers = want ? await store.list<Customer>("customers") : [];
+  return store.transaction(async (tx: Transaction) => {
+    const ledger = await tx.get<Record<string, unknown>>("batches", "_ledger");
+    if (ledger?.restoreId) throw new SyncError("SYNC_BUSY", "正在恢复备份，请稍后再同步");
+    const existing = await tx.get<CustomerTask>("tasks", id);
+    if (existing) return { id, at: existing.at, atLocal: toShanghaiLocal(existing.at), customerId: existing.customerId, revision: existing.revision, created: false };
+    let customerId = "";
+    if (want) {
+      const hits = customers.filter((c) => !c.mergedInto && !c.archivedAt && displayCustomerName(c.name) === displayCustomerName(want));
+      // 事务内再确认一次客户仍存在且未被合并
+      const hit = hits.length === 1 ? await tx.get<Customer>("customers", hits[0].id) : null;
+      if (hit && !hit.mergedInto && !hit.archivedAt) customerId = hit.id;
+    }
+    if (!customerId) {
+      customerId = SYNC_INBOX_ID;
+      if (!(await tx.get<Customer>("customers", SYNC_INBOX_ID))) {
+        const inbox: Customer = { id: SYNC_INBOX_ID, name: SYNC_INBOX_NAME, mergedInto: null, revision: 1, createdAt: nowIso, updatedAt: nowIso };
+        await tx.put("customers", SYNC_INBOX_ID, inbox);
+      }
+    }
+    const feedback = customerId === SYNC_INBOX_ID && want ? `手机填写客户：${want}${note ? "\n" + note : ""}` : note;
+    const time = utcInstant(nowIso);
+    const row: CustomerTask = {
+      customerId, at, title: title.trim(), feedback: feedback.slice(0, 4000), nextAction: "", reminder: reminder as CustomerTask["reminder"],
+      id, completedAt: null, deletedAt: null, createdAt: time, updatedAt: time, revision: 1, lastMutation: id,
+      reminderStartAt: time, reminderGeneration: await ctx.hash(JSON.stringify([id, time, "create"])),
+    };
+    await tx.put("tasks", id, row);
+    if (ledger) await tx.put("batches", "_ledger", { ...ledger, hasData: true });
+    const logId = "sync_" + (await ctx.hash("create:" + id)).slice(0, 40);
+    await tx.put(SYNC_LOG, logId, { id: logId, at: nowIso, taskId: id, requestId: String(requestId ?? clientRef), before: null, after: "created", revision: 1 });
+    return { id, at, atLocal: toShanghaiLocal(at), customerId, revision: 1, created: true };
   });
 }
 
@@ -252,6 +333,10 @@ export async function handleSync(
       return { ok: true, data: await syncList(store(), nowIso) };
     if (parsed.action === "tasks.sync.complete")
       return { ok: true, data: await syncComplete(store(), ctx, nowIso, parsed.payload) };
+    if (parsed.action === "tasks.sync.uncomplete")
+      return { ok: true, data: await syncComplete(store(), ctx, nowIso, { ...parsed.payload, completedAt: null }) };
+    if (parsed.action === "tasks.sync.create")
+      return { ok: true, data: await syncCreate(store(), ctx, nowIso, parsed.payload) };
     throw new SyncError("SYNC_FORBIDDEN", "同步密钥只能调用同步接口");
   } catch (error) {
     return syncFailure(error);
