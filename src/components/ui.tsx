@@ -98,7 +98,7 @@ export function Money({
 export function Brand() {
   return (
     <div className="brand">
-      <img src={`${import.meta.env.BASE_URL}logo-v5.png`} alt="" />
+      <img src={`${import.meta.env.BASE_URL}logo.png`} alt="" />
       <div>
         <strong>章鱼哥AI</strong>
         <span>生意手账</span>

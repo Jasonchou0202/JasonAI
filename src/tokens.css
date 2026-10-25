@@ -4,7 +4,7 @@
   --green: #b4532f; /* 深珊瑚：文字/按钮底（白字 4.98:1） */
   --coral: #d97757; /* 主强调珊瑚橙：图形、进度、图标 */
   --coral-light: #e9a178;
-  --coral-ink: #9a4426; /* 浅色托盘上的珊瑚文字（≥5.2:1） */
+  --coral-ink: #9c4526; /* 浅色托盘上的珊瑚文字（手册 #9C4526） */
   --green-dark: #9a4426;
   --light: #f6e3d3;
   --border: #f0dcc8;
@@ -14,13 +14,13 @@
   --text-2: #4f4038; /* 次要文字、说明 */
   --text-3: #6b5a50; /* 辅助文字、标签、提示（最浅，不再使用更浅的文字颜色） */
   /* 语义文字色 */
-  --text-success: #9a4426;
+  --text-success: #9c4526;
   --text-warn: #7a5320;
-  --text-danger: #8e2c22;
+  --text-danger: #9e2a1e; /* 暂定，待章鱼哥确认 */
   /* 兼容旧变量名 */
   --ink: var(--text-1);
   --muted: var(--text-3);
-  --red: #8e2c22;
+  --red: #9e2a1e;
   --shadow: none; /* 旧变量：区块不再用阴影 */
   /* 字号阶梯（6 级，rem 跟随浏览器字号设置；根字号 16px 时分别为 12/14/16/20/28/40px）
      辅助文字最小 --fs-1（12px），正文最小 --fs-2（14px） */
@@ -41,7 +41,7 @@
   --mint-soft: #f6e3d3;
   --cream-soft: #fdf8ef;
   --warn-soft: #f9ecd6;
-  --danger-soft: #f8e1dc;
+  --danger-soft: #f8dad4;
   /* 唯一强调色：增长 */
   --accent: #b4532f;
   --accent-soft: #f6e3d3;

@@ -1,6 +1,6 @@
 /* 客户等级 · 四象限 · 有效动作 */
 .tier-badge{display:inline-flex;align-items:center;justify-content:center;min-width:26px;height:20px;padding:0 6px;border-radius:var(--radius-pill);font-size:11px;font-weight:700;letter-spacing:.02em;margin-right:6px;flex:none}
-.tier-P0{--t:#B4532F;--tf:#fff;--ts:#F6E3D3;--td:#9A4426}.tier-P1{--t:#D97757;--tf:#2B211C;--ts:#F9E8DC;--td:#9A4426}.tier-P2{--t:#E9A178;--tf:#2B211C;--ts:#FBEFE4;--td:#7A5320}.tier-P3{--t:#F0DCC8;--tf:#2B211C;--ts:#FBF3E4;--td:#5E4D43}.tier-P4{--t:#6B5A50;--tf:#fff;--ts:#F4E6D4;--td:#4F4038}
+.tier-P0{--t:#B4532F;--tf:#fff;--ts:#F6E3D3;--td:#9C4526}.tier-P1{--t:#D97757;--tf:#2B211C;--ts:#F9E8DC;--td:#9C4526}.tier-P2{--t:#E9A178;--tf:#2B211C;--ts:#FBEFE4;--td:#7A5320}.tier-P3{--t:#F0DCC8;--tf:#2B211C;--ts:#FBF3E4;--td:#5E4D43}.tier-P4{--t:#6B5A50;--tf:#fff;--ts:#F4E6D4;--td:#4F4038}
 .tier-badge{background:var(--t);color:var(--tf)}
 .tier-chips button.tier-chip{background:var(--ts);color:var(--td);border-color:transparent}.tier-chips button.tier-chip b{color:var(--td)}
 .tier-chips button.tier-chip.selected{background:var(--t);color:var(--tf);border-color:var(--t)}.tier-chips button.tier-chip.selected b{color:var(--tf)}
@@ -22,7 +22,7 @@
 .quad-cell.empty .quad-name{color:var(--text-2)}
 .quad-todo{display:flex;align-items:center;gap:6px;font-size:17px!important;color:var(--text-1)}.quad-todo i{width:8px;height:8px;border-radius:50%}
 .quad-hint{color:var(--text-2);line-height:1.45;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-.quad-link{margin-top:auto;font-size:12px;color:#9a4426;text-decoration:none;display:inline-flex;align-items:center;gap:2px}
+.quad-link{margin-top:auto;font-size:12px;color:#9c4526;text-decoration:none;display:inline-flex;align-items:center;gap:2px}
 .monthly-charts{display:grid;grid-template-columns:1fr 1fr;gap:16px}
 @media (max-width:900px){.monthly-charts{grid-template-columns:1fr}}
 .monthly-chart .panel-heading{gap:10px}
@@ -47,7 +47,7 @@
 .action-group li:last-child{border-bottom:0}.action-tools{display:flex;gap:2px;flex:none}.action-tools .icon-button{width:30px;height:30px}
 .action-add{display:flex;gap:6px;flex-wrap:wrap}.action-add input{flex:1;min-width:160px}
 .action-picker{grid-column:1/-1;border:1px dashed var(--line);border-radius:var(--radius-m,12px);padding:8px 12px;font-size:13px}
-.action-picker summary{cursor:pointer;color:#9a4426;font-weight:500}
+.action-picker summary{cursor:pointer;color:#9c4526;font-weight:500}
 .action-picker-group{margin-top:8px}.action-picker-group small{display:flex;align-items:center;gap:5px;color:var(--text-2)}.action-picker-group small i{width:8px;height:8px;border-radius:50%}
 .action-picker-group>div{display:flex;flex-wrap:wrap;gap:6px;margin-top:5px}
 .action-chip{border:1px solid color-mix(in srgb,var(--q) 40%,transparent);background:color-mix(in srgb,var(--q) 9%,#fff);color:var(--text-1);border-radius:var(--radius-pill);padding:4px 10px;font:inherit;font-size:12px;cursor:pointer;text-align:left}
@@ -82,7 +82,7 @@
 .profile-chips{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0 4px}
 .p-chip{display:inline-flex;align-items:center;height:24px;padding:0 10px;border-radius:var(--radius-pill);font-size:12px;font-weight:600;white-space:nowrap}
 .tier-chip-solid{background:var(--t);color:var(--tf)}
-.status-repeat{background:#F6E3D3;color:#9A4426}.status-lapsed{background:#F8E1DC;color:#8E2C22}
+.status-repeat{background:#F6E3D3;color:#9C4526}.status-lapsed{background:#F8DAD4;color:#9E2A1E}
 .p-chip.neutral{background:#f6ece0;color:var(--text-2);font-weight:500}
 .profile-editor{margin-bottom:16px}
 .profile-view{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;padding:0 20px 18px;margin:0}
@@ -93,7 +93,7 @@
 .profile-form .customer-actions,.profile-form .error{grid-column:1/-1}
 .pf-options,.pf-checks{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0 4px}
 .pf-opt,.pf-check{border:1px solid var(--line);background:var(--surface);border-radius:var(--radius-pill);padding:5px 12px;font:inherit;font-size:13px;cursor:pointer;display:inline-flex;align-items:center;gap:6px}
-.pf-opt.on,.pf-check.on{background:#f9e8dc;border-color:#d97757;color:#9a4426}
+.pf-opt.on,.pf-check.on{background:#f9e8dc;border-color:#d97757;color:#9c4526}
 .pf-check input{width:auto;margin:0;accent-color:#d97757}
 .pf-add{display:flex;gap:6px;margin:6px 0 8px}.pf-add input{flex:1}
 @media (max-width:520px){.profile-form{grid-template-columns:1fr;padding:0 14px 16px}.profile-form>label,.pf-label{padding-top:0}}

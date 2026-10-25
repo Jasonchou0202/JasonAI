@@ -5,7 +5,7 @@
   overflow: hidden;
   isolation: isolate;
   margin: calc(-1 * var(--page-pad-top)) calc(-1 * var(--page-pad-x)) 0;
-  padding: 64px var(--page-pad-x) 270px;
+  padding: 64px var(--page-pad-x) 48px;
   text-align: center;
   background:
     radial-gradient(60% 70% at 50% 100%, #f6e3d3 0%, #f6e3d300 70%),
@@ -13,16 +13,7 @@
 }
 .dash-hero-art {
   position: absolute;
-  z-index: -1;
-  left: 50%;
-  bottom: -60px;
-  width: 760px;
-  max-width: none;
-  height: auto;
-  transform: translateX(-50%);
-  opacity: 0.72;
-  -webkit-mask-image: linear-gradient(180deg, #000 70%, transparent 86%);
-  mask-image: linear-gradient(180deg, #000 70%, transparent 86%);
+  z-index: 0;
   pointer-events: none;
   user-select: none;
 }
@@ -378,21 +369,6 @@
   .dash-hero {
     padding: 40px var(--page-pad-x) 44px;
   }
-  /* 插画缩小并移到右侧，不再占半屏 */
-  .dash-hero-art {
-    left: auto;
-    right: 2%;
-    bottom: -28px;
-    width: 380px;
-    transform: none;
-    opacity: 0.6;
-    -webkit-mask-image: radial-gradient(
-      closest-side,
-      #000 62%,
-      transparent 100%
-    );
-    mask-image: radial-gradient(closest-side, #000 62%, transparent 100%);
-  }
   .dash-hero-number {
     margin-top: 18px;
   }
@@ -452,11 +428,6 @@
     padding-top: 32px;
     padding-bottom: 130px;
   }
-  .dash-hero-art {
-    width: 400px;
-    bottom: -30px;
-    opacity: 0.62;
-  }
   .dash-hero-number {
     margin-top: 18px;
     padding: 4px 8px;
@@ -508,7 +479,7 @@
   }
 }
 
-/* 品牌：v5 小章鱼原图完整展示（圆形、不透明、不加遮罩/滤镜），四周留白 ≥25% */
+/* 品牌：透明底小章鱼 logo（/workspace/brand/logo），不加遮罩/滤镜/圆形阴影底，四周留白 ≥25% */
 .dash-hero-art,
 .dash-page .dash-hero-art {
   left: auto;
@@ -521,8 +492,9 @@
   opacity: 1;
   -webkit-mask-image: none;
   mask-image: none;
-  border-radius: 50%;
-  box-shadow: 0 8px 24px #5a352014;
+  border-radius: 0;
+  box-shadow: none;
+  background: transparent;
 }
 @media (max-width: 600px) {
   .dash-hero-art,

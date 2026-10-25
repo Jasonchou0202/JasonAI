@@ -141,7 +141,7 @@ label small {
   background: var(--surface-soft);
 }
 .button.danger {
-  background: #a33a2e;
+  background: #9e2a1e;
   color: var(--surface);
 }
 .text-button {
@@ -455,7 +455,7 @@ label small {
   height: 22px;
   padding: 0 5px;
   border-radius: var(--radius-pill);
-  background: #a33a2e;
+  background: #9e2a1e;
   color: var(--surface);
   font-size: var(--fs-1);
   font-weight: 700;
@@ -530,7 +530,7 @@ label small {
   white-space: nowrap;
 }
 .daily-reminder-state.overdue {
-  color: #8e2c22;
+  color: #9e2a1e;
   background: var(--danger-soft);
 }
 .daily-reminder-empty {
@@ -3077,4 +3077,11 @@ label small,
 .content-balance.ok,
 .profit-preview strong {
   color: var(--coral-ink);
+}
+
+/* 品牌：侧栏 logo 用透明底，不垫奶油圆 */
+.brand img {
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
 }

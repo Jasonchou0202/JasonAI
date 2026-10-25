@@ -132,7 +132,7 @@
   height: 26px;
   padding: 0;
   border-radius: 50%;
-  background: #a33a2e;
+  background: #9e2a1e;
   color: white;
   font-size: var(--fs-1);
   line-height: 1;
@@ -248,8 +248,8 @@
   --task-bg: #f9ecd6;
 }
 .task-pending {
-  --task-color: #8e2c22;
-  --task-bg: #f8e1dc;
+  --task-color: #9e2a1e;
+  --task-bg: #f8dad4;
 }
 .customer-legend > span,
 .customer-day-counts > span {

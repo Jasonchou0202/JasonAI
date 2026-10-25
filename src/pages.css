@@ -610,7 +610,7 @@
   mask-image: none;
   opacity: 1;
 }
-.empty-art{width:96px!important;height:96px!important;border-radius:50%}
-.welcome-art img{width:min(100%,320px);height:auto;aspect-ratio:1;border-radius:50%;display:block;margin:0 auto}
+.empty-art{width:96px!important;height:96px!important;border-radius:0;background:transparent;box-shadow:none}
+.welcome-art img{width:min(100%,320px);height:auto;aspect-ratio:1;border-radius:0;background:transparent;box-shadow:none;display:block;margin:0 auto}
 /* 品牌：页头不再叠放半透明小章鱼（禁止加滤镜/压在文字后），logo 只在侧栏完整出现 */
 .page-heading::after{content:none}
