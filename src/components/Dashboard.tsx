@@ -89,7 +89,7 @@ export function Dashboard({
           srcSet={`${heroArt800} 800w, ${heroArt1200} 1200w`}
           sizes="(max-width: 680px) 520px, 760px"
           width={1200}
-          height={600}
+          height={1200}
           alt=""
           aria-hidden="true"
           loading="lazy"

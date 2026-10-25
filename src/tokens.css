@@ -1,23 +1,26 @@
 /* 设计变量（tokens）：颜色与文字层级集中在这里维护 */
 :root {
   /* 品牌色 */
-  --green: #166b55;
-  --green-dark: #124d3f;
-  --light: #eaf2ed;
-  --border: #e5e9e4;
-  --cream: #f4efd9;
+  --green: #b4532f; /* 深珊瑚：文字/按钮底（白字 4.98:1） */
+  --coral: #d97757; /* 主强调珊瑚橙：图形、进度、图标 */
+  --coral-light: #e9a178;
+  --coral-ink: #9a4426; /* 浅色托盘上的珊瑚文字（≥5.2:1） */
+  --green-dark: #9a4426;
+  --light: #f6e3d3;
+  --border: #f0dcc8;
+  --cream: #f4e6d4;
   /* 文字颜色三层：在白底、页面底色、米色和浅绿底上对比度均 ≥ 4.5:1 */
-  --text-1: #243b34; /* 主文字、标题、金额 */
-  --text-2: #4a5c54; /* 次要文字、说明 */
-  --text-3: #5b6a62; /* 辅助文字、标签、提示（最浅，不再使用更浅的文字颜色） */
+  --text-1: #2b211c; /* 主文字、标题、金额 */
+  --text-2: #4f4038; /* 次要文字、说明 */
+  --text-3: #6b5a50; /* 辅助文字、标签、提示（最浅，不再使用更浅的文字颜色） */
   /* 语义文字色 */
-  --text-success: #496a3f;
-  --text-warn: #7a6630;
-  --text-danger: #a24a3e;
+  --text-success: #9a4426;
+  --text-warn: #7a5320;
+  --text-danger: #8e2c22;
   /* 兼容旧变量名 */
   --ink: var(--text-1);
   --muted: var(--text-3);
-  --red: #ac4a3e;
+  --red: #8e2c22;
   --shadow: none; /* 旧变量：区块不再用阴影 */
   /* 字号阶梯（6 级，rem 跟随浏览器字号设置；根字号 16px 时分别为 12/14/16/20/28/40px）
      辅助文字最小 --fs-1（12px），正文最小 --fs-2（14px） */
@@ -29,19 +32,19 @@
   --fs-6: 2.5rem; /* 首屏大数字 */
 
   /* 表面与分隔线（浅色，只用于背景和线，不用于文字） */
-  --bg: #f7f8f5; /* 页面底色 */
+  --bg: #fbf3e4; /* 页面底色 */
   --surface: #ffffff;
-  --surface-soft: #f5f7f3; /* 轻灰底：输入区、分组底色 */
-  --surface-muted: #eef2ec; /* 稍深的灰绿底：选中、悬停 */
-  --line: #e5e9e4; /* 细分隔线 */
-  --line-soft: #eef1eb; /* 更淡的列表分隔线 */
-  --mint-soft: #eaf2ed;
-  --cream-soft: #fbf6e6;
-  --warn-soft: #fbf1df;
-  --danger-soft: #fcefeb;
+  --surface-soft: #fdf8ef; /* 轻灰底：输入区、分组底色 */
+  --surface-muted: #f6e3d3; /* 稍深的灰绿底：选中、悬停 */
+  --line: #f0dcc8; /* 细分隔线 */
+  --line-soft: #f6e9da; /* 更淡的列表分隔线 */
+  --mint-soft: #f6e3d3;
+  --cream-soft: #fdf8ef;
+  --warn-soft: #f9ecd6;
+  --danger-soft: #f8e1dc;
   /* 唯一强调色：增长 */
-  --accent: #0b6e5a;
-  --accent-soft: #dff5ec;
+  --accent: #b4532f;
+  --accent-soft: #f6e3d3;
   /* 圆角 */
   --radius-s: 6px;
   --radius-m: 9px;
@@ -49,9 +52,9 @@
   --radius-xl: 20px;
   --radius-pill: 999px;
   /* 阴影：只用于浮层和主按钮，页面区块不用阴影 */
-  --shadow-s: 0 1px 5px #1e342915;
-  --shadow-m: 0 6px 18px #1e342914;
-  --shadow-l: 0 25px 80px #1a322633;
+  --shadow-s: 0 1px 4px #5a35200f;
+  --shadow-m: 0 8px 24px #5a352014;
+  --shadow-l: 0 24px 72px #5a35202b;
   /* 间距（4 的倍数） */
   --space-1: 4px;
   --space-2: 8px;

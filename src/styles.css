@@ -39,15 +39,15 @@ textarea {
 }
 button:focus-visible,
 a:focus-visible {
-  outline: 3px solid #91bfac;
+  outline: 3px solid #e9a178;
   outline-offset: 3px;
 }
 input:focus,
 select:focus,
 textarea:focus {
   outline: none;
-  border-color: #659e84;
-  box-shadow: 0 0 0 3px #e8f1eb;
+  border-color: #d97757;
+  box-shadow: 0 0 0 3px #f6e3d3;
 }
 button {
   border: 0;
@@ -127,7 +127,7 @@ label small {
 .button.primary {
   background: var(--green);
   color: var(--surface);
-  box-shadow: 0 3px 7px #166b5512;
+  box-shadow: 0 3px 7px #b4532f12;
 }
 .button.primary:hover {
   background: var(--green-dark);
@@ -141,7 +141,7 @@ label small {
   background: var(--surface-soft);
 }
 .button.danger {
-  background: #bc5247;
+  background: #a33a2e;
   color: var(--surface);
 }
 .text-button {
@@ -455,7 +455,7 @@ label small {
   height: 22px;
   padding: 0 5px;
   border-radius: var(--radius-pill);
-  background: #dc4548;
+  background: #a33a2e;
   color: var(--surface);
   font-size: var(--fs-1);
   font-weight: 700;
@@ -530,7 +530,7 @@ label small {
   white-space: nowrap;
 }
 .daily-reminder-state.overdue {
-  color: #bc3f40;
+  color: #8e2c22;
   background: var(--danger-soft);
 }
 .daily-reminder-empty {
@@ -615,7 +615,7 @@ label small {
   display: inline-block;
   width: 7px;
   height: 7px;
-  background: #a5b783;
+  background: #e9a178;
   border-radius: 50%;
   margin-left: 8px;
   vertical-align: middle;
@@ -625,7 +625,7 @@ label small {
   margin-top: 6px;
 }
 .heading-divider {
-  color: #c7cec3;
+  color: #f0dcc8;
   margin: 0 12px;
 }
 .heading-add {
@@ -673,7 +673,7 @@ label small {
   isolation: isolate;
 }
 .hero .metric-label {
-  color: #cae0d1;
+  color: #fbe3d6;
   position: relative;
   z-index: 1;
 }
@@ -692,7 +692,7 @@ label small {
 .big-money > span:first-child {
   font-size: var(--fs-4);
   font-weight: 400;
-  color: #badac7;
+  color: #fbe3d6;
 }
 .mid-money {
   font-size: var(--fs-5);
@@ -705,7 +705,7 @@ label small {
   font-weight: 400;
 }
 .hero .negative {
-  color: #ffd5c7 !important;
+  color: #fff1e6 !important;
 }
 .hero-bottom {
   display: flex;
@@ -725,7 +725,7 @@ label small {
   white-space: nowrap;
 }
 .hero-circle {
-  border: 1px solid #ecf1d319;
+  border: 1px solid #fff1e619;
   width: 220px;
   height: 220px;
   position: absolute;
@@ -773,7 +773,7 @@ label small {
   margin-right: auto;
 }
 .live-dot {
-  background: #799d7b;
+  background: #d97757;
   width: 5px;
   height: 5px;
   border-radius: 50%;
@@ -831,7 +831,7 @@ label small {
 .segmented button.active {
   background: var(--surface);
   color: var(--green);
-  box-shadow: 0 1px 5px #1e342915;
+  box-shadow: 0 1px 5px #5a35200f;
   font-weight: 700;
 }
 .chart-summary {
@@ -974,7 +974,7 @@ label small {
   width: 100%;
   max-width: 46px;
   display: block;
-  background: #ccddca;
+  background: #f0dcc8;
   border-radius: 5px 5px 0 0;
   position: relative;
   min-height: 0;
@@ -983,7 +983,7 @@ label small {
     background 0.18s;
 }
 .bar-column:nth-child(2n) .bar {
-  background: #a7c4a5;
+  background: #e9a178;
 }
 .bar-column.last .bar,
 .bar-column:hover .bar,
@@ -991,7 +991,7 @@ label small {
   background: var(--green);
 }
 .bar-column.loss .bar {
-  background: #d69b8d;
+  background: #e9a178;
 }
 .bar-tip {
   position: absolute;
@@ -999,7 +999,7 @@ label small {
   left: 50%;
   transform: translateX(-50%);
   border-radius: 4px;
-  background: #294b38;
+  background: #b4532f;
   color: var(--surface);
   padding: 5px 7px;
   white-space: nowrap;
@@ -1176,7 +1176,7 @@ label small {
   overflow: hidden;
 }
 .rank-track span {
-  background: #b2c7a7;
+  background: #e9a178;
   height: 100%;
   display: block;
   border-radius: 3px;
@@ -1245,11 +1245,11 @@ label small {
   display: flex;
   gap: 10px;
   align-items: center;
-  background: #264d3c;
+  background: #2b211c;
   color: var(--surface);
   border-radius: var(--radius-m);
   padding: 14px 23px;
-  box-shadow: 0 8px 30px #183a3929;
+  box-shadow: 0 8px 30px #5a352029;
   font-size: var(--fs-2);
   max-width: 90vw;
 }
@@ -1295,7 +1295,7 @@ label small {
   gap: 9px;
   padding: 14px 16px;
   background: var(--danger-soft);
-  border: 1px solid #f3d7cf;
+  border: 1px solid #f0d0c4;
   color: var(--text-danger);
   font-size: var(--fs-1);
   line-height: 1.7;
@@ -1376,7 +1376,7 @@ label small {
   min-height: 33px;
 }
 .product-chips button.selected {
-  border-color: #9abd9f;
+  border-color: #e9a178;
   color: var(--green);
   background: var(--mint-soft);
 }
@@ -1432,8 +1432,8 @@ label small {
   background: var(--cream);
   padding: 30px 25px;
   position: relative;
-  border: 1px solid #e2e4d2;
-  box-shadow: 0 6px 15px #28372607;
+  border: 1px solid #f0dcc8;
+  box-shadow: 0 6px 15px #5a352007;
 }
 .paper-slip:after {
   content: "";
@@ -1443,8 +1443,8 @@ label small {
   bottom: -8px;
   height: 10px;
   background:
-    linear-gradient(135deg, #eeeede 5px, transparent 0) 0 0/10px 10px,
-    linear-gradient(225deg, #eeeede 5px, transparent 0) 0 0/10px 10px;
+    linear-gradient(135deg, #f6e9da 5px, transparent 0) 0 0/10px 10px,
+    linear-gradient(225deg, #f6e9da 5px, transparent 0) 0 0/10px 10px;
 }
 .paper-slip .eyebrow {
   font-size: var(--fs-1);
@@ -1461,7 +1461,7 @@ label small {
 }
 .slip-rule {
   height: 1px;
-  background: #d6dbc4;
+  background: #f0dcc8;
   margin: 27px 0;
 }
 .paper-slip > div:not(.slip-rule) {
@@ -1479,7 +1479,7 @@ label small {
   font-family: "Manrope", sans-serif;
 }
 .paper-slip .slip-total {
-  border-top: 1px dashed #c9d2b6;
+  border-top: 1px dashed #e2cbb6;
   padding-top: 21px;
   margin-top: 25px !important;
 }
@@ -1780,12 +1780,12 @@ label small {
   border-radius: var(--radius-l);
   width: min(610px, calc(100vw - 32px));
   max-height: 85vh;
-  box-shadow: 0 25px 100px #1a322633;
+  box-shadow: 0 25px 100px #5a35202b;
   color: var(--ink);
   background: var(--surface);
 }
 .modal::backdrop {
-  background: #14251f66;
+  background: #2b211c66;
   backdrop-filter: blur(3px);
 }
 .modal-inner {
@@ -1923,7 +1923,7 @@ label small {
 .welcome-kicker i {
   width: 6px;
   height: 6px;
-  background: #9fb083;
+  background: #e9a178;
   border-radius: 50%;
 }
 .welcome h1 {
@@ -1984,7 +1984,7 @@ label small {
   display: flex;
   align-items: center;
   gap: 12px;
-  border: 1px solid #dce6d3;
+  border: 1px solid #f0dcc8;
   background: var(--line-soft);
   padding: 16px 19px;
   border-radius: var(--radius-m);
@@ -2504,7 +2504,7 @@ label small {
     background: var(--green);
     color: var(--surface);
     border-radius: 15px;
-    box-shadow: 0 4px 10px #185b3925;
+    box-shadow: 0 4px 10px #b4532f25;
     border: 3px solid var(--bg);
   }
   .mobile-add small {
@@ -3038,7 +3038,7 @@ label small,
     padding: 12px 18px 26px;
     background: #fffffff7;
     border-top: 1px solid var(--border);
-    box-shadow: 0 -8px 18px #233c330d;
+    box-shadow: 0 -8px 18px #5a35200d;
     border-radius: 0 0 12px 12px;
   }
   .entry-form .form-actions .button {
@@ -3062,4 +3062,19 @@ label small,
   .entry-form > section:last-of-type {
     padding-bottom: 12px;
   }
+}
+
+/* 品牌配色：浅珊瑚托盘上的珊瑚文字改用更深一档，保证 WCAG AA（≥4.5:1） */
+.nav-sub button.active,
+.nav-sub a.active,
+.sidebar-settings.selected,
+.dash-growth.up,
+.customer-day.selected .customer-day-number,
+.customer-day-number,
+.product-chips button.selected,
+.date-toggle em,
+.metric-icon,
+.content-balance.ok,
+.profit-preview strong {
+  color: var(--coral-ink);
 }

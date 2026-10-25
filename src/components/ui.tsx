@@ -71,8 +71,8 @@ export function Empty({
       <img
         className="empty-art"
         src={emptyArt}
-        width={160}
-        height={80}
+        width={96}
+        height={96}
         alt=""
         loading="lazy"
         decoding="async"
@@ -98,10 +98,10 @@ export function Money({
 export function Brand() {
   return (
     <div className="brand">
-      <img src={`${import.meta.env.BASE_URL}octopus.svg`} alt="" />
+      <img src={`${import.meta.env.BASE_URL}logo-v5.png`} alt="" />
       <div>
-        <strong>章鱼哥</strong>
-        <span>AI 工作室 · 生意手账</span>
+        <strong>章鱼哥AI</strong>
+        <span>生意手账</span>
       </div>
     </div>
   );

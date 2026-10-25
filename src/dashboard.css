@@ -8,8 +8,8 @@
   padding: 64px var(--page-pad-x) 270px;
   text-align: center;
   background:
-    radial-gradient(60% 70% at 50% 100%, #e3f4ec 0%, #e3f4ec00 70%),
-    linear-gradient(180deg, #fbfcfa 0%, #f1f8f4 60%, #f5f6f3 100%);
+    radial-gradient(60% 70% at 50% 100%, #f6e3d3 0%, #f6e3d300 70%),
+    linear-gradient(180deg, #fdf8ef 0%, #fbf3e4 60%, #fbf3e4 100%);
 }
 .dash-hero-art {
   position: absolute;
@@ -133,7 +133,7 @@
   color: var(--surface);
   font-size: var(--fs-2);
   font-weight: 600;
-  box-shadow: 0 6px 18px #166b5526;
+  box-shadow: 0 6px 18px #b4532f26;
   transition:
     background 0.18s,
     transform 0.18s;
@@ -265,7 +265,7 @@
 .dash-chart .bar-column:nth-child(2n) .bar {
   max-width: 52px;
   border-radius: 12px 12px 6px 6px;
-  background: linear-gradient(180deg, #c3e5d7 0%, var(--accent-soft) 100%);
+  background: linear-gradient(180deg, #f0dcc8 0%, var(--accent-soft) 100%);
   transition:
     height 0.35s,
     filter 0.18s;
@@ -273,10 +273,10 @@
 .dash-chart .bar-column.last .bar,
 .dash-chart .bar-column:hover .bar,
 .dash-chart .bar-column:focus-visible .bar {
-  background: linear-gradient(180deg, #1f8f73 0%, #8fd3bb 100%);
+  background: linear-gradient(180deg, #d97757 0%, #e9a178 100%);
 }
 .dash-chart .bar-column.loss .bar {
-  background: linear-gradient(0deg, #e2a99c 0%, var(--cream) 100%);
+  background: linear-gradient(0deg, #e9a178 0%, var(--cream) 100%);
 }
 .dash-chart .bar-tip {
   top: -34px;
@@ -286,7 +286,7 @@
   color: var(--text-1);
   font-weight: 700;
   font-family: "Manrope", sans-serif;
-  box-shadow: 0 4px 14px #1e342918;
+  box-shadow: 0 4px 14px #5a352018;
   transition: opacity 0.15s;
 }
 /* 最近一根默认显示金额；指向其它柱时让位 */
@@ -506,4 +506,33 @@
   .dash-chart .bar {
     transition: none;
   }
+}
+
+/* 品牌：v5 小章鱼原图完整展示（圆形、不透明、不加遮罩/滤镜），四周留白 ≥25% */
+.dash-hero-art,
+.dash-page .dash-hero-art {
+  left: auto;
+  right: 6%;
+  top: 40px;
+  bottom: auto;
+  width: 112px;
+  height: 112px;
+  transform: none;
+  opacity: 1;
+  -webkit-mask-image: none;
+  mask-image: none;
+  border-radius: 50%;
+  box-shadow: 0 8px 24px #5a352014;
+}
+@media (max-width: 600px) {
+  .dash-hero-art,
+  .dash-page .dash-hero-art {
+    right: 16px;
+    top: 16px;
+    width: 64px;
+    height: 64px;
+  }
+}
+@media (max-width: 600px) {
+  .dash-hero { padding-bottom: 40px; }
 }

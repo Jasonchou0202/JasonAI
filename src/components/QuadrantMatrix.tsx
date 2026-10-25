@@ -53,7 +53,7 @@ export function QuadrantMatrix({ api }: { api: Api }) {
             const hints = actions.filter((a) => a.quadrant === q).slice(0, 2);
             return [
               i % 2 === 0 && <span key={"y" + i} className="qx-ylab">{i === 0 ? "新客户" : "老客户"}</span>,
-              <div key={q} className={`quad-cell ${on ? "on" : "empty"}`} style={on ? { background: info.color } : undefined} data-quadrant={q}>
+              <div key={q} className={`quad-cell ${on ? "on" : "empty"}`} style={on ? { ["--qc" as string]: info.color } : undefined} data-quadrant={q}>
                 <span className="quad-name">{info.label}</span>
                 {on ? (
                   <>

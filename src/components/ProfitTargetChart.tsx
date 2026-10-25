@@ -94,8 +94,8 @@ function ProfitTargetInner({ months, current }: { months: Bucket[]; current: str
         <svg width={cw} height={H} viewBox={`0 0 ${cw} ${H}`} role="img" aria-label={`每月利润与目标走势，${endLabel} 目标每月 ¥${money(PROFIT_TARGET.endProfit)}`}>
           <defs>
             <linearGradient id="ptBlue" x1="0" x2="0" y1="0" y2="1">
-              <stop offset="0" stopColor="#2997FF" />
-              <stop offset="1" stopColor="#0066CC" />
+              <stop offset="0" stopColor="#E9A178" />
+              <stop offset="1" stopColor="#D97757" />
             </linearGradient>
           </defs>
           {ticks.map((v) => (

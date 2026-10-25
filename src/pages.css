@@ -59,8 +59,8 @@
   min-height: 210px;
   align-items: flex-end;
   background:
-    radial-gradient(50% 90% at 88% 100%, #e1f3ea 0%, #e1f3ea00 70%),
-    linear-gradient(180deg, #fbfcfa 0%, #f1f8f4 100%);
+    radial-gradient(50% 90% at 88% 100%, #f6e3d3 0%, #f6e3d300 70%),
+    linear-gradient(180deg, #fdf8ef 0%, #fbf3e4 100%);
 }
 .page-heading::after {
   content: "";
@@ -90,7 +90,7 @@
 }
 .page-heading .button.primary {
   border-radius: var(--radius-pill);
-  box-shadow: 0 6px 18px #166b5526;
+  box-shadow: 0 6px 18px #b4532f26;
   padding-inline: 22px;
 }
 .page-heading .privacy-label,
@@ -364,7 +364,7 @@
   border: 0;
   box-shadow: none;
   border-radius: var(--radius-xl);
-  background: linear-gradient(180deg, #f3faf6 0%, #fbfcfa 100%);
+  background: linear-gradient(180deg, #fbf3e4 0%, #fdf8ef 100%);
 }
 .paper-slip::after {
   display: none;
@@ -410,7 +410,7 @@
   font-weight: 600;
 }
 .dash-chart .bar-column.armed .bar {
-  background: linear-gradient(180deg, #1f8f73 0%, #8fd3bb 100%);
+  background: linear-gradient(180deg, #d97757 0%, #e9a178 100%);
 }
 .dash-chart .bar-column.armed .bar-tip {
   opacity: 1;
@@ -422,8 +422,8 @@
 /* ---------- 登录页 ---------- */
 .welcome {
   background:
-    radial-gradient(45% 60% at 78% 55%, #e1f3ea 0%, #e1f3ea00 70%),
-    linear-gradient(180deg, #fbfcfa 0%, #f3f8f5 100%);
+    radial-gradient(45% 60% at 78% 55%, #f6e3d3 0%, #f6e3d300 70%),
+    linear-gradient(180deg, #fdf8ef 0%, #fbf3e4 100%);
   max-width: none;
 }
 .welcome > header,
@@ -601,3 +601,16 @@
   color: var(--text-2);
   line-height: 1.7;
 }
+
+/* 品牌：v5 小章鱼为方图，保持原比例、不拉伸 */
+.welcome-art img,
+.empty-art {
+  object-fit: contain;
+  -webkit-mask-image: none;
+  mask-image: none;
+  opacity: 1;
+}
+.empty-art{width:96px!important;height:96px!important;border-radius:50%}
+.welcome-art img{width:min(100%,320px);height:auto;aspect-ratio:1;border-radius:50%;display:block;margin:0 auto}
+/* 品牌：页头不再叠放半透明小章鱼（禁止加滤镜/压在文字后），logo 只在侧栏完整出现 */
+.page-heading::after{content:none}
