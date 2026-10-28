@@ -471,7 +471,7 @@ export default function App() {
             <img
               src={heroArt800}
               width={800}
-              height={400}
+              height={800}
               alt=""
               decoding="async"
             />

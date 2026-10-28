@@ -89,7 +89,7 @@ export function Dashboard({
           srcSet={`${heroArt800} 800w, ${heroArt1200} 1200w`}
           sizes="(max-width: 680px) 520px, 760px"
           width={1200}
-          height={600}
+          height={1200}
           alt=""
           aria-hidden="true"
           loading="lazy"
@@ -216,7 +216,7 @@ export function Dashboard({
           )}
         </div>
         {period === "month" ? (
-          <ProfitTargetChart months={data.months} current={today().slice(0, 7)} />
+          <ProfitTargetChart months={data.months} current={today().slice(0, 7)} startProfit={data.profitTargetStart} />
         ) : (
         <div
           className={`bar-chart dash-chart period-${period} ${anyNegative ? "has-negative" : ""}`}

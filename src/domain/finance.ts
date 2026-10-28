@@ -1,3 +1,4 @@
+import { PROFIT_TARGET } from "./profitTarget";
 import type {
   Sale,
   SaleInput,
@@ -195,6 +196,7 @@ export function dashboard(sales: Sale[], date = today()): Dashboard {
     days: buckets(active, "day", date, 7),
     weeks: buckets(active, "week", date, 8),
     months: buckets(active, "month", date, 12),
+    profitTargetStart: profitTargetStart(active),
     recent: active.slice(0, 5),
     products: [...groups.values()]
       .sort((a, b) => b.profit - a.profit)
@@ -209,4 +211,11 @@ export function monthlyTotals(rows: SaleInput[]): Bucket[] {
     ...periodRange(month + "-01", "month"),
     ...totals(rows.filter((r) => r.date.startsWith(month))),
   }));
+}
+
+/** 利润目标线起点（传入已过滤的有效记录；PROFIT_TARGET.startMonth 当月实际利润，分）；不受最近 12 个月窗口影响。该月无记录时返回 null */
+export function profitTargetStart(sales: SaleInput[]): number | null {
+  const month = PROFIT_TARGET.startMonth;
+  const rows = sales.filter((r) => r.date.startsWith(month));
+  return rows.length ? totals(rows).profit : null;
 }

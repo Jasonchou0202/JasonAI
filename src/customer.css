@@ -132,7 +132,7 @@
   height: 26px;
   padding: 0;
   border-radius: 50%;
-  background: #d73535;
+  background: #9e2a1e;
   color: white;
   font-size: var(--fs-1);
   line-height: 1;
@@ -240,16 +240,16 @@
   font-size: var(--fs-1);
 }
 .task-complete {
-  --task-color: #166b55;
-  --task-bg: #eaf3ec;
+  --task-color: #b4532f;
+  --task-bg: #f6e3d3;
 }
 .task-urgent {
-  --task-color: #8a5610;
-  --task-bg: #fbf1df;
+  --task-color: #7a5320;
+  --task-bg: #f9ecd6;
 }
 .task-pending {
-  --task-color: #a2443a;
-  --task-bg: #fcf0ec;
+  --task-color: #9e2a1e;
+  --task-bg: #f8dad4;
 }
 .customer-legend > span,
 .customer-day-counts > span {
@@ -281,7 +281,7 @@
   color: var(--ink);
 }
 .customer-day:hover {
-  border-color: #9dbba6;
+  border-color: #e9a178;
 }
 .customer-day.outside {
   background: var(--surface);
@@ -358,7 +358,7 @@
   min-width: 0;
 }
 .customer-task.deleted {
-  border-left-color: #8c978e;
+  border-left-color: #c9ad98;
   background: var(--bg);
 }
 .customer-task-top {
@@ -808,7 +808,7 @@
   color: inherit;
 }
 .period-tabs .selected {
-  background: #183d35;
+  background: #2b211c;
   color: white;
 }
 .ranking-period {
