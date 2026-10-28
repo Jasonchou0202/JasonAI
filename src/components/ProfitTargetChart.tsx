@@ -18,16 +18,16 @@ function niceScale(v: number): { max: number; steps: number } {
 }
 
 /** 每月利润：实际柱 + 实际走势线 + 目标虚线；默认显示本月前 2 个月到后 3 个月，下方滑杆切换 */
-export function ProfitTargetChart({ months, current }: { months: Bucket[]; current: string }) {
+export function ProfitTargetChart({ months, current, startProfit }: { months: Bucket[]; current: string; startProfit?: number | null }) {
   if (!months.length) return <div className="profit-target"><p className="pt-note">暂无月度利润数据</p></div>;
-  return <ProfitTargetInner months={months} current={current} />;
+  return <ProfitTargetInner months={months} current={current} startProfit={startProfit} />;
 }
 
-function ProfitTargetInner({ months, current }: { months: Bucket[]; current: string }) {
+function ProfitTargetInner({ months, current, startProfit }: { months: Bucket[]; current: string; startProfit?: number | null }) {
   const firstData = months[0].key.slice(0, 7);
   const first = firstData < PROFIT_TARGET.startMonth ? firstData : PROFIT_TARGET.startMonth;
   const actual = new Map(months.map((b) => [b.key.slice(0, 7), b]));
-  const target = fixedTarget(months);
+  const target = fixedTarget(months, startProfit);
   const startMonth = target.startMonth;
   const targetBy = new Map(target.points.map((p) => [p.month, p.value]));
   const all = Array.from({ length: monthDiff(first, PROFIT_TARGET.endMonth) + 1 }, (_, i) => addMonth(first, i));

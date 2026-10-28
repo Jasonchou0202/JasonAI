@@ -39,3 +39,24 @@ describe("利润目标走势", () => {
     expect(monthDiff("2026-09", "2027-12")).toBe(15);
   });
 });
+
+import { profitTargetStart } from "../src/domain/finance";
+const row = (date: string, revenue: number, cost: number) =>
+  ({ productId: "p", productName: "测试", customer: "c", date, revenue, cost, note: "" });
+
+describe("后端只读字段 profitTargetStart", () => {
+  it("返回 2026-09 当月利润，与当前窗口无关；无数据时为 null", () => {
+    expect(profitTargetStart([row("2026-09-03", 500, 100), row("2026-09-20", 300, 100), row("2026-10-01", 900, 0)])).toBe(600);
+    expect(profitTargetStart([row("2026-10-01", 900, 0)])).toBeNull();
+  });
+  it("前端优先用后端起点：月度窗口已滚过 2026-09 也照常画线", () => {
+    const t = fixedTarget([{ key: "2027-10-01", profit: 9_000_000 }], 1_000_000);
+    expect(t.hasStart).toBe(true);
+    expect(t.points[0]).toEqual({ month: "2026-09", value: 1_000_000 });
+    expect(t.points.at(-1)).toEqual({ month: "2027-12", value: 10_000_000 });
+  });
+  it("拿不到后端字段（undefined/null）时退回原算法", () => {
+    expect(fixedTarget(months, undefined)).toEqual(fixedTarget(months));
+    expect(fixedTarget(months, null)).toEqual(fixedTarget(months));
+  });
+});

@@ -63,6 +63,8 @@ export interface Dashboard {
   days: Bucket[];
   weeks: Bucket[];
   months: Bucket[];
+  /** 利润目标线起点利润（分），后端只读字段；旧后端没有时为 undefined */
+  profitTargetStart?: number | null;
   recent: Sale[];
   products: { name: string; profit: number; count: number }[];
 }

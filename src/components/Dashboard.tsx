@@ -216,7 +216,7 @@ export function Dashboard({
           )}
         </div>
         {period === "month" ? (
-          <ProfitTargetChart months={data.months} current={today().slice(0, 7)} />
+          <ProfitTargetChart months={data.months} current={today().slice(0, 7)} startProfit={data.profitTargetStart} />
         ) : (
         <div
           className={`bar-chart dash-chart period-${period} ${anyNegative ? "has-negative" : ""}`}
