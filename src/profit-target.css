@@ -32,3 +32,6 @@
 .pt-ytick,.pt-xtick{fill:#3A2E25}.pt-legend{color:#3A2E25}
 .pt-val{fill:#3A2E25}.pt-up{fill:#A3401F;font-weight:800}.pt-down{fill:#2F4A6D;font-weight:700}
 .pt-progress-bar i{background:#C2552F}.pt-slider input[type=range]{background:linear-gradient(90deg,#C2552F var(--p),#E8DCC6 var(--p))}
+.pt-bar,.pt-bar.up,.pt-bar.cur{fill:#C2552F;opacity:1}.pt-bar.loss{fill:#2F4A6D}
+.pt-up,.pt-down{font-size:14px}
+.pt-col.sel .pt-hit{fill:#F5E9D6}

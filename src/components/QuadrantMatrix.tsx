@@ -37,7 +37,7 @@ export function QuadrantMatrix({ api }: { api: Api }) {
       <div className="panel-heading">
         <div>
           <h2 id="quad-title"><LayoutGrid size={17} /> 客户 × 产品矩阵</h2>
-          <p>{NEW_RULE_TEXT}；灰色象限是待开拓的增长方向</p>
+          <p>{NEW_RULE_TEXT}</p>
         </div>
         <div className="period-tabs" role="tablist" aria-label="矩阵周期">
           {RANGES.map((r) => (
