@@ -114,12 +114,21 @@ function ProfitTargetInner({ months, current, startProfit }: { months: Bucket[];
               <g key={m} className={`pt-col ${sel === m ? "sel" : ""}`} onMouseEnter={() => setSel(m)} onClick={() => setSel(m)}>
                 <rect x={x(i) - colW / 2} y={top} width={colW} height={plotH} className="pt-hit" />
                 {v !== undefined && h > 0 && (
-                  <path className={`pt-bar ${m === current ? "cur" : ""} ${v < 0 ? "loss" : ""}`}
+                  <path className={`pt-bar ${m === current ? "cur" : ""} ${v < 0 ? "loss" : ""} ${(() => { const pv = valueOf(addMonth(m, -1)); return pv !== undefined && v > pv ? "up" : ""; })()}`}
                     d={v >= 0
                       ? `M${bx},${by + h} V${by + r} Q${bx},${by} ${bx + r},${by} H${bx + bw - r} Q${bx + bw},${by} ${bx + bw},${by + r} V${by + h} Z`
                       : `M${bx},${by} H${bx + bw} V${by + h} H${bx} Z`} />
                 )}
-                {v !== undefined && <text x={x(i)} y={y(Math.max(v, 0)) - 6} className="pt-val">{wan(v)}</text>}
+                {v !== undefined && (() => {
+                  const pv = valueOf(addMonth(m, -1));
+                  const g = pv !== undefined && pv > 0 ? Math.round(((v - pv) / pv) * 100) : null;
+                  return (
+                    <text x={x(i)} y={y(Math.max(v, 0)) - 6} className="pt-val">
+                      {wan(v)}
+                      {g !== null && <tspan className={g >= 0 ? "pt-up" : "pt-down"} dx={3}>{g >= 0 ? `▲${g}%` : `▼${-g}%`}</tspan>}
+                    </text>
+                  );
+                })()}
                 {future && tv !== undefined && (
                   <>
                     <rect x={bx} y={y(tv)} width={bw} height={y(0) - y(tv)} rx={Math.min(8, bw / 2)} className="pt-ghost" />
