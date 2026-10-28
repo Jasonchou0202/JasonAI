@@ -110,3 +110,10 @@
 /* 品牌配色：矩阵格子改成白卡 + 珊瑚色顶条，深棕文字，珊瑚橙用量控制在点缀 */
 .quad-cell.on{background:#fff;color:var(--text-1);border:1px solid var(--line);box-shadow:inset 0 4px 0 var(--qc),0 1px 4px #5a35200f}
 .quad-cell.on .quad-name{color:var(--text-2);opacity:1}.quad-cell.on small{color:var(--text-2);opacity:1}
+/* cream-contrast：矩阵四块实色填充，白字加粗 */
+.quad-matrix{gap:8px}
+.quad-cell.on{background:var(--qc);color:#fff;border:1px solid #E8DCC6;box-shadow:none}
+.quad-cell.on .quad-name,.quad-cell.on small,.quad-cell.on strong{color:#fff;opacity:1;font-weight:700}
+.quad-cell.on .quad-link{color:#fff}
+.quad-cell.empty{background:#FBF3E4;border:1px dashed #E8DCC6;color:#3A2E25}
+.qm-bar{gap:2px;height:14px;background:#FBF3E4}

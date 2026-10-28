@@ -23,10 +23,10 @@ export const QUADRANT_INFO: Record<
   Quadrant,
   { label: string; short: string; color: string }
 > = {
-  newOld: { label: "新客户 × 老产品", short: "新客老品", color: "#D97757" },
-  newNew: { label: "新客户 × 新产品", short: "新客新品", color: "#E9A178" },
-  oldOld: { label: "老客户 × 老产品", short: "老客老品", color: "#B4532F" },
-  oldNew: { label: "老客户 × 新产品", short: "老客新品", color: "#6B5A50" },
+  newOld: { label: "新客户 × 老产品", short: "新客老品", color: "#C2552F" },
+  newNew: { label: "新客户 × 新产品", short: "新客新品", color: "#2F4A6D" },
+  oldOld: { label: "老客户 × 老产品", short: "老客老品", color: "#5F7A3A" },
+  oldNew: { label: "老客户 × 新产品", short: "老客新品", color: "#A8670F" },
 };
 /** 新老分界日（北京时间）：此日前已有的客户/商品为老，此日及之后新增为新 */
 export const NEW_CUTOFF = "2026-10-21";
