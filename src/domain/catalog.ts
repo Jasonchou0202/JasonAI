@@ -38,6 +38,7 @@ export const productCategories = [
   "Claude",
   "Grok",
   "Gemini",
+  "Typeless",
   "Verizon 网络",
   "常规网络",
   "流量网络",
@@ -51,6 +52,7 @@ export function productCategory(name: string): string {
   if (/chatgpt/i.test(name)) return "ChatGPT";
   if (/claude/i.test(name)) return "Claude";
   if (/gemini/i.test(name)) return "Gemini";
+  if (/typeless/i.test(name)) return "Typeless";
   if (/verizon/i.test(name)) return "Verizon 网络";
   if (/常规.*(?:套餐|🪜)/.test(name)) return "常规网络";
   if (/流量|🪜|网络套餐/.test(name)) return "流量网络";

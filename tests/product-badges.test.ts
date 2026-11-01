@@ -233,3 +233,36 @@ it("offers Grok as the 3rd category, accepts it server-side, and never auto-assi
   expect(validateProduct({ ...product, category: "Grok" }).category).toBe("Grok");
   expect(productCategory("Grok 会员")).toBe("其他");
 });
+it("offers Typeless after the AI brands and suggests it from the product name", async () => {
+  const { productCategories, productCategory } = await import("../src/domain/catalog");
+  expect(productCategories.slice(0, 5)).toEqual([
+    "ChatGPT",
+    "Claude",
+    "Grok",
+    "Gemini",
+    "Typeless",
+  ]);
+  expect(productCategories.at(-1)).toBe("其他");
+  expect(validateProduct({ ...product, category: "Typeless" }).category).toBe(
+    "Typeless",
+  );
+  expect(productCategory("Typeless 会员")).toBe("Typeless");
+  expect(productCategory("TYPELESS Pro")).toBe("Typeless");
+  expect(productCategory("typeless")).toBe("Typeless");
+  expect(productCategory("Typeless API")).toBe("Typeless");
+  const store = new MemoryStore();
+  const created = (await execute(store, ctx, "products.create", {
+    requestId: "typeless",
+    product: {
+      ...product,
+      id: "typeless",
+      name: "Typeless",
+      category: "Typeless",
+      price: 0,
+      cost: 0,
+      hasDefaultPrice: false,
+      hasDefaultCost: false,
+    },
+  })) as { product: Product };
+  expect(created.product.category).toBe("Typeless");
+});
