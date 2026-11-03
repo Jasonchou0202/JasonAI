@@ -180,8 +180,8 @@ describe("tasks.sync.complete", () => {
     for (const p of [
       done("pastEdge", 3, "2026-10-24T04:05:01.000Z"),
       done("pastEdge", 3, "昨天"),
-      { id: "pastEdge", revision: 3, requestId: "x1" },
-      { id: "pastEdge", completedAt: NOW, requestId: "x2" },
+      { id: "pastEdge", revision: 0, completedAt: NOW, requestId: "x1" },
+      { id: "pastEdge", revision: "3", completedAt: NOW, requestId: "x2" },
       { id: "pastEdge", revision: 3, completedAt: NOW },
     ])
       expect(await run(s, "tasks.sync.complete", p)).toMatchObject({ ok: false, code: "SYNC_BAD_REQUEST" });
@@ -312,4 +312,77 @@ atTest("tasks.sync.list 只返回 at > now（iPhone 提醒事项拒收过去时�
   atExpect(r.data.tasks.map((t: any) => t.id)).toEqual(["tooFar"]); // inside 恰好等于 now，不返回
   const r2 = await run(seed(), "tasks.sync.list", {}, { now: "2026-10-30T01:59:59.000Z" });
   atExpect(r2.data.tasks.map((t: any) => [t.id, t.atLocal])).toEqual([["inside", "2026-10-30 10:00"], ["tooFar", "2027-01-25 08:00"]]);
+});
+
+describe("手机 → 看板写回", () => {
+  const sales = (s: MemoryStore) => JSON.stringify(s.data.sales);
+  it("complete 不传 revision/completedAt 也可；已完成再调不报错、不写库", async () => {
+    const s = seed();
+    const before = sales(s);
+    const a = await run(s, "tasks.sync.complete", { id: "inside", requestId: "c1" });
+    expect(a).toMatchObject({ ok: true, data: { id: "inside", completedAt: NOW, revision: 4 } });
+    const b = await run(s, "tasks.sync.complete", { id: "inside", requestId: "c2", revision: 3 });
+    expect(b).toMatchObject({ ok: true, data: { completedAt: NOW, revision: 4, unchanged: true } });
+    expect((s.data.tasks.inside as CustomerTask).revision).toBe(4);
+    expect(Object.values(s.data[SYNC_LOG]).length).toBe(1);
+    expect(sales(s)).toBe(before);
+  });
+  it("状态需要变化时 revision 不一致报冲突", async () => {
+    const s = seed();
+    expect(await run(s, "tasks.sync.complete", { id: "inside", requestId: "c3", revision: 2 }))
+      .toMatchObject({ ok: false, code: "SYNC_CONFLICT" });
+  });
+  it("uncomplete 取消打勾；本来未完成也不报错", async () => {
+    const s = seed();
+    await run(s, "tasks.sync.complete", { id: "inside", requestId: "u1" });
+    expect(await run(s, "tasks.sync.uncomplete", { id: "inside", requestId: "u2" }))
+      .toMatchObject({ ok: true, data: { completedAt: null, revision: 5 } });
+    expect(await run(s, "tasks.sync.uncomplete", { id: "inside", requestId: "u3" }))
+      .toMatchObject({ ok: true, data: { completedAt: null, unchanged: true } });
+    expect((s.data.tasks.inside as CustomerTask).completedAt).toBeNull();
+  });
+  it("create：北京时间解析、客户名匹配根客户、clientRef 防重复", async () => {
+    const s = seed();
+    const before = sales(s);
+    const p = { title: "回访", customer: "李德嘉", at: "2026-10-30 14:30", clientRef: "EK-REM-1" };
+    const a = await run(s, "tasks.sync.create", p);
+    expect(a).toMatchObject({ ok: true, data: { at: "2026-10-30T06:30:00.000Z", atLocal: "2026-10-30 14:30", customerId: "root", created: true, revision: 1 } });
+    const b = await run(s, "tasks.sync.create", { ...p, title: "改了标题" });
+    expect(b).toMatchObject({ ok: true, data: { id: a.data.id, created: false } });
+    expect(Object.keys(s.data.tasks).length).toBe(6);
+    const t = s.data.tasks[a.data.id] as CustomerTask;
+    expect(t).toMatchObject({ title: "回访", completedAt: null, deletedAt: null, reminder: "both" });
+    expect(sales(s)).toBe(before);
+    // 新建的会出现在 list 里，并可 complete
+    const list = await run(s, "tasks.sync.list");
+    expect(list.data.tasks.map((x: any) => x.id)).toContain(a.data.id);
+    expect(await run(s, "tasks.sync.complete", { id: a.data.id, requestId: "c9", revision: 1 })).toMatchObject({ ok: true });
+  });
+  it("create：客户为空或对不上 → 挂到固定的手机临时日程客户，原客户名写进反馈", async () => {
+    const s = seed();
+    const a = await run(s, "tasks.sync.create", { title: "临时", customer: "新朋友", at: "2026-10-30T09:00:00+08:00", requestId: "n1" });
+    expect(a).toMatchObject({ ok: true, data: { customerId: "sync_inbox", at: "2026-10-30T01:00:00.000Z" } });
+    expect((s.data.tasks[a.data.id] as CustomerTask).feedback).toBe("手机填写客户：新朋友");
+    const b = await run(s, "tasks.sync.create", { title: "无客户", at: "2026-10-31 09:00", requestId: "n2" });
+    expect(b.data.customerId).toBe("sync_inbox");
+    expect(Object.keys(s.data.customers).length).toBe(3);
+  });
+  it("create：参数错误拒绝，不写库", async () => {
+    const s = seed();
+    for (const p of [
+      { title: "", at: "2026-10-30 14:30", clientRef: "a" },
+      { title: "x", at: "2026-13-30 14:30", clientRef: "a" },
+      { title: "x", at: "明天", clientRef: "a" },
+      { title: "x", at: "2026-10-30 14:30" },
+      { title: "x", at: "2026-10-30 14:30", clientRef: "a", reminder: "loud" },
+    ])
+      expect(await run(s, "tasks.sync.create", p)).toMatchObject({ ok: false, code: "SYNC_BAD_REQUEST" });
+    expect(Object.keys(s.data.tasks).length).toBe(5);
+  });
+  it("create/uncomplete 需要正确密钥", async () => {
+    const s = seed();
+    for (const a of ["tasks.sync.create", "tasks.sync.uncomplete"])
+      expect(await run(s, a, { title: "x", at: "2026-10-30 14:30", clientRef: "a", id: "inside" }, { key: "wrong" }))
+        .toMatchObject({ ok: false, code: "SYNC_UNAUTHORIZED" });
+  });
 });
