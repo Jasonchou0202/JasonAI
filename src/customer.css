@@ -241,7 +241,7 @@
 }
 .task-complete {
   --task-color: #b4532f;
-  --task-bg: #f6e3d3;
+  --task-bg: #f4e6d4;
 }
 .task-urgent {
   --task-color: #7a5320;
@@ -1084,23 +1084,30 @@
 
 /* ===== 2026-11 优化：客户日程页 苹果官网风卡片（照 22:43 确认样稿） ===== */
 .main-shell:has(.apple-page:not(.apple-section)) {
-  background: #f5f5f7;
+  /* 11-11 统一：日程页不再单独换成浅灰，和全站同一奶油底 */
+  background: var(--bg);
   min-height: 100vh;
 }
 .apple-page {
-  --apple-ink: #1d1d1f;
-  --apple-2: #6e6e73;
-  --apple-3: #86868b;
-  --apple-line: #f0f0f2;
+  /* 11-11 统一：苹果风卡片改用团队配色的文字和线色（原冷灰 #1d1d1f/#6e6e73/#86868b/#f0f0f2） */
+  --apple-ink: var(--text-1);
+  --apple-2: var(--text-2);
+  --apple-3: var(--text-3);
+  --apple-line: var(--line-soft);
+  --apple-fill: var(--bg); /* 白卡里的输入框、分段控件、头像条底：奶油 #FBF3E4 */
+  --apple-fill-2: var(--cream); /* 次按钮「改期」等：奶油深一档 #F4E6D4 */
+  --apple-coral-text: var(--green); /* 白卡上的小号珊瑚字用深珊瑚 #B4532F（对白 4.98:1） */
+  --apple-red-text: #d70015; /* 小号「逾期」字：同色系加深（对白 5.4:1）；圆点和大数字仍 #ff3b30 */
+  --apple-green-text: #1e7b34; /* 小号「完成」字：同色系加深（对白 5.3:1）；圆点仍 #34c759 */
   --apple-coral: #d97757;
   --apple-red: #ff3b30;
   --apple-green: #34c759;
-  --apple-shadow: 0 1px 2px rgba(0, 0, 0, 0.04), 0 8px 28px rgba(0, 0, 0, 0.05);
+  --apple-shadow: var(--shadow-card);
   gap: 24px;
   padding-bottom: 48px;
 }
 .apple-page .page-heading .eyebrow {
-  color: var(--apple-coral);
+  color: var(--apple-coral-text);
   font-weight: 600;
   letter-spacing: 0.04em;
 }
@@ -1111,7 +1118,7 @@
 }
 .apple-card {
   background: #fff;
-  border: 0;
+  border: 1px solid var(--line);
   border-radius: 28px;
   padding: 28px 30px;
   box-shadow: var(--apple-shadow);
@@ -1146,7 +1153,7 @@ button.apple-card:active,
   width: 30px;
   height: 30px;
   border-radius: 50%;
-  background: #f5f5f7;
+  background: var(--apple-fill);
   color: var(--apple-2);
   display: grid;
   place-items: center;
@@ -1214,7 +1221,7 @@ button.apple-card:active,
   border: 0;
   background: none;
   padding: 4px 0;
-  color: var(--apple-coral);
+  color: var(--apple-coral-text);
   font: inherit;
   font-size: 15px;
   font-weight: 600;
@@ -1352,7 +1359,7 @@ button.apple-card:active,
   border: 0;
   border-radius: 999px;
   padding: 9px 0;
-  background: #f5f5f7;
+  background: var(--apple-fill-2);
   color: var(--apple-ink);
   font: inherit;
   font-size: 14px;
@@ -1382,7 +1389,7 @@ button.apple-card:active,
   padding: 0;
   border: 0;
   border-radius: 50%;
-  background: #d2d2d7;
+  background: var(--line);
   cursor: pointer;
   transition: width 0.2s ease;
 }
@@ -1403,7 +1410,7 @@ button.apple-card:active,
   align-items: start;
 }
 .apple-seg {
-  background: #f5f5f7;
+  background: var(--apple-fill);
   border: 0;
   border-radius: 999px;
 }
@@ -1461,13 +1468,13 @@ button.apple-card:active,
   flex-shrink: 0;
   font-weight: 600;
   font-size: 13px;
-  color: var(--apple-coral);
+  color: var(--apple-coral-text);
 }
 .apple-log-s.done {
-  color: var(--apple-green);
+  color: var(--apple-green-text);
 }
 .apple-log-s.late {
-  color: var(--apple-red);
+  color: var(--apple-red-text);
 }
 .apple-log-s.deleted {
   color: var(--apple-3);
@@ -1493,7 +1500,7 @@ button.apple-card:active,
   display: flex;
   align-items: center;
   gap: 10px;
-  background: #f5f5f7;
+  background: var(--apple-fill);
   border-radius: 16px;
   padding: 0 18px;
   color: var(--apple-3);
@@ -1521,7 +1528,7 @@ button.apple-card:active,
   gap: 8px;
   max-width: 100%;
   border: 0;
-  background: #f5f5f7;
+  background: var(--apple-fill);
   border-radius: 999px;
   padding: 5px 14px 5px 5px;
   font: inherit;
@@ -1538,7 +1545,7 @@ button.apple-card:active,
   width: 28px;
   height: 28px;
   border-radius: 50%;
-  background: var(--apple-coral);
+  background: var(--green);
   color: #fff;
   display: grid;
   place-items: center;
@@ -1562,7 +1569,7 @@ button.apple-card:active,
 .apple-page .action-group {
   border: 0;
   border-radius: 20px;
-  background: #f5f5f7;
+  background: var(--apple-fill);
 }
 .apple-page .action-group h3 i {
   display: none;
@@ -1645,7 +1652,7 @@ button.apple-card:active,
   }
 }
 .apple-page .segmented.apple-seg {
-  background: #f5f5f7;
+  background: var(--apple-fill);
   border: 0;
 }
 .apple-page .segmented.apple-seg button.active {
@@ -1659,19 +1666,19 @@ button.apple-card:active,
   box-shadow: none;
 }
 
-/* 客户详情页：只把「客户日程」这一区做成苹果风浅灰底块，详情页其他区块和整页背景不变 */
+/* 客户详情页「客户日程」区：11-11 统一后不再单独铺浅灰底块，直接放在页面同一奶油底上 */
 .apple-page.apple-section {
-  background: #f5f5f7;
-  border-radius: 28px;
-  padding: 28px;
+  background: transparent;
+  border-radius: 0;
+  padding: 0;
   margin-top: 8px;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04), 0 8px 28px rgba(0, 0, 0, 0.05);
+  box-shadow: none;
 }
 .apple-section > .section-heading {
   margin: 0;
 }
 .apple-section > .section-heading .eyebrow {
-  color: var(--apple-coral);
+  color: var(--apple-coral-text);
   font-weight: 600;
   letter-spacing: 0.04em;
 }
@@ -1684,14 +1691,7 @@ button.apple-card:active,
 }
 @media (max-width: 600px) {
   .apple-page.apple-section {
-    border-radius: 24px;
-    padding: 18px 14px 24px;
-    margin-left: calc(-1 * var(--page-pad-x) + 6px);
-    margin-right: calc(-1 * var(--page-pad-x) + 6px);
-  }
-  .apple-section .apple-stats {
-    margin-right: -14px;
-    padding-right: 14px;
+    padding: 0;
   }
   .apple-section .apple-task {
     flex-basis: calc((100vw - 2 * var(--page-pad-x)) / 1.5);

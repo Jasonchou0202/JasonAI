@@ -58,9 +58,7 @@
   padding: var(--space-7) var(--page-pad-x) var(--space-6);
   min-height: 210px;
   align-items: flex-end;
-  background:
-    radial-gradient(50% 90% at 88% 100%, #f6e3d3 0%, #f6e3d300 70%),
-    linear-gradient(180deg, #fdf8ef 0%, #fbf3e4 100%);
+  background: var(--bg); /* 11-11 统一：去掉粉色渐变 */
 }
 .page-heading::after {
   content: "";
@@ -168,15 +166,14 @@
   font-size: var(--fs-1);
 }
 
-/* ---------- 区块：去掉边框和阴影，用细线分隔 ---------- */
+/* ---------- 区块：11-11 统一为奶油底上的白卡（品牌手册：卡片 #FFFFFF + 描边 #F0DCC8） ---------- */
 .main-content .panel {
   --panel-inset: 24px;
-  background: transparent;
-  border: 0;
-  border-top: 1px solid var(--line);
-  border-radius: 0;
-  box-shadow: none;
-  margin-inline: calc(-1 * var(--panel-inset));
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-card);
+  margin-inline: 0;
 }
 .main-content .panel + .panel,
 .main-content .panel + * + .panel {
@@ -364,7 +361,7 @@
   border: 0;
   box-shadow: none;
   border-radius: var(--radius-xl);
-  background: linear-gradient(180deg, #fbf3e4 0%, #fdf8ef 100%);
+  background: var(--surface); /* 11-11 统一：记一笔表单是白卡 */
 }
 .paper-slip::after {
   display: none;
@@ -421,9 +418,7 @@
 
 /* ---------- 登录页 ---------- */
 .welcome {
-  background:
-    radial-gradient(45% 60% at 78% 55%, #f6e3d3 0%, #f6e3d300 70%),
-    linear-gradient(180deg, #fdf8ef 0%, #fbf3e4 100%);
+  background: var(--bg); /* 11-11 统一：登录页同一奶油底 */
   max-width: none;
 }
 .welcome > header,

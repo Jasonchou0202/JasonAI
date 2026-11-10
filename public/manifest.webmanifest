@@ -6,7 +6,7 @@
   "scope": "/JasonAI/",
   "display": "standalone",
   "lang": "zh-CN",
-  "theme_color": "#b4532f",
+  "theme_color": "#fbf3e4",
   "background_color": "#fbf3e4",
   "icons": [
     { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },

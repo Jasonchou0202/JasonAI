@@ -6,7 +6,7 @@
   --coral-light: #e9a178;
   --coral-ink: #9c4526; /* 浅色托盘上的珊瑚文字（手册 #9C4526） */
   --green-dark: #9a4426;
-  --light: #f6e3d3;
+  --light: #f4e6d4; /* 11-11 统一：原 #f6e3d3 偏粉，改品牌「奶油深一档」 */
   --border: #f0dcc8;
   --cream: #f4e6d4;
   /* 文字颜色三层：在白底、页面底色、米色和浅绿底上对比度均 ≥ 4.5:1 */
@@ -32,19 +32,19 @@
   --fs-6: 2.5rem; /* 首屏大数字 */
 
   /* 表面与分隔线（浅色，只用于背景和线，不用于文字） */
-  --bg: #fbf3e4; /* 页面底色 */
+  --bg: #fbf3e4; /* 页面底色：品牌视觉手册「主底·浅奶油」#FBF3E4，全站唯一页面底色 */
   --surface: #ffffff;
-  --surface-soft: #fdf8ef; /* 轻灰底：输入区、分组底色 */
-  --surface-muted: #f6e3d3; /* 稍深的灰绿底：选中、悬停 */
+  --surface-soft: #fbf3e4; /* 白卡里的分组/输入区底：与页面同一奶油（原 #fdf8ef 第二种米色已去掉） */
+  --surface-muted: #f4e6d4; /* 选中、悬停：品牌「奶油深一档」（原 #f6e3d3 偏粉） */
   --line: #f0dcc8; /* 细分隔线 */
   --line-soft: #f6e9da; /* 更淡的列表分隔线 */
-  --mint-soft: #f6e3d3;
-  --cream-soft: #fdf8ef;
+  --mint-soft: #f4e6d4;
+  --cream-soft: #fbf3e4;
   --warn-soft: #f9ecd6;
   --danger-soft: #f8dad4;
   /* 唯一强调色：增长 */
   --accent: #b4532f;
-  --accent-soft: #f6e3d3;
+  --accent-soft: #f4e6d4;
   /* 圆角 */
   --radius-s: 6px;
   --radius-m: 9px;
@@ -53,6 +53,8 @@
   --radius-pill: 999px;
   /* 阴影：只用于浮层和主按钮，页面区块不用阴影 */
   --shadow-s: 0 1px 4px #5a35200f;
+  /* 11-11 统一：奶油底上的白卡共用一档柔和暖阴影（品牌手册：柔和阴影、低透明） */
+  --shadow-card: 0 1px 2px #5a35200a, 0 6px 20px #5a35200f;
   --shadow-m: 0 8px 24px #5a352014;
   --shadow-l: 0 24px 72px #5a35202b;
   /* 间距（4 的倍数） */

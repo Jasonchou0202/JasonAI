@@ -1,5 +1,5 @@
 .profit-target{padding:4px 4px 8px}
-.pt-progress{display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px;font-size:13px;color:var(--text-2);background:#f9ecdf;border-radius:14px;padding:10px 14px;margin:4px 0 10px}
+.pt-progress{display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px;font-size:13px;color:var(--text-2);background:var(--bg);border-radius:14px;padding:10px 14px;margin:4px 0 10px}
 .pt-progress b{color:#9c4526;font-size:15px}.pt-progress small{color:var(--text-3);font-size:12px}
 .pt-progress-bar{flex:1 1 120px;height:6px;border-radius:3px;background:#f0dcc8;overflow:hidden;min-width:100px}.pt-progress-bar i{display:block;height:100%;background:linear-gradient(90deg,#e9a178,#b4532f);border-radius:3px}
 .pt-legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:12px;color:var(--text-2);margin:4px 0 8px}
@@ -34,4 +34,4 @@
 .pt-progress-bar i{background:#C2552F}.pt-slider input[type=range]{background:linear-gradient(90deg,#C2552F var(--p),#E8DCC6 var(--p))}
 .pt-bar,.pt-bar.up,.pt-bar.cur{fill:#C2552F;opacity:1}.pt-bar.loss{fill:#2F4A6D}
 .pt-up,.pt-down{font-size:14px}
-.pt-col.sel .pt-hit{fill:#F5E9D6}
+.pt-col.sel .pt-hit{fill:#F4E6D4}
