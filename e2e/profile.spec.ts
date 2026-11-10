@@ -18,7 +18,7 @@ async function open(page: Page, name: string) {
 }
 
 for (const [label, size] of [["桌面", { width: 1366, height: 900 }], ["手机390", { width: 390, height: 844 }]] as const) {
-  test(`客户标签、信息收集与需求占比（${label}）`, async ({ page }) => {
+  test(`客户标签、信息收集；看板不显示需求占比（${label}）`, async ({ page }) => {
     await page.setViewportSize(size);
     await open(page, "示例客户 · 小林");
     const chips = page.locator(".profile-chips");
@@ -54,13 +54,12 @@ for (const [label, size] of [["桌面", { width: 1366, height: 900 }], ["手机3
     await expect(page.locator(".profile-chips")).toBeVisible();
     await expect(page.getByRole("button", { name: "编辑客户信息和需求" })).toBeVisible();
 
+    // 2026-11：看板上不再显示「客户需求占比」，需求数据仍在客户详情里可看可填
+    await expect(page.locator(".profile-view")).toContainText("Agent 学习");
     await page.goto("./#/dashboard");
-    const chart = page.locator(".need-chart");
-    await expect(chart).toContainText("已记录需求的客户数（2 位）");
-    await expect(chart.locator("li").first()).toContainText("Agent 学习");
-    await expect(chart.locator("li").first()).toContainText("2 位 · 100%");
-    await chart.scrollIntoViewIfNeeded();
-    await shot(page, `${label}-客户需求占比`, ".need-chart");
+    await expect(page.locator(".customer-ranking")).toBeVisible();
+    await expect(page.locator(".need-chart")).toHaveCount(0);
+    await expect(page.getByText("客户需求占比")).toHaveCount(0);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   });
 }

@@ -202,7 +202,7 @@ test("add product selects it, preserves the sale draft on cancel, and keeps manu
   await dialog.getByLabel("商品名称", { exact: true }).fill("尚未保存商品");
   await dialog.getByRole("button", { name: "取消", exact: true }).click();
   await expect(page.getByLabel(/商品名称/)).toHaveValue("ChatGPT Plus");
-  await expect(page.getByLabel(/销售额/)).toHaveValue("180.00");
+  await expect(page.getByLabel(/销售额/)).toHaveValue("180");
   await addProduct.click();
   dialog = page.getByRole("dialog");
   await dialog.getByLabel("商品名称", { exact: true }).fill("ChatGPT 新服务");
@@ -217,7 +217,7 @@ test("add product selects it, preserves the sale draft on cancel, and keeps manu
   await expect(dialog).not.toBeVisible();
   await expect(productInput).toHaveValue("ChatGPT 新服务年卡");
   await expect(page.getByLabel(/销售额/)).toHaveValue("");
-  await expect(page.getByLabel(/成本 \/ 出资/)).toHaveValue("0.00");
+  await expect(page.getByLabel(/成本 \/ 出资/)).toHaveValue("0");
   await expect(page.getByLabel("客户名称", { exact: false })).toHaveValue(
     "原销售客户",
   );
@@ -282,7 +282,7 @@ test("product offline retry survives modal close and adds once; existing names u
   await dialog.getByLabel("商品名称", { exact: true }).fill(" ChatGPT Plus ");
   await dialog.getByLabel("常用售价（选填）").fill("999");
   await dialog.getByRole("button", { name: "保存商品", exact: true }).click();
-  await expect(page.getByLabel(/销售额/)).toHaveValue("180.00");
+  await expect(page.getByLabel(/销售额/)).toHaveValue("180");
 });
 
 test("ranking badges count future and overdue tasks, change after completion, and handle 99+ on mobile", async ({
@@ -324,22 +324,28 @@ test("ranking badges count future and overdue tasks, change after completion, an
   ).toBe(true);
 });
 
-test("all-time top twenty, sorting, expand, search and history link", async ({
+test("all-time top ten, the rest as one avatar row, sorting, expand, search and history link", async ({
   page,
 }) => {
   const panel = ranking(page),
     rows = panel.locator(".customer-ranks > li");
-  await expect(rows).toHaveCount(20);
+  await expect(rows).toHaveCount(10);
   await expect(rows.first()).toContainText("客户01");
   expect(await rows.locator(".customer-rank-number").allTextContents()).toEqual(
-    Array.from({ length: 20 }, (_, i) => String(i + 1).padStart(2, "0")),
+    Array.from({ length: 10 }, (_, i) => String(i + 1).padStart(2, "0")),
   );
+  // 第 11 名起：一行小头像 + 名字，点开即进该客户
+  const rest = panel.locator(".customer-rest-chip");
+  await expect(rest).toHaveCount(21);
+  await expect(rest.first()).toContainText("客户11");
+  await expect(rest.first()).toHaveAttribute("title", /^第 11 名 · 客户11 · ¥/);
   const values = (await rows.locator(".money").allTextContents()).map((v) =>
     Number(v.replaceAll(",", "")),
   );
   expect(values).toEqual([...values].sort((a, b) => b - a));
-  await panel.getByRole("button", { name: /展开全部/ }).click();
+  await panel.getByRole("button", { name: "查看全部 31 位客户" }).click();
   await expect(rows).toHaveCount(31);
+  await expect(rest).toHaveCount(0);
   await expect(panel).not.toContainText("✅");
   await panel.getByRole("searchbox").fill("年卡");
   await expect(rows).toHaveCount(1);
@@ -439,12 +445,17 @@ test("calendar mixed colours, complete, reopen, schedule next, delete, restore a
     }),
   ).toBeVisible();
   const history = page.locator(".customer-history");
-  const card = history.locator("article").filter({
+  // 日程记录卡里是一行行记录，点开一行就展开完整日程卡（编辑、完成、删除、恢复都在里面）
+  const row = history.locator(".apple-log").filter({ hasText: "验收-soon" });
+  await expect(row.locator(".apple-log-s")).toHaveText("待办");
+  await row.locator(".apple-log-row").click();
+  const card = row.locator("article").filter({
     has: page.getByRole("heading", { name: "验收-soon", exact: true }),
   });
   await expect(card).toHaveClass(/task-urgent/);
   await card.getByRole("button", { name: "完成", exact: true }).click();
   await expect(card).toHaveClass(/task-complete/);
+  await expect(row.locator(".apple-log-s")).toHaveText("完成");
   await card.getByRole("button", { name: "重开", exact: true }).click();
   await expect(card).toHaveClass(/task-urgent/);
   await card.getByRole("button", { name: "安排下一次" }).click();
@@ -522,8 +533,12 @@ test("offline save keeps the draft and retry creates exactly one sale", async ({
 }) => {
   await page.goto("./#/entry");
   await page.getByLabel(/商品名称/).fill("断网验收");
+  // 金额只收整数元：带小数先被拦下
   await page.getByLabel(/销售额/).fill("12.34");
-  await page.getByLabel(/成本 \/ 出资/).fill("2.01");
+  await page.getByLabel(/成本 \/ 出资/).fill("2");
+  await page.getByRole("button", { name: "保存这笔", exact: true }).click();
+  await expect(page.getByRole("alert")).toContainText("金额只填到元");
+  await page.getByLabel(/销售额/).fill("12");
   await context.setOffline(true);
   await page.getByRole("button", { name: "保存这笔", exact: true }).click();
   await expect(page.getByRole("alert")).toContainText("网络已断开");
@@ -536,7 +551,7 @@ test("offline save keeps the draft and retry creates exactly one sale", async ({
     ).filter((s: any) => s.productName === "断网验收"),
   );
   expect(rows).toHaveLength(1);
-  expect((rows[0] as any).revenue - (rows[0] as any).cost).toBe(1033);
+  expect((rows[0] as any).revenue - (rows[0] as any).cost).toBe(1000);
 });
 test("sales customer search opens schedule management", async ({ page }) => {
   await page.goto("./#/details");
@@ -569,7 +584,7 @@ test("calendar supports both name search and dropdown, and prioritizes today's t
     page.getByRole("searchbox", { name: "输入客户名字查找日程" }),
   ).toHaveValue("");
   await expect(todayPanel.locator("article")).toHaveCount(3);
-  const history = page.locator(".customer-history .customer-task-list article");
+  const history = page.locator(".customer-history .apple-log");
   await expect(history.nth(0)).toContainText("验收-late");
   await expect(history.nth(2)).toContainText("验收-done");
   await expect(history.nth(3)).toContainText("验收-tomorrow");
@@ -603,20 +618,22 @@ test("full directories, quick product tags and recoverable acceptance cleanup", 
   await tag.click();
   await expect(tag).toHaveAttribute("aria-pressed", "true");
   await expect(page.getByLabel(/商品名称/)).toHaveValue("ChatGPT Plus");
-  await expect(page.getByLabel(/销售额/)).toHaveValue("180.00");
+  await expect(page.getByLabel(/销售额/)).toHaveValue("180");
   await page.getByLabel(/商品名称/).fill("新手动商品");
   await expect(tag).toHaveAttribute("aria-pressed", "false");
   await page.getByLabel(/商品名称/).fill("Claude Max 5x");
-  await expect(page.getByLabel(/销售额/)).toHaveValue("120.00");
+  await expect(page.getByLabel(/销售额/)).toHaveValue("120");
 });
-test("quick entry: tag, customer, save stores the same sale fields; recent product first; date collapsed", async ({
+test("quick entry: tag, customer, save stores the same sale fields; top-profit products first; date collapsed", async ({
   page,
 }) => {
   await page.goto("./#/entry");
   const tags = page
     .getByRole("group", { name: /常用商品/ })
     .getByRole("button");
-  await expect(tags.first()).toHaveText("ChatGPT Plus");
+  // 夹具里还没有能对上商品的销售：按商品顺序补满，最多 5 个
+  await expect(tags.first()).toBeVisible();
+  expect(await tags.count()).toBeLessThanOrEqual(5);
   await page
     .getByRole("button", { name: "Claude Max 5x", exact: true })
     .click();
@@ -626,8 +643,6 @@ test("quick entry: tag, customer, save stores the same sale fields; recent produ
     exact: true,
   });
   await expect(dateToggle).toBeVisible();
-  // 让这笔的创建时间晚于夹具数据，才能验证“最近卖过的排前面”
-  await page.clock.setFixedTime(new Date("2026-10-14T05:00:00.000Z"));
   await page.getByRole("button", { name: "保存这笔", exact: true }).click();
   await expect(page).toHaveURL(/dashboard/);
   const rows = await page.evaluate(() =>
@@ -645,8 +660,15 @@ test("quick entry: tag, customer, save stores the same sale fields; recent produ
     cost: 3000,
     note: "",
   });
+  // 再记一笔利润更高的 ChatGPT Plus：近 3 个月利润高的排前面
   await page.goto("./#/entry");
-  await expect(tags.first()).toHaveText("Claude Max 5x");
+  await page.getByRole("button", { name: "ChatGPT Plus", exact: true }).click();
+  await page.getByLabel(/销售额/).fill("500");
+  await page.getByRole("button", { name: "保存这笔", exact: true }).click();
+  await expect(page).toHaveURL(/dashboard/);
+  await page.goto("./#/entry");
+  await expect(tags.first()).toHaveText("ChatGPT Plus");
+  await expect(tags.nth(1)).toHaveText("Claude Max 5x");
   await page
     .getByRole("button", { name: "成交日期：今天，点击修改", exact: true })
     .click();

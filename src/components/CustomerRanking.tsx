@@ -24,6 +24,8 @@ const PERIOD_TABS: { type: RankPeriodType; label: string }[] = [
   { type: "half", label: "半年" },
   { type: "year", label: "年" },
 ];
+/** 核心客户首屏完整显示的名次数 */
+export const FIRST_SCREEN = 10;
 const PROFIT_LABEL: Record<RankPeriodType, string> = {
   all: "累计利润",
   month: "月利润",
@@ -97,7 +99,12 @@ export function CustomerRanking({
       .join(" ")
       .includes(query);
   });
-  const rows = expanded || query || tier !== "all" ? items : items?.slice(0, 20);
+  const full = expanded || Boolean(query) || tier !== "all";
+  const rows = full ? items : items?.slice(0, FIRST_SCREEN);
+  // 第 11 名起：未展开时只显示一行小头像 + 名字
+  const rest = full ? [] : (items?.slice(FIRST_SCREEN) ?? []);
+  const open = (customerId: string) =>
+    onCustomer(customerId, period.type === "month" ? period.value! : "all");
   return (
     <section className="panel customer-ui customer-ranking">
       <div className="panel-heading customer-heading">
@@ -225,12 +232,7 @@ export function CustomerRanking({
                   <li key={row.customerId}>
                     <button
                       className="customer-rank-link"
-                      onClick={() =>
-                        onCustomer(
-                          row.customerId,
-                          period.type === "month" ? period.value! : "all",
-                        )
-                      }
+                      onClick={() => open(row.customerId)}
                     >
                       <span
                         className={`customer-rank-number ${row.rank <= 3 ? "top" : ""}`}
@@ -293,15 +295,41 @@ export function CustomerRanking({
                   : "记录客户名称后，就能看到利润排行。"}
               </Empty>
             )}
-            {!query && data.items.length > 20 && (
+            {rest.length > 0 && (
+              <div className="customer-rest" aria-label={`第 ${FIRST_SCREEN + 1} 名起的 ${rest.length} 位客户`}>
+                <span className="customer-rest-label">第 {FIRST_SCREEN + 1} 名起 · {rest.length} 位</span>
+                <ul className="customer-rest-strip">
+                  {rest.map((row) => {
+                    const name = displayCustomerName(row.name);
+                    return (
+                      <li key={row.customerId}>
+                        <button
+                          type="button"
+                          className="customer-rest-chip"
+                          title={`第 ${row.rank} 名 · ${name} · ¥${money(row.totals.profit)}`}
+                          aria-label={`第 ${row.rank} 名 ${name}，利润 ${money(row.totals.profit)} 元，管理日程`}
+                          onClick={() => open(row.customerId)}
+                        >
+                          <span className="customer-avatar" aria-hidden="true">
+                            {Array.from(name)[0] ?? "?"}
+                          </span>
+                          <span className="customer-rest-name">{name}</span>
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            )}
+            {!query && tier === "all" && data.items.length > FIRST_SCREEN && (
               <button
                 className="text-button customer-expand"
                 aria-expanded={expanded}
                 onClick={() => setExpanded((v) => !v)}
               >
                 {expanded
-                  ? "收起至前 20 位"
-                  : `展开全部 ${data.items.length} 位客户`}
+                  ? `收起至前 ${FIRST_SCREEN} 位`
+                  : `查看全部 ${data.items.length} 位客户`}
               </button>
             )}
             <div className="customer-summary customer-unassigned">

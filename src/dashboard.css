@@ -508,3 +508,93 @@
 @media (max-width: 600px) {
   .dash-hero { padding-bottom: 40px; }
 }
+
+/* ---------- 2026-11 优化：本月商品贡献改为前 5 柱状图（占满整行） ---------- */
+.product-bar-chart {
+  list-style: none;
+  margin: 0;
+  padding: 8px 0 28px;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 18px;
+  align-items: start;
+}
+.product-bar-chart li {
+  display: grid;
+  grid-template-rows: auto 200px auto auto;
+  gap: 8px;
+  min-width: 0;
+  text-align: center;
+}
+.product-bar-value {
+  font-size: var(--fs-3);
+  font-weight: 700;
+  color: var(--text-1);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.product-bar-value .money {
+  font-size: inherit;
+}
+.product-bar-track {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  border-bottom: 1px solid var(--border);
+}
+.product-bar {
+  display: block;
+  width: min(72px, 70%);
+  border-radius: 10px 10px 3px 3px;
+  background: linear-gradient(180deg, #e9a178, #d97757);
+  opacity: 0.72;
+}
+.product-bar.first {
+  opacity: 1;
+}
+.product-bar-name {
+  font-size: var(--fs-2);
+  color: var(--text-1);
+  line-height: 1.35;
+  height: 2.7em;
+  overflow-wrap: anywhere;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.product-bar-name b {
+  color: var(--coral-ink);
+  margin-right: 4px;
+  font-variant-numeric: tabular-nums;
+}
+.product-bar-chart small {
+  color: var(--text-3);
+  font-size: var(--fs-1);
+}
+@media (max-width: 600px) {
+  .product-bar-chart {
+    gap: 6px;
+    padding-bottom: 20px;
+  }
+  .product-bar-chart li {
+    grid-template-rows: auto 150px auto auto;
+    gap: 6px;
+  }
+  .product-bar-value {
+    font-size: var(--fs-1);
+  }
+  .product-bar {
+    width: 78%;
+    border-radius: 7px 7px 2px 2px;
+  }
+  .product-bar-name {
+    font-size: var(--fs-1);
+    -webkit-line-clamp: 3;
+    height: 4.05em;
+  }
+  .product-bar-name b {
+    display: block;
+    margin: 0;
+  }
+}
