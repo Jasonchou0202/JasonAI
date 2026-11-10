@@ -138,7 +138,10 @@ export function AppleTaskCard({
         <i className="apple-dot" aria-hidden="true" />
         {state.text}
       </span>
-      <time className="apple-time" dateTime={task.at}>
+      <time
+        className={`apple-time ${appleTime(task.at, now).length > 8 ? "long" : ""}`}
+        dateTime={task.at}
+      >
         {appleTime(task.at, now)}
       </time>
       <button

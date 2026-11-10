@@ -3174,3 +3174,15 @@ label small,
     grid-template-columns: 1fr;
   }
 }
+/* 记一笔顺手建日程：有效动作选择器占整行，白底浮在浅灰面板上 */
+.entry-schedule-fields .action-picker {
+  grid-column: 1 / -1;
+  background: #fff;
+}
+.entry-schedule-next {
+  display: block;
+  margin-top: 4px;
+  color: var(--text-2);
+  font-size: var(--fs-1);
+  overflow-wrap: anywhere;
+}

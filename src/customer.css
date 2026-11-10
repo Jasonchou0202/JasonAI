@@ -1083,7 +1083,7 @@
 }
 
 /* ===== 2026-11 优化：客户日程页 苹果官网风卡片（照 22:43 确认样稿） ===== */
-.main-shell:has(.apple-page) {
+.main-shell:has(.apple-page:not(.apple-section)) {
   background: #f5f5f7;
   min-height: 100vh;
 }
@@ -1657,4 +1657,53 @@ button.apple-card:active,
   height: 7px;
   flex: 0 0 auto;
   box-shadow: none;
+}
+
+/* 客户详情页：只把「客户日程」这一区做成苹果风浅灰底块，详情页其他区块和整页背景不变 */
+.apple-page.apple-section {
+  background: #f5f5f7;
+  border-radius: 28px;
+  padding: 28px;
+  margin-top: 8px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04), 0 8px 28px rgba(0, 0, 0, 0.05);
+}
+.apple-section > .section-heading {
+  margin: 0;
+}
+.apple-section > .section-heading .eyebrow {
+  color: var(--apple-coral);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+.apple-section > .section-heading h2 {
+  color: var(--apple-ink);
+  letter-spacing: -0.02em;
+}
+.apple-section .apple-history .apple-search-box {
+  margin: 4px 0 6px;
+}
+@media (max-width: 600px) {
+  .apple-page.apple-section {
+    border-radius: 24px;
+    padding: 18px 14px 24px;
+    margin-left: calc(-1 * var(--page-pad-x) + 6px);
+    margin-right: calc(-1 * var(--page-pad-x) + 6px);
+  }
+  .apple-section .apple-stats {
+    margin-right: -14px;
+    padding-right: 14px;
+  }
+  .apple-section .apple-task {
+    flex-basis: calc((100vw - 2 * var(--page-pad-x)) / 1.5);
+  }
+}
+/* 带日期的时间（如「12月12日 09:00」）字号收一档，手机上不被截断 */
+.apple-time.long {
+  font-size: 28px;
+}
+@media (max-width: 600px) {
+  .apple-time.long {
+    font-size: 22px;
+    margin-top: 16px;
+  }
 }

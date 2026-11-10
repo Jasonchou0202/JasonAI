@@ -15,9 +15,14 @@ import { displayCustomerName } from "../domain/customers";
 import { money, moneyInput, parseYuan } from "../domain/finance";
 import {
   defaultFollowUp,
+  findCustomerByName,
   inLunchBreak,
+  scheduleText,
   topProfitProducts,
 } from "../domain/entryHelpers";
+import { QUADRANT_INFO } from "../domain/insights";
+import type { EffectiveAction } from "../domain/actions";
+import { ActionPicker } from "./ActionLibrary";
 import { useInsights } from "../lib/insights-ui";
 import { beijingToUTC, customerRoot } from "../lib/customer-ui";
 import { useQuery, ErrorNote, message } from "./ui";
@@ -40,12 +45,15 @@ type Draft = {
   scheduleTitle?: string;
   scheduleReminder?: "both" | "due" | "off";
   scheduleRequestId?: string;
+  /** 顺手建日程时勾选的有效动作（按勾选先后），每行「【色块】动作」 */
+  scheduleActions?: { id: string; line: string }[];
 };
 /** 销售已存、日程还没建成时，留着重试（同一个 requestId，不会重复建） */
 interface PendingSchedule {
   customer: string;
   at: string;
   title: string;
+  nextAction: string;
   reminder: "both" | "due" | "off";
   requestId: string;
 }
@@ -128,7 +136,35 @@ export function SaleForm({
     (catalog || products || []).filter((p) => p.active),
   );
   // 只读：近 3 个月各商品利润合计排前 5（全部有效销售来自看板同一份只读数据）
-  const { sales: allSales } = useInsights();
+  const { sales: allSales, insights } = useInsights();
+  // 有效动作（方案 A）：按客户名找到档案 → 合并后的主客户 → 所在色块
+  const { data: customerList } = useQuery<Customer[]>(
+    api,
+    "customers.list",
+    {},
+  );
+  const customerHit =
+    customerList &&
+    findCustomerByName(customerList, form.customer, displayCustomerName);
+  const scheduleQuadrants =
+    !form.customer.trim() || !customerList || !insights
+      ? undefined
+      : customerHit
+        ? (insights.customerQuadrants.get(
+            customerRoot(customerList, customerHit.id),
+          ) ?? new Set())
+        : new Set<never>();
+  const pickedActions = new Set((form.scheduleActions || []).map((a) => a.id));
+  function toggleAction(a: EffectiveAction, on: boolean) {
+    const line = `【${QUADRANT_INFO[a.quadrant].short}】${a.text}`;
+    setForm((f) => {
+      const rest = (f.scheduleActions || []).filter((x) => x.id !== a.id);
+      return {
+        ...f,
+        scheduleActions: on ? [...rest, { id: a.id, line }] : rest,
+      };
+    });
+  }
   const activeProducts = (products || []).filter(
     (p) => p.active && !p.archivedAt,
   );
@@ -178,6 +214,10 @@ export function SaleForm({
       ...f,
       [k]: v,
       ...(k === "date" ? { dateTouched: true } : {}),
+      // 换了客户，色块可能不同，已勾的动作清空重选
+      ...(k === "customer" && v.trim() !== f.customer.trim()
+        ? { scheduleActions: [] }
+        : {}),
     }));
   }
   function toggleSchedule(on: boolean) {
@@ -190,15 +230,16 @@ export function SaleForm({
       scheduleRequestId: f.scheduleRequestId || crypto.randomUUID(),
     }));
   }
-  const scheduleTitle = (f: Draft) =>
-    (
-      f.scheduleTitle?.trim() ||
-      (f.productName.trim() ? `续费提醒：${f.productName.trim()}` : "客户回访")
-    ).slice(0, 200);
+  const scheduleTexts = (f: Draft) =>
+    scheduleText(
+      f.scheduleTitle || "",
+      f.productName,
+      (f.scheduleActions || []).map((a) => a.line),
+    );
   /** 第二步：按客户名找到（合并后的）客户，再建日程；requestId 固定，重试不会重复 */
   async function createSchedule(p: PendingSchedule) {
     const list = await api.call<Customer[]>("customers.list", {});
-    const hit = list.find((c) => c.name === p.customer);
+    const hit = findCustomerByName(list, p.customer, displayCustomerName);
     if (!hit) throw new Error("没找到这位客户的档案");
     await api.call("tasks.create", {
       requestId: p.requestId,
@@ -207,7 +248,7 @@ export function SaleForm({
         at: beijingToUTC(p.at),
         title: p.title,
         feedback: "",
-        nextAction: "",
+        nextAction: p.nextAction || "",
         reminder: p.reminder,
       },
     });
@@ -263,7 +304,7 @@ export function SaleForm({
           ? {
               customer: form.customer.trim(),
               at: form.scheduleAt || defaultFollowUp(form.date),
-              title: scheduleTitle(form),
+              ...scheduleTexts(form),
               reminder: form.scheduleReminder || "both",
               requestId: form.scheduleRequestId || crypto.randomUUID(),
             }
@@ -555,6 +596,12 @@ export function SaleForm({
               </label>
               {form.schedule && form.customer.trim() && (
                 <div className="entry-schedule-fields">
+                  <ActionPicker
+                    mode={mode}
+                    quadrants={scheduleQuadrants}
+                    selected={pickedActions}
+                    onToggle={toggleAction}
+                  />
                   <div>
                     <label htmlFor="schedule-at">跟进时间</label>
                     <input
@@ -579,12 +626,20 @@ export function SaleForm({
                       id="schedule-title"
                       maxLength={200}
                       value={form.scheduleTitle ?? ""}
-                      placeholder={scheduleTitle({
-                        ...form,
-                        scheduleTitle: "",
-                      })}
+                      placeholder={
+                        scheduleTexts({ ...form, scheduleTitle: "" }).title
+                      }
                       onChange={(e) => change("scheduleTitle", e.target.value)}
                     />
+                    {scheduleTexts(form).nextAction && (
+                      <small
+                        className="entry-schedule-next"
+                        data-testid="schedule-next"
+                      >
+                        下一步：
+                        {scheduleTexts(form).nextAction.replaceAll("\n", "；")}
+                      </small>
+                    )}
                   </div>
                   <div>
                     <label htmlFor="schedule-reminder">提醒</label>

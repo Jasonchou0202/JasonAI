@@ -288,11 +288,125 @@ function CustomerCalendar({
     const s = appleState(rows[0], now);
     return s.text === "已逾期" ? "最早一条今天已逾期" : `最早一条已${s.text}`;
   }
+  // 日程记录卡：日程总页和客户详情页共用（详情页卡内自带搜索框）
+  const historyCard = (
+    <section
+      className="apple-card customer-history apple-history"
+      aria-labelledby="apple-history-title"
+    >
+      <div className="apple-sechead">
+        <h2 id="apple-history-title" className="apple-sec small">
+          {customerId ? "历史日程" : "日程记录"}
+        </h2>
+        <div className="segmented apple-seg">
+          {(["all", "completed", "deleted"] as const).map((value, i) => (
+            <button
+              key={value}
+              aria-pressed={history === value}
+              className={history === value ? "active" : ""}
+              onClick={() => {
+                setHistory(value);
+                setHistoryLimit(historyPage);
+              }}
+            >
+              {["全部", "已完成", "回收站"][i]}
+            </button>
+          ))}
+        </div>
+      </div>
+      {customerId && (
+        <label className="apple-search-box">
+          <Search size={17} aria-hidden="true" />
+          <input
+            type="search"
+            aria-label="搜索历史客户和日程"
+            placeholder="搜索标题、反馈或下一步"
+            value={search}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setHistoryLimit(historyPage);
+            }}
+          />
+        </label>
+      )}
+      {customers.error && customerId && (
+        <ErrorNote>{customers.error}</ErrorNote>
+      )}
+      {query && (
+        <p className="apple-foot">
+          按「{search.trim()}」筛选 · {historyRows.length} 条
+        </p>
+      )}
+      {history === "deleted" && deleted.error && (
+        <>
+          <ErrorNote>{deleted.error}</ErrorNote>
+          <button
+            className="text-button"
+            onClick={() => setRefresh((v) => v + 1)}
+          >
+            重试读取回收站
+          </button>
+        </>
+      )}
+      {(history === "deleted" ? deleted.loading : tasks.loading) && <Loading />}
+      {!(history === "deleted"
+        ? deleted.loading || deleted.error
+        : tasks.loading || tasks.error) &&
+        (historyRows.length ? (
+          <ul className="apple-logs">
+            {orderedHistory.slice(0, historyLimit).map((task) => (
+              <AppleLogRow
+                key={task.id}
+                task={task}
+                now={now}
+                customer={names.get(
+                  customerRoot(customers.data || [], task.customerId),
+                )}
+                open={openLogs.has(task.id)}
+                onToggle={() =>
+                  setOpenLogs((s) => {
+                    const n = new Set(s);
+                    if (n.has(task.id)) n.delete(task.id);
+                    else n.add(task.id);
+                    return n;
+                  })
+                }
+              >
+                {card(task)}
+              </AppleLogRow>
+            ))}
+          </ul>
+        ) : (
+          <p className="apple-foot apple-pad">没有符合条件的日程</p>
+        ))}
+      {historyRows.length > historyLimit && (
+        <button
+          className="apple-more customer-expand"
+          onClick={() => setHistoryLimit((v) => v + historyPage)}
+        >
+          继续查看（还有 {historyRows.length - historyLimit} 条）
+          <ChevronRight size={15} aria-hidden="true" />
+        </button>
+      )}
+    </section>
+  );
+  // 横排卡片：日程总页只放今天；客户详情页放「今天的 + 还没完成的 + 今天刚完成的」，免得详情页常常是空卡，点完成后也能就地重新打开
+  const railTitle = customerId ? "今日日程与待跟进" : "今日日程";
+  const railRows = customerId
+    ? activeTasks.filter(
+        (t) =>
+          beijingDay(t.at) === today ||
+          !t.completedAt ||
+          beijingDay(t.completedAt) === today,
+      )
+    : grouped.get(today) || [];
   const customerResults = query
     ? choices.filter((c) => matchesCustomer(c, query))
     : [];
   return (
-    <div className={`customer-ui customer-calendar-page ${customerId ? "" : "apple-page"}`}>
+    <div
+      className={`customer-ui customer-calendar-page apple-page ${customerId ? "apple-section" : ""}`}
+    >
       <div
         className={`${customerId ? "section-heading" : "page-heading"} customer-heading`}
       >
@@ -378,65 +492,56 @@ function CustomerCalendar({
           }}
         />
       )}
-      {customerId ? (
-      <section className="panel customer-today">
-          <div className="panel-heading">
-            <div>
-              <h2>今日日程 · {today}</h2>
-              <p>{(grouped.get(today) || []).length} 次跟进 · 当天事项优先显示</p>
-            </div>
+      <>
+        <div className="apple-stats" role="group" aria-label="待办概览">
+          {upcoming.map((g, i) => (
+            <AppleStatCard
+              key={g.label}
+              label={g.label}
+              count={g.rows.length}
+              tone={i === 0 ? "or" : i === 2 ? "red" : "plain"}
+              foot={tasks.loading ? "正在读取…" : statFoot(i, g.rows)}
+              onOpen={() => setGroup(i)}
+            />
+          ))}
+        </div>
+        <section
+          className="customer-today apple-today"
+          aria-labelledby="apple-today-title"
+        >
+          <div className="apple-sechead">
+            <h2 id="apple-today-title" className="apple-sec">
+              {railTitle} <small>{today}</small>
+            </h2>
+            {railRows.length > 0 && (
+              <button
+                type="button"
+                className="apple-more"
+                onClick={() => setGroup(3)}
+              >
+                全部 {railRows.length} 条{" "}
+                <ChevronRight size={15} aria-hidden="true" />
+              </button>
+            )}
           </div>
           {tasks.loading ? (
             <Loading />
           ) : tasks.error ? (
             <ErrorNote>{tasks.error}</ErrorNote>
-          ) : (grouped.get(today) || []).length ? (
-            <div className="customer-task-list">
-              {grouped.get(today)!.map(card)}
-            </div>
+          ) : railRows.length ? (
+            <AppleRail
+              count={railRows.length}
+              label={`${railTitle}卡片，左右滑动查看`}
+            >
+              {railRows.map(appleCard)}
+            </AppleRail>
           ) : (
-            <Empty title="今天没有日程" />
+            <div className="apple-card apple-empty">
+              {customerId ? "今天没有日程，也没有待跟进的日程" : "今天没有日程"}
+            </div>
           )}
         </section>
-      ) : (
-        <>
-          <div className="apple-stats" role="group" aria-label="待办概览">
-            {upcoming.map((g, i) => (
-              <AppleStatCard
-                key={g.label}
-                label={g.label}
-                count={g.rows.length}
-                tone={i === 0 ? "or" : i === 2 ? "red" : "plain"}
-                foot={tasks.loading ? "正在读取…" : statFoot(i, g.rows)}
-                onOpen={() => setGroup(i)}
-              />
-            ))}
-          </div>
-          <section className="customer-today apple-today" aria-labelledby="apple-today-title">
-            <div className="apple-sechead">
-              <h2 id="apple-today-title" className="apple-sec">
-                今日日程 <small>{today}</small>
-              </h2>
-              {(grouped.get(today) || []).length > 0 && (
-                <button type="button" className="apple-more" onClick={() => setGroup(3)}>
-                  全部 {(grouped.get(today) || []).length} 条 <ChevronRight size={15} aria-hidden="true" />
-                </button>
-              )}
-            </div>
-            {tasks.loading ? (
-              <Loading />
-            ) : tasks.error ? (
-              <ErrorNote>{tasks.error}</ErrorNote>
-            ) : (grouped.get(today) || []).length ? (
-              <AppleRail count={(grouped.get(today) || []).length} label="今日日程卡片，左右滑动查看">
-                {grouped.get(today)!.map(appleCard)}
-              </AppleRail>
-            ) : (
-              <div className="apple-card apple-empty">今天没有日程</div>
-            )}
-          </section>
-        </>
-      )}
+      </>
       <section className="panel customer-calendar">
         <div className="panel-heading customer-heading">
           <div>
@@ -568,162 +673,17 @@ function CustomerCalendar({
         </section>
       )}
       {customerId ? (
-      <section className="panel customer-history">
-          <div className="panel-heading customer-heading">
-            <div>
-              <h2>{customerId ? "历史日程" : "日程记录与客户搜索"}</h2>
-              <p>保留反馈、下一步与已完成的沟通记录</p>
-            </div>
-          </div>
-          <div className="customer-history-tools">
-            <input
-              type="search"
-              aria-label="搜索历史客户和日程"
-              placeholder="搜索客户、反馈或下一步"
-              value={search}
-              onChange={(e) => {
-                setSearch(e.target.value);
-                setHistoryLimit(historyPage);
-              }}
-            />
-            <div className="segmented">
-              {(["all", "completed", "deleted"] as const).map((value, i) => (
-                <button
-                  key={value}
-                  aria-pressed={history === value}
-                  className={history === value ? "active" : ""}
-                  onClick={() => {
-                    setHistory(value);
-                    setHistoryLimit(historyPage);
-                  }}
-                >
-                  {["全部", "已完成", "回收站"][i]}
-                </button>
-              ))}
-            </div>
-          </div>
-          {customers.error && (
-            <div className="customer-pad">
-              <ErrorNote>{customers.error}</ErrorNote>
-            </div>
-          )}
-          {!customerId && Boolean(customerResults?.length) && (
-            <div className="customer-search-results">
-              {customerResults?.map((c) => (
-                <button
-                  key={c.id}
-                  className="button secondary"
-                  onClick={() =>
-                    onCustomer(customerRoot(customers.data || [], c.id))
-                  }
-                >
-                  {displayCustomerName(c.name)}
-                  <ArrowUpRight size={15} />
-                </button>
-              ))}
-            </div>
-          )}
-          {history === "deleted" && deleted.error && (
-            <div className="customer-pad">
-              <ErrorNote>{deleted.error}</ErrorNote>
-              <button
-                className="text-button"
-                onClick={() => setRefresh((v) => v + 1)}
-              >
-                重试读取回收站
-              </button>
-            </div>
-          )}
-          {(history === "deleted" ? deleted.loading : tasks.loading) && (
-            <Loading />
-          )}
-          {!(history === "deleted"
-            ? deleted.loading || deleted.error
-            : tasks.loading || tasks.error) &&
-            (historyRows.length ? (
-              <div className="customer-task-list">
-                {orderedHistory.slice(0, historyLimit).map(card)}
-              </div>
-            ) : (
-              <Empty title="没有符合条件的日程" />
-            ))}
-          {historyRows.length > historyLimit && (
-            <button
-              className="text-button customer-expand"
-              onClick={() => setHistoryLimit((v) => v + historyPage)}
-            >
-              继续查看历史（还有 {historyRows.length - historyLimit} 条）
-            </button>
-          )}
-        </section>
+        historyCard
       ) : (
         <div className="apple-bottom">
-          <section className="apple-card customer-history apple-history" aria-labelledby="apple-history-title">
-            <div className="apple-sechead">
-              <h2 id="apple-history-title" className="apple-sec small">日程记录</h2>
-              <div className="segmented apple-seg">
-                {(["all", "completed", "deleted"] as const).map((value, i) => (
-                  <button
-                    key={value}
-                    aria-pressed={history === value}
-                    className={history === value ? "active" : ""}
-                    onClick={() => {
-                      setHistory(value);
-                      setHistoryLimit(historyPage);
-                    }}
-                  >
-                    {["全部", "已完成", "回收站"][i]}
-                  </button>
-                ))}
-              </div>
-            </div>
-            {query && <p className="apple-foot">按「{search.trim()}」筛选 · {historyRows.length} 条</p>}
-            {history === "deleted" && deleted.error && (
-              <>
-                <ErrorNote>{deleted.error}</ErrorNote>
-                <button className="text-button" onClick={() => setRefresh((v) => v + 1)}>
-                  重试读取回收站
-                </button>
-              </>
-            )}
-            {(history === "deleted" ? deleted.loading : tasks.loading) && <Loading />}
-            {!(history === "deleted"
-              ? deleted.loading || deleted.error
-              : tasks.loading || tasks.error) &&
-              (historyRows.length ? (
-                <ul className="apple-logs">
-                  {orderedHistory.slice(0, historyLimit).map((task) => (
-                    <AppleLogRow
-                      key={task.id}
-                      task={task}
-                      now={now}
-                      customer={names.get(customerRoot(customers.data || [], task.customerId))}
-                      open={openLogs.has(task.id)}
-                      onToggle={() =>
-                        setOpenLogs((s) => {
-                          const n = new Set(s);
-                          if (n.has(task.id)) n.delete(task.id);
-                          else n.add(task.id);
-                          return n;
-                        })
-                      }
-                    >
-                      {card(task)}
-                    </AppleLogRow>
-                  ))}
-                </ul>
-              ) : (
-                <p className="apple-foot apple-pad">没有符合条件的日程</p>
-              ))}
-            {historyRows.length > historyLimit && (
-              <button className="apple-more customer-expand" onClick={() => setHistoryLimit((v) => v + historyPage)}>
-                继续查看（还有 {historyRows.length - historyLimit} 条）
-                <ChevronRight size={15} aria-hidden="true" />
-              </button>
-            )}
-          </section>
-          <section className="apple-card apple-search" aria-labelledby="apple-search-title">
-            <h2 id="apple-search-title" className="apple-sec small">客户搜索</h2>
+          {historyCard}
+          <section
+            className="apple-card apple-search"
+            aria-labelledby="apple-search-title"
+          >
+            <h2 id="apple-search-title" className="apple-sec small">
+              客户搜索
+            </h2>
             <label className="apple-search-box">
               <Search size={17} aria-hidden="true" />
               <input
@@ -738,21 +698,33 @@ function CustomerCalendar({
               />
             </label>
             {customers.error && <ErrorNote>{customers.error}</ErrorNote>}
-            <p className="apple-foot">{query ? `匹配的客户 · ${customerResults.length} 位` : "最近有日程的客户"}</p>
+            <p className="apple-foot">
+              {query
+                ? `匹配的客户 · ${customerResults.length} 位`
+                : "最近有日程的客户"}
+            </p>
             <div className="apple-avatars customer-search-results">
-              {(query ? customerResults : recentCustomers).slice(0, query ? 30 : 8).map((c) => (
-                <button
-                  key={c.id}
-                  type="button"
-                  className="apple-av"
-                  title={displayCustomerName(c.name)}
-                  onClick={() => onCustomer(customerRoot(customers.data || [], c.id))}
-                >
-                  <b aria-hidden="true">{Array.from(displayCustomerName(c.name))[0] ?? "?"}</b>
-                  <span>{displayCustomerName(c.name)}</span>
-                </button>
-              ))}
-              {query && !customerResults.length && <span className="apple-foot">没有匹配的客户</span>}
+              {(query ? customerResults : recentCustomers)
+                .slice(0, query ? 30 : 8)
+                .map((c) => (
+                  <button
+                    key={c.id}
+                    type="button"
+                    className="apple-av"
+                    title={displayCustomerName(c.name)}
+                    onClick={() =>
+                      onCustomer(customerRoot(customers.data || [], c.id))
+                    }
+                  >
+                    <b aria-hidden="true">
+                      {Array.from(displayCustomerName(c.name))[0] ?? "?"}
+                    </b>
+                    <span>{displayCustomerName(c.name)}</span>
+                  </button>
+                ))}
+              {query && !customerResults.length && (
+                <span className="apple-foot">没有匹配的客户</span>
+              )}
             </div>
             <p className="apple-foot">日程记录会同步按这里的关键词筛选</p>
           </section>
@@ -761,14 +733,21 @@ function CustomerCalendar({
       {!customerId && (
         <ActionLibrary
           mode={mode}
-          focus={(new URLSearchParams(location.hash.split("?")[1] || "").get("actions") || undefined) as Quadrant | undefined}
+          focus={
+            (new URLSearchParams(location.hash.split("?")[1] || "").get(
+              "actions",
+            ) || undefined) as Quadrant | undefined
+          }
           onSchedule={(a) =>
             setEditor({
               draftId: `action-${a.id}-${selected}`,
               draft: {
                 customerId: effectiveCustomerId,
                 at: beijingToUTC(`${selected}T09:00`),
-                title: `【${QUADRANT_INFO[a.quadrant].short}】${a.text}`.slice(0, 200),
+                title: `【${QUADRANT_INFO[a.quadrant].short}】${a.text}`.slice(
+                  0,
+                  200,
+                ),
               },
             })
           }
@@ -776,13 +755,15 @@ function CustomerCalendar({
       )}
       {group !== null && (
         <Modal
-          title={group === 3 ? `今日日程 · ${today}` : upcoming[group].label}
+          title={
+            group === 3 ? `${railTitle} · ${today}` : upcoming[group].label
+          }
           onClose={() => setGroup(null)}
         >
           <div className="customer-ui">
-            {(group === 3 ? grouped.get(today) || [] : upcoming[group].rows).length ? (
+            {(group === 3 ? railRows : upcoming[group].rows).length ? (
               <div className="customer-task-list apple-modal-list">
-                {(group === 3 ? grouped.get(today) || [] : upcoming[group].rows).map(card)}
+                {(group === 3 ? railRows : upcoming[group].rows).map(card)}
               </div>
             ) : (
               <p className="customer-pad subtle">暂无日程</p>

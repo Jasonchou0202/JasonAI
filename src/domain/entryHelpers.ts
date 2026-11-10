@@ -51,3 +51,39 @@ export function topProfitProducts(
     .slice(0, n)
     .map((x) => x.p);
 }
+
+/**
+ * 记一笔顺手建日程的标题和下一步，写法与「新增跟进日程」弹窗一致：
+ * 没手填标题时，第一条动作「【色块】动作」做标题，其余动作逐行进下一步；
+ * 手填了标题，动作全部进下一步；一条动作都没选，标题仍是「续费提醒：商品名」。
+ */
+export function scheduleText(
+  customTitle: string,
+  productName: string,
+  actionLines: readonly string[],
+): { title: string; nextAction: string } {
+  const custom = customTitle.trim();
+  const fallback = productName.trim()
+    ? `续费提醒：${productName.trim()}`
+    : "客户回访";
+  const title = (custom || actionLines[0] || fallback).slice(0, 200);
+  const rest = custom ? actionLines : actionLines.slice(1);
+  return { title, nextAction: rest.join("\n").slice(0, 2000) };
+}
+
+/** 按记一笔里填的客户名找客户档案：先精确匹配，再按显示名（去掉 ✅ 和末尾 IP）匹配 */
+export function findCustomerByName<
+  T extends { id: string; name: string; mergedInto?: string | null },
+>(
+  list: readonly T[],
+  name: string,
+  display: (n: string) => string,
+): T | undefined {
+  const n = name.trim();
+  if (!n) return undefined;
+  return (
+    list.find((c) => c.name === n) ??
+    list.find((c) => !c.mergedInto && display(c.name) === n) ??
+    list.find((c) => display(c.name) === n)
+  );
+}
