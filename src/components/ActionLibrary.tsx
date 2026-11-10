@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { CalendarPlus, Pencil, Plus, RotateCcw, Trash2, Sparkles } from "lucide-react";
+import { CalendarPlus, Check, Pencil, Plus, RotateCcw, Trash2, Sparkles } from "lucide-react";
 import { QUADRANTS, QUADRANT_INFO, type Quadrant } from "../domain/insights";
 import { PRESET_ACTIONS, type EffectiveAction } from "../domain/actions";
 import { useActionLibrary } from "../lib/insights-ui";
@@ -71,26 +71,54 @@ export function ActionLibrary({ mode, focus, onSchedule }: { mode: string; focus
   );
 }
 
-/** 日程表单里的「引用有效动作」选择器 */
-export function ActionPicker({ mode, onPick }: { mode: string; onPick: (a: EffectiveAction) => void }) {
+/**
+ * 日程表单里的「有效动作」多选：客户落在哪些色块，就只列这些色块的动作（方案 A，动作库仍只存本机）。
+ * quadrants 为 undefined 表示还没选客户；空集合表示这位客户还没有成交。
+ */
+export function ActionPicker({
+  mode,
+  quadrants,
+  selected,
+  onToggle,
+}: {
+  mode: string;
+  quadrants?: ReadonlySet<Quadrant>;
+  selected: ReadonlySet<string>;
+  onToggle: (a: EffectiveAction, on: boolean) => void;
+}) {
   const { actions } = useActionLibrary(mode);
+  const groups = QUADRANTS.filter((q) => quadrants?.has(q));
   return (
-    <details className="action-picker">
-      <summary>引用有效动作</summary>
-      {QUADRANTS.map((q) => {
-        const list = actions.filter((a) => a.quadrant === q);
-        if (!list.length) return null;
-        return (
-          <div key={q} className="action-picker-group">
-            <small><i style={{ background: QUADRANT_INFO[q].color }} />{QUADRANT_INFO[q].label}</small>
-            <div>
-              {list.map((a) => (
-                <button type="button" key={a.id} className="action-chip" style={{ ["--q" as string]: QUADRANT_INFO[q].color }} onClick={() => onPick(a)}>{a.text}</button>
-              ))}
+    <div className="action-picker" role="group" aria-label="有效动作（按客户色块，可多选）">
+      <div className="action-picker-head">
+        <span>有效动作</span>
+        <small>按这位客户所在色块显示，可多选</small>
+      </div>
+      {!quadrants ? (
+        <p className="action-picker-hint">先选择客户，再按客户所在色块挑动作。</p>
+      ) : !groups.length ? (
+        <p className="action-picker-hint">这位客户还没有成交记录，暂时没有对应色块的动作。</p>
+      ) : (
+        groups.map((q) => {
+          const list = actions.filter((a) => a.quadrant === q);
+          return (
+            <div key={q} className="action-picker-group" data-quadrant={q} style={{ ["--q" as string]: QUADRANT_INFO[q].color }}>
+              <span className="quad-capsule">{QUADRANT_INFO[q].short}</span>
+              <div>
+                {list.length ? list.map((a) => {
+                  const on = selected.has(a.id);
+                  return (
+                    <button type="button" key={a.id} className={`action-chip ${on ? "on" : ""}`} aria-pressed={on} onClick={() => onToggle(a, !on)}>
+                      {on && <Check size={13} aria-hidden="true" />}
+                      {a.text}
+                    </button>
+                  );
+                }) : <small className="muted">这个色块还没有动作，可在下方「有效动作库」添加</small>}
+              </div>
             </div>
-          </div>
-        );
-      })}
-    </details>
+          );
+        })
+      )}
+    </div>
   );
 }

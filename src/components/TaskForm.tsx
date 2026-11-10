@@ -17,8 +17,10 @@ import {
 } from "../lib/customer-ui";
 import { ErrorNote, message } from "./ui";
 import { ActionPicker } from "./ActionLibrary";
-import { insertAction } from "../domain/actions";
+import { insertAction, type EffectiveAction } from "../domain/actions";
 import { QUADRANT_INFO } from "../domain/insights";
+import { useInsights } from "../lib/insights-ui";
+import { customerRoot } from "../lib/customer-ui";
 import "../customer.css";
 
 export type TaskDraft = Partial<TaskInput>;
@@ -169,6 +171,35 @@ function TaskEditor({
     } else if (edit) setRefresh((v) => v + 1);
   }
   const active = customers.data?.filter((c) => !c.mergedInto) || [];
+  const { insights } = useInsights();
+  const [picked, setPicked] = useState<Set<string>>(() => new Set());
+  /** 勾选：「要做什么」为空时填进标题，否则追加到「下一步」；取消勾选就把这一行拿掉 */
+  function toggleAction(a: EffectiveAction, on: boolean) {
+    const label = QUADRANT_INFO[a.quadrant].short;
+    const line = `【${label}】${a.text}`;
+    setPicked((p) => {
+      const next = new Set(p);
+      if (on) next.add(a.id);
+      else next.delete(a.id);
+      return next;
+    });
+    if (on) {
+      if (!form.input.title.trim()) change("title", line.slice(0, 200));
+      else
+        change(
+          "nextAction",
+          insertAction(form.input.nextAction, label, a).slice(0, 2000),
+        );
+    } else if (form.input.title === line.slice(0, 200)) change("title", "");
+    else
+      change(
+        "nextAction",
+        form.input.nextAction
+          .split("\n")
+          .filter((l) => l !== line)
+          .join("\n"),
+      );
+  }
   const stale =
     edit &&
     latest.data &&
@@ -222,7 +253,10 @@ function TaskEditor({
           id={`${prefix}-customer`}
           value={form.input.customerId}
           required
-          onChange={(e) => change("customerId", e.target.value)}
+          onChange={(e) => {
+            change("customerId", e.target.value);
+            setPicked(new Set());
+          }}
         >
           <option value="">选择客户</option>
           {form.input.customerId &&
@@ -257,14 +291,15 @@ function TaskEditor({
         />
         <ActionPicker
           mode={mode}
-          onPick={(a) => {
-            const label = QUADRANT_INFO[a.quadrant].short;
-            // 「要做什么」为空时直接填入；已有内容就追加到「下一步」，不覆盖已写的字
-            if (!form.input.title.trim())
-              change("title", `【${label}】${a.text}`.slice(0, 200));
-            else
-              change("nextAction", insertAction(form.input.nextAction, label, a).slice(0, 2000));
-          }}
+          quadrants={
+            form.input.customerId && insights && customers.data
+              ? (insights.customerQuadrants.get(
+                  customerRoot(customers.data, form.input.customerId),
+                ) ?? new Set())
+              : undefined
+          }
+          selected={picked}
+          onToggle={toggleAction}
         />
         <label htmlFor={`${prefix}-title`}>要做什么</label>
         <input

@@ -4,6 +4,7 @@ import {
   QUADRANTS, QUADRANT_INFO, NEW_RULE_TEXT, monthlyNewCustomers, monthlyQuadrantCustomers, pct,
 } from "../domain/insights";
 import { useInsights } from "../lib/insights-ui";
+import { treemap } from "../lib/treemap";
 
 const mLabel = (m: string) => `${Number(m.slice(5))}月`;
 
@@ -49,47 +50,80 @@ export function NewCustomerTrend() {
   );
 }
 
-/** 每月四色块客户数与占比：堆叠条 + 数字 */
+/** 默认显示的月份数（含本月） */
+export const QUAD_WINDOW = 3;
+/** 每月四色块客户数与占比：每月一张树状图，格子面积 = 该色块客户数；默认近 3 个月，拖滑块看其他月份 */
 export function MonthlyQuadrantChart() {
   const { sales, insights } = useInsights();
-  if (!insights) return null;
-  const rows = monthlyQuadrantCustomers(sales, insights);
-  if (!rows.length) return null;
+  const rows = insights ? monthlyQuadrantCustomers(sales, insights) : [];
+  const last = Math.max(rows.length - 1, 0);
+  const [end, setEnd] = useState<number | null>(null);
+  if (!insights || !rows.length) return null;
+  const at = Math.min(end ?? last, last);
+  const shown = rows.slice(Math.max(0, at - QUAD_WINDOW + 1), at + 1);
+  const minEnd = Math.min(QUAD_WINDOW - 1, last);
+  const dot = (m: string) => m.replace("-", ".");
   return (
-    <section className="panel monthly-chart" aria-labelledby="quad-month-title">
+    <section className="panel monthly-chart quad-treemap-panel" aria-labelledby="quad-month-title">
       <div className="panel-heading">
         <div>
           <h2 id="quad-month-title"><BarChart3 size={17} /> 每月四色块客户数与占比</h2>
-          <p>占比 = 该色块客户数 ÷ 当月成交客户数。一位客户同月可落在两个色块，所以四项相加可能超过 100%；{NEW_RULE_TEXT}</p>
+          <p>格子大小 = 该色块客户数；占比 = 该色块客户数 ÷ 当月成交客户数。一位客户同月可落在两个色块，所以四项相加可能超过 100%；{NEW_RULE_TEXT}</p>
         </div>
       </div>
       <div className="quad-legend">
         {QUADRANTS.map((q) => <span key={q}><i style={{ background: QUADRANT_INFO[q].color }} />{QUADRANT_INFO[q].label}</span>)}
       </div>
-      <ol className="quad-months">
-        {[...rows].reverse().map((r) => {
-          const slots = QUADRANTS.reduce((n, q) => n + r.counts[q], 0);
+      <div className="quad-treemaps" data-months={shown.map((r) => r.month).join(",")}>
+        {shown.map((r) => {
+          const cells = treemap(QUADRANTS.map((q) => ({ item: q, value: r.counts[q] })));
           return (
-            <li key={r.month}>
-              <span className="qm-month">{r.month.replace("-", ".")}<small>{r.active} 位客户</small></span>
-              <span className="qm-bar" role="img" aria-label={`${r.month}：` + QUADRANTS.map((q) => `${QUADRANT_INFO[q].short}${r.counts[q]}位（${pct(r.counts[q], r.active)}%）`).join("，")}>
-                {slots ? QUADRANTS.filter((q) => r.counts[q]).map((q) => (
-                  <i key={q} style={{ width: `${(r.counts[q] / slots) * 100}%`, background: QUADRANT_INFO[q].color }}
-                    title={`${QUADRANT_INFO[q].label}：${r.counts[q]} 位，占当月 ${pct(r.counts[q], r.active)}%`} />
-                )) : <i className="empty" style={{ width: "100%" }} />}
-              </span>
-              <span className="qm-nums">
+            <figure key={r.month} className="quad-treemap-month">
+              <figcaption><strong>{dot(r.month)}</strong><small>{r.active} 位客户</small></figcaption>
+              <div className="quad-treemap" role="img" aria-label={`${r.month}：` + QUADRANTS.map((q) => `${QUADRANT_INFO[q].short}${r.counts[q]}位（${pct(r.counts[q], r.active)}%）`).join("，")}>
+                {cells.length ? cells.map((c) => {
+                  const info = QUADRANT_INFO[c.item];
+                  const tiny = c.w < 22 || c.h < 22;
+                  return (
+                    <span key={c.item} className={`quad-tm-cell ${tiny ? "tiny" : ""}`} data-quadrant={c.item}
+                      style={{ left: `${c.x}%`, top: `${c.y}%`, width: `${c.w}%`, height: `${c.h}%`, background: info.color }}
+                      title={`${info.label}：${c.value} 位，占当月 ${pct(c.value, r.active)}%`}>
+                      {!tiny && <em>{info.short}</em>}
+                      <b>{c.value}<small>位</small></b>
+                      {!tiny && <small>{pct(c.value, r.active)}%</small>}
+                    </span>
+                  );
+                }) : <span className="quad-tm-empty">当月无成交</span>}
+              </div>
+              <ul className="quad-tm-nums">
                 {QUADRANTS.map((q) => (
-                  <small key={q} className={r.counts[q] ? "" : "zero"}>
-                    <b style={{ background: r.counts[q] ? QUADRANT_INFO[q].color : undefined }} />
-                    {r.counts[q]}位 {pct(r.counts[q], r.active)}%
-                  </small>
+                  <li key={q} className={r.counts[q] ? "" : "zero"}>
+                    <i style={{ background: r.counts[q] ? QUADRANT_INFO[q].color : undefined }} />
+                    {QUADRANT_INFO[q].short} {r.counts[q]}位 · {pct(r.counts[q], r.active)}%
+                  </li>
                 ))}
-              </span>
-            </li>
+              </ul>
+            </figure>
           );
         })}
-      </ol>
+      </div>
+      {last > minEnd && (
+        <div className="quad-slider">
+          <span>{dot(rows[0].month)}</span>
+          <input
+            type="range"
+            min={minEnd}
+            max={last}
+            step={1}
+            value={at}
+            aria-label="选择显示的月份"
+            aria-valuetext={`${dot(shown[0].month)} 至 ${dot(shown.at(-1)!.month)}`}
+            onChange={(e) => setEnd(Number(e.target.value))}
+          />
+          <span>{dot(rows[last].month)}</span>
+          <strong aria-live="polite">{dot(shown[0].month)} – {dot(shown.at(-1)!.month)}</strong>
+        </div>
+      )}
     </section>
   );
 }

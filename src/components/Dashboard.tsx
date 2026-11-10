@@ -5,7 +5,6 @@ import {
   Plus,
   TrendingUp,
   TrendingDown,
-  ReceiptText,
 } from "lucide-react";
 import type {
   Api,
@@ -18,13 +17,12 @@ import type {
 } from "../domain/model";
 import { money, totals } from "../domain/finance";
 import { today, periodRange } from "../domain/dates";
-import { useQuery, ErrorNote, Loading, Money, Empty, SaleRows } from "./ui";
+import { useQuery, ErrorNote, Loading, Money, Empty } from "./ui";
 import { CustomerRanking } from "./CustomerRanking";
 import { ProfitTargetChart } from "./ProfitTargetChart";
 import "../profit-target.css";
 import { QuadrantMatrix } from "./QuadrantMatrix";
 import { MonthlyQuadrantChart, NewCustomerTrend } from "./MonthlyCharts";
-import { NeedShareChart } from "./NeedShareChart";
 import { lastMonthSamePeriod, samePeriodGrowth } from "./growth";
 import heroArt800 from "../assets/hero-octopus-800.webp";
 import heroArt1200 from "../assets/hero-octopus-1200.webp";
@@ -34,7 +32,6 @@ export function Dashboard({
   version,
   onFilter,
   onNew,
-  onEdit,
   onCustomer,
 }: {
   api: Api;
@@ -272,66 +269,49 @@ export function Dashboard({
         <NewCustomerTrend />
         <MonthlyQuadrantChart />
       </div>
-      <NeedShareChart />
-      <div className="dashboard-bottom">
-        <section className="panel">
-          <div className="panel-heading">
-            <div>
-              <h2>最近的销售</h2>
-              <p>一笔笔记录，积累每一份收获</p>
-            </div>
-            <button className="text-button" onClick={() => onFilter({})}>
-              全部明细
-              <ArrowRight size={16} />
-            </button>
+      <section className="panel product-ranking product-bars" aria-labelledby="product-bars-title">
+        <div className="panel-heading">
+          <div>
+            <h2 id="product-bars-title">本月商品贡献</h2>
+            <p>本月利润前 5 的商品 · 利润 = 销售额 − 成本</p>
           </div>
-          {data.recent.length ? (
-            <SaleRows rows={data.recent} onEdit={onEdit} />
-          ) : (
-            <Empty title="从第一笔销售开始">
-              <button className="text-button" onClick={onNew}>
-                记一笔销售 →
-              </button>
-            </Empty>
-          )}
-        </section>
-        <section className="panel product-ranking">
-          <div className="panel-heading">
-            <div>
-              <h2>本月商品贡献</h2>
-              <p>哪些商品带来了利润</p>
-            </div>
-            <TrendingUp size={19} className="muted" />
-          </div>
-          {data.products.length ? (
-            data.products.map((p, i) => (
-              <div className="rank-row" key={p.name}>
-                <span className="rank-index">0{i + 1}</span>
-                <div>
-                  <div className="rank-top">
-                    <strong>{p.name}</strong>
-                    <Money value={p.profit} />
-                  </div>
-                  <div className="rank-track">
+          <button className="text-button" onClick={() => go("month")}>
+            本月明细
+            <ArrowRight size={16} />
+          </button>
+        </div>
+        {data.products.length ? (
+          <ol className="product-bar-chart" aria-label="本月商品利润前 5 柱状图">
+            {data.products.map((p, i) => {
+              const top = Math.max(...data.products.map((x) => x.profit), 1);
+              return (
+                <li key={p.name} aria-label={`第 ${i + 1} 名 ${p.name}，利润 ${money(p.profit)} 元，${p.count} 笔`}>
+                  <span className="product-bar-value">
+                    ¥<Money value={p.profit} />
+                  </span>
+                  <span className="product-bar-track">
                     <span
-                      style={{
-                        width: `${(Math.max(0, p.profit) / Math.max(...data.products.map((p) => p.profit), 1)) * 100}%`,
-                      }}
+                      className={`product-bar ${i === 0 ? "first" : ""}`}
+                      style={{ height: `${Math.max((Math.max(0, p.profit) / top) * 100, p.profit > 0 ? 4 : 0)}%` }}
                     />
-                  </div>
-                  <small>{p.count} 笔成交</small>
-                </div>
-              </div>
-            ))
-          ) : (
-            <Empty title="本月还没有记录" />
-          )}
-          <div className="quiet-note">
-            <ReceiptText size={15} />
-            利润 = 销售额 − 成本
-          </div>
-        </section>
-      </div>
+                  </span>
+                  <span className="product-bar-name" title={p.name}>
+                    <b>0{i + 1}</b>
+                    {p.name}
+                  </span>
+                  <small>{p.count} 笔</small>
+                </li>
+              );
+            })}
+          </ol>
+        ) : (
+          <Empty title="本月还没有记录">
+            <button className="text-button" onClick={onNew}>
+              记一笔销售 →
+            </button>
+          </Empty>
+        )}
+      </section>
     </div>
   );
 }

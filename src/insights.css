@@ -117,3 +117,32 @@
 .quad-cell.on .quad-link{color:#fff}
 .quad-cell.empty{background:#FBF3E4;border:1px dashed #E8DCC6;color:#3A2E25}
 .qm-bar{gap:2px;height:14px;background:#FBF3E4}
+/* 2026-11 优化：每月四色块改树状图（默认近 3 个月 + 滑块） */
+.quad-treemaps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;padding:4px 20px 12px}
+.quad-treemap-month{margin:0;display:grid;gap:8px;min-width:0}
+.quad-treemap-month figcaption{display:flex;align-items:baseline;justify-content:space-between;gap:6px;font-size:13px}
+.quad-treemap-month figcaption small{color:var(--text-3);font-size:12px}
+.quad-treemap{position:relative;aspect-ratio:1/1;border-radius:12px;overflow:hidden;background:#FBF3E4}
+.quad-tm-cell{position:absolute;box-sizing:border-box;border:1.5px solid #fff;border-radius:8px;color:#fff;padding:6px 7px;display:flex;flex-direction:column;justify-content:flex-start;gap:1px;overflow:hidden;line-height:1.2}
+.quad-tm-cell em{font-style:normal;font-size:11px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.quad-tm-cell b{font-size:18px;font-weight:700;font-variant-numeric:tabular-nums}.quad-tm-cell b small{font-size:11px;font-weight:600;margin-left:1px}
+.quad-tm-cell > small{font-size:11px;font-weight:600;opacity:.95}
+.quad-tm-cell.tiny{padding:2px;align-items:center;justify-content:center}.quad-tm-cell.tiny b{font-size:11px}.quad-tm-cell.tiny b small{display:none}
+.quad-tm-empty{position:absolute;inset:0;display:grid;place-items:center;color:var(--text-3);font-size:12px}
+.quad-tm-nums{list-style:none;margin:0;padding:0;display:grid;gap:2px;font-size:11px;color:var(--text-2)}
+.quad-tm-nums li{display:flex;align-items:center;gap:5px;white-space:nowrap}.quad-tm-nums i{width:7px;height:7px;border-radius:2px;background:#e2cbb6;flex-shrink:0}.quad-tm-nums .zero{color:var(--text-3)}
+.quad-slider{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:6px 10px;padding:4px 20px 18px;font-size:12px;color:var(--text-3)}
+.quad-slider input{width:100%;accent-color:#D97757}
+.quad-slider strong{grid-column:1/-1;justify-self:center;font-size:13px;color:var(--text-1);font-variant-numeric:tabular-nums}
+@media (max-width:600px){.quad-treemaps{gap:8px;padding:4px 14px 10px}.quad-tm-cell{padding:4px}.quad-tm-cell em{font-size:10px}.quad-tm-cell b{font-size:14px}.quad-tm-nums{font-size:10px}.quad-tm-nums li{white-space:normal}.quad-slider{padding:4px 14px 16px}}
+/* 2026-11 优化：日程表单「有效动作」按客户色块多选（浅色胶囊） */
+.action-picker{border:0;background:#f5f5f7;border-radius:18px;padding:12px 14px;display:grid;gap:10px}
+.action-picker-head{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}.action-picker-head span{font-weight:600;color:var(--text-1);font-size:14px}.action-picker-head small{color:#6e6e73;font-size:12px}
+.action-picker-hint{margin:0;color:#6e6e73;font-size:13px}
+.action-picker-group{margin:0;display:grid;gap:6px}
+.action-picker-group>div{margin:0}
+.quad-capsule{justify-self:start;display:inline-flex;align-items:center;border-radius:999px;padding:3px 10px;font-size:12px;font-weight:600;background:color-mix(in srgb,var(--q) 13%,#fff);color:color-mix(in srgb,var(--q) 88%,#000)}
+.action-chip{display:inline-flex;align-items:center;gap:4px;border:1px solid transparent;background:#fff;transition:transform .15s,background .15s}
+.action-chip.on{background:color-mix(in srgb,var(--q) 14%,#fff);border-color:color-mix(in srgb,var(--q) 55%,transparent);color:color-mix(in srgb,var(--q) 85%,#000);font-weight:600}
+.action-chip:active{transform:scale(.97)}
+@media (max-width:600px){.quad-tm-cell > small{display:none}.quad-treemap-month figcaption{flex-direction:column;align-items:flex-start;gap:0}}

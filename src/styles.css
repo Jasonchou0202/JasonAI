@@ -3085,3 +3085,104 @@ label small,
   background: transparent;
   box-shadow: none;
 }
+
+/* 2026-11 优化：记一笔 下拉小箭头 + 新增客户日程 */
+.combo-input {
+  position: relative;
+}
+.combo-input > input {
+  padding-right: 40px;
+}
+.combo-input > input::-webkit-calendar-picker-indicator {
+  opacity: 0;
+  pointer-events: none;
+}
+.combo-arrow {
+  position: absolute;
+  top: 50%;
+  right: 6px;
+  transform: translateY(-50%);
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: var(--radius-s);
+  background: transparent;
+  color: var(--text-3);
+  cursor: pointer;
+}
+.combo-arrow:hover {
+  color: var(--coral-ink);
+  background: var(--surface-soft);
+}
+.entry-schedule {
+  display: grid;
+  gap: 12px;
+}
+.entry-schedule-toggle {
+  flex-wrap: wrap;
+  font-size: var(--fs-2);
+  font-weight: 600;
+  color: var(--text-1);
+}
+.entry-schedule-toggle svg {
+  color: var(--coral);
+}
+.entry-schedule-toggle small {
+  flex-basis: 100%;
+  padding-left: 25px;
+  font-weight: 400;
+  color: var(--text-3);
+  font-size: var(--fs-1);
+}
+.entry-schedule-fields {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  padding: 14px;
+  border-radius: var(--radius-m);
+  background: var(--surface-soft);
+}
+.entry-schedule-fields input,
+.entry-schedule-fields select {
+  width: 100%;
+}
+.entry-schedule-warn {
+  display: block;
+  margin-top: 4px;
+  color: #9e2a1e;
+  font-size: var(--fs-1);
+}
+@media (max-width: 760px) {
+  .entry-schedule-fields {
+    grid-template-columns: 1fr;
+  }
+}
+.entry-schedule-fields {
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1.5fr) minmax(0, 1fr);
+  align-items: start;
+}
+.entry-schedule-hint {
+  display: block;
+  margin-top: 4px;
+  color: var(--text-3);
+  font-size: var(--fs-1);
+}
+@media (max-width: 760px) {
+  .entry-schedule-fields {
+    grid-template-columns: 1fr;
+  }
+}
+/* 记一笔顺手建日程：有效动作选择器占整行，白底浮在浅灰面板上 */
+.entry-schedule-fields .action-picker {
+  grid-column: 1 / -1;
+  background: #fff;
+}
+.entry-schedule-next {
+  display: block;
+  margin-top: 4px;
+  color: var(--text-2);
+  font-size: var(--fs-1);
+  overflow-wrap: anywhere;
+}

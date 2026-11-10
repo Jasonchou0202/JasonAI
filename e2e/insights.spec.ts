@@ -53,7 +53,12 @@ for (const [label, size] of [["桌面", { width: 1366, height: 900 }], ["手机3
     await trend.scrollIntoViewIfNeeded();
     await shot(page, `${label}-每月新增客户走势`);
     const qm = page.locator(".monthly-chart").nth(1);
-    await expect(qm.locator(".quad-months li").first()).toContainText("2026.10");
+    // 树状图：默认最多 3 个月，最新月份在最右；格子面积按客户数
+    const months = qm.locator(".quad-treemap-month");
+    expect(await months.count()).toBeLessThanOrEqual(3);
+    await expect(months.last()).toContainText("2026.10");
+    await expect(months.last().locator(".quad-tm-cell").first()).toBeVisible();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     await qm.scrollIntoViewIfNeeded();
     await shot(page, `${label}-每月四色块客户数与占比`);
 
@@ -75,9 +80,20 @@ for (const [label, size] of [["桌面", { width: 1366, height: 900 }], ["手机3
     await page.locator(".action-library").getByRole("button", { name: "把「沟通了解新需求」加入日程" }).click();
     const dialog = page.getByRole("dialog");
     await expect(dialog.getByLabel("要做什么")).toHaveValue("【老客新品】沟通了解新需求");
-    await dialog.getByText("引用有效动作").click();
-    await dialog.getByRole("button", { name: "分销机制" }).click();
-    await expect(dialog.getByLabel("下一步")).toHaveValue(/【新客老品】分销机制/);
+    // 方案 A：没选客户时不列动作；选了客户只列这位客户所在色块的动作，可多选
+    const picker = dialog.getByRole("group", { name: /有效动作/ });
+    await expect(picker).toContainText("先选择客户");
+    await dialog.getByLabel("客户", { exact: true }).selectOption({ label: "示例客户 · 小林" });
+    await expect(picker.locator(".action-picker-group")).toHaveCount(2);
+    await expect(picker.locator('[data-quadrant="oldOld"]')).toBeVisible();
+    await expect(picker.locator('[data-quadrant="oldNew"]')).toBeVisible();
+    await expect(picker.getByRole("button", { name: "分销机制" })).toHaveCount(0);
+    await picker.getByRole("button", { name: "断购客户转化为复购" }).click();
+    await picker.getByRole("button", { name: "核心客户维护好，持续赋能，增加粘度" }).click();
+    await expect(picker.getByRole("button", { name: /断购客户转化为复购/ })).toHaveAttribute("aria-pressed", "true");
+    await expect(dialog.getByLabel("下一步")).toHaveValue("【老客老品】断购客户转化为复购\n【老客老品】核心客户维护好，持续赋能，增加粘度");
+    await picker.getByRole("button", { name: /断购客户转化为复购/ }).click();
+    await expect(dialog.getByLabel("下一步")).toHaveValue("【老客老品】核心客户维护好，持续赋能，增加粘度");
     await shot(page, `${label}-日程引用有效动作`);
   });
 }

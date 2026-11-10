@@ -26,12 +26,30 @@ export function parseMoney(value: unknown): number {
     throw new Error("金额超出支持范围");
   return neg ? -n : n;
 }
+/** 分 → 整数元（四舍五入，0.5 远离零）。只用于显示：合计一律先按分求和，最后才取整 */
+export const roundYuan = (cents: number) =>
+  Math.sign(cents) * Math.round(Math.abs(cents) / 100) || 0;
+/** 金额显示：只到元（个位），不带小数 */
 export const money = (value: number) =>
-  new Intl.NumberFormat("zh-CN", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(value / 100);
-export const moneyInput = (value: number) => (value / 100).toFixed(2);
+  new Intl.NumberFormat("zh-CN", { maximumFractionDigits: 0 }).format(
+    roundYuan(value),
+  );
+/** 输入框回填：整元显示为整数；历史上带角分的记录原样显示两位小数，避免编辑时被悄悄改金额 */
+export const moneyInput = (value: number) =>
+  value % 100 === 0 ? String(value / 100) : (value / 100).toFixed(2);
+/**
+ * 表单录入金额：只接受整数元，返回分。
+ * original：编辑旧记录时的原值（分）；输入框内容没动过（等于原值回填文字）时原样返回，不改金额。
+ */
+export function parseYuan(value: unknown, original?: number): number {
+  const s = String(value ?? "")
+    .trim()
+    .replace(/^(-?)\s*[¥￥]\s*/, "$1")
+    .replace(/,/g, "");
+  if (original !== undefined && s === moneyInput(original)) return original;
+  if (!/^-?\d+$/.test(s)) throw new Error("金额只填到元（整数，不带小数）");
+  return parseMoney(s);
+}
 export const emptyTotals = (): Totals => ({
   revenue: 0,
   cost: 0,

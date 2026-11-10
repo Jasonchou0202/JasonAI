@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import type { Api, Product } from "../domain/model";
-import { moneyInput, parseMoney } from "../domain/finance";
+import { moneyInput, parseYuan } from "../domain/finance";
 import { productCategories, productCategory } from "../domain/catalog";
 import {
   apiMode,
@@ -82,8 +82,8 @@ export function ProductEditor({
         id: draft.id,
         name: draft.name.trim(),
         category: draft.category,
-        price: draft.price.trim() ? parseMoney(draft.price) : 0,
-        cost: draft.cost.trim() ? parseMoney(draft.cost) : 0,
+        price: draft.price.trim() ? parseYuan(draft.price, product?.price) : 0,
+        cost: draft.cost.trim() ? parseYuan(draft.cost, product?.cost) : 0,
         hasDefaultPrice: Boolean(draft.price.trim()),
         hasDefaultCost: Boolean(draft.cost.trim()),
         active: draft.active,
@@ -169,7 +169,7 @@ export function ProductEditor({
               <label htmlFor="p-price">常用售价（选填）</label>
               <input
                 id="p-price"
-                inputMode="decimal"
+                inputMode="numeric"
                 placeholder="未填则记账时输入"
                 value={draft.price}
                 onChange={(e) =>
@@ -181,7 +181,7 @@ export function ProductEditor({
               <label htmlFor="p-cost">常用成本（选填）</label>
               <input
                 id="p-cost"
-                inputMode="decimal"
+                inputMode="numeric"
                 placeholder="未填则记账时输入"
                 value={draft.cost}
                 onChange={(e) =>
