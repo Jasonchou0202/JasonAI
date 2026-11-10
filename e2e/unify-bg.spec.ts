@@ -79,7 +79,7 @@ test("状态栏 theme-color 与 PWA 清单跟页面同一奶油底", async ({ pa
   expect(manifest.theme_color).toBe("#fbf3e4");
   expect(manifest.background_color).toBe("#fbf3e4");
 });
-test("弹窗是白卡、遮罩下的页面仍是奶油底；手机底部导航用奶油底", async ({
+test("弹窗是白卡；手机底部导航和电脑侧栏保持白色（页面仍是奶油底）", async ({
   page,
 }) => {
   await page.setViewportSize({ width: 390, height: 844 });
@@ -94,5 +94,35 @@ test("弹窗是白卡、遮罩下的页面仍是奶油底；手机底部导航�
   const nav = page.locator("nav.mobile-nav");
   expect(
     await nav.evaluate((e) => getComputedStyle(e).backgroundColor),
-  ).toMatch(/^rgba\(251, 243, 228/);
+  ).toMatch(/^rgba?\(255, 255, 255/);
+  await page.setViewportSize({ width: 1280, height: 800 });
+  const sidebar = page.locator("aside.sidebar");
+  await expect(sidebar).toBeVisible();
+  expect(
+    await sidebar.evaluate((e) => getComputedStyle(e).backgroundColor),
+  ).toBe("rgb(255, 255, 255)");
+  expect(
+    await page.evaluate(
+      () => getComputedStyle(document.documentElement).backgroundColor,
+    ),
+  ).toBe(CREAM);
+});
+test("客户等级 P0–P2 胶囊统一奶油深一档 #F4E6D4，文字团队主文字色", async ({
+  page,
+}) => {
+  await page.goto("./#/dashboard");
+  const chips = page.locator(".tier-chips button.tier-chip");
+  await expect(chips.first()).toBeVisible();
+  for (const tier of ["P0", "P1", "P2"]) {
+    const chip = page.locator(`.tier-chips button.tier-chip.tier-${tier}`);
+    await expect(chip).toHaveCount(1);
+    const c = chip.first();
+    if ((await c.getAttribute("class"))?.includes("selected")) continue;
+    expect(await c.evaluate((e) => getComputedStyle(e).backgroundColor)).toBe(
+      "rgb(244, 230, 212)",
+    );
+    expect(await c.evaluate((e) => getComputedStyle(e).color)).toBe(
+      "rgb(43, 33, 28)",
+    );
+  }
 });

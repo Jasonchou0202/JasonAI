@@ -1,6 +1,7 @@
 /* 客户等级 · 四象限 · 有效动作 */
 .tier-badge{display:inline-flex;align-items:center;justify-content:center;min-width:26px;height:20px;padding:0 6px;border-radius:var(--radius-pill);font-size:11px;font-weight:700;letter-spacing:.02em;margin-right:6px;flex:none}
-.tier-P0{--t:#B4532F;--tf:#fff;--ts:#F6E3D3;--td:#9C4526}.tier-P1{--t:#D97757;--tf:#2B211C;--ts:#F9E8DC;--td:#9C4526}.tier-P2{--t:#E9A178;--tf:#2B211C;--ts:#FBEFE4;--td:#7A5320}.tier-P3{--t:#F0DCC8;--tf:#2B211C;--ts:#FBF3E4;--td:#5E4D43}.tier-P4{--t:#6B5A50;--tf:#fff;--ts:#F4E6D4;--td:#4F4038}
+/* 11-11 v2：P0–P2 胶囊底统一奶油深一档 #F4E6D4、文字团队主文字色 #2B211C（对比 12.8:1）；等级区分看实心等级角标 --t */
+.tier-P0{--t:#B4532F;--tf:#fff;--ts:#F4E6D4;--td:#2B211C}.tier-P1{--t:#D97757;--tf:#2B211C;--ts:#F4E6D4;--td:#2B211C}.tier-P2{--t:#E9A178;--tf:#2B211C;--ts:#F4E6D4;--td:#2B211C}.tier-P3{--t:#F0DCC8;--tf:#2B211C;--ts:#FBF3E4;--td:#5E4D43}.tier-P4{--t:#6B5A50;--tf:#fff;--ts:#F4E6D4;--td:#4F4038}
 .tier-badge{background:var(--t);color:var(--tf)}
 .tier-chips button.tier-chip{background:var(--ts);color:var(--td);border-color:transparent}.tier-chips button.tier-chip b{color:var(--td)}
 .tier-chips button.tier-chip.selected{background:var(--t);color:var(--tf);border-color:var(--t)}.tier-chips button.tier-chip.selected b{color:var(--tf)}

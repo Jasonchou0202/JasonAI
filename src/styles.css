@@ -219,7 +219,7 @@ label small {
 }
 .sidebar {
   width: 222px;
-  background: var(--bg); /* 11-11 统一：侧栏和页面同一奶油底，只有卡片是白的 */
+  background: var(--surface); /* 11-11 v2：Jason 定侧栏保持白色；页面底色仍是奶油 */
   border-right: 1px solid var(--border);
   padding: 31px 21px 0;
   position: fixed;
@@ -2265,7 +2265,7 @@ label small {
     z-index: 50;
   }
   .mobile-sheet {
-    background: #fbf3e4f2; /* 11-11 统一：底部导航/抽屉用奶油底（原半透明白） */
+    background: #fffffff2; /* 11-11 v2：Jason 定手机底部导航/抽屉保持白色 */
     border-top: 1px solid var(--line);
     backdrop-filter: blur(12px);
     padding: 8px 12px 2px;
@@ -2469,7 +2469,7 @@ label small {
   .mobile-nav {
     position: static;
     display: flex;
-    background: #fbf3e4f2; /* 11-11 统一：底部导航/抽屉用奶油底（原半透明白） */
+    background: #fffffff2; /* 11-11 v2：Jason 定手机底部导航/抽屉保持白色 */
     border-top: 1px solid var(--line);
     backdrop-filter: blur(12px);
     padding: 8px 10px calc(8px + env(safe-area-inset-bottom));
