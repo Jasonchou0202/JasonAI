@@ -46,9 +46,10 @@ function makeSprite() {
 }
 
 function countFor(band: EdgeBand, w: number, h: number) {
-  if (band === "top") return Math.round(Math.min(80, Math.max(40, w / 16)));
-  if (band === "left") return Math.round(Math.min(72, Math.max(40, h / 14)));
-  return Math.round(Math.min(52, Math.max(28, w / 12)));
+  // v5：大约减到 v4 的一半，能看出单颗在飘、不成片
+  if (band === "top") return Math.round(Math.min(36, Math.max(16, w / 36)));
+  if (band === "left") return Math.round(Math.min(32, Math.max(14, h / 32)));
+  return Math.round(Math.min(22, Math.max(10, w / 28)));
 }
 
 function seed(n: number): Particle[] {

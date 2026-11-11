@@ -176,18 +176,22 @@ for (const [label, size] of [
     expect(r.shellImage === "none" || r.shellImage === "initial").toBeTruthy();
     const topC = r.canvases.find((c) => c.band === "top");
     expect(topC?.pe).toBe("none");
-    expect(topC && topC.w > 100 && topC.h >= 24).toBeTruthy();
+    expect(topC && topC.w > 100).toBeTruthy();
     expect(r.hitTop.isCanvas).toBe(false);
     if (label === "1280") {
+      expect(topC?.h).toBe(68); // v5 电脑顶栏下 68px
       expect(r.sidebarBorder).toBe("0px");
       const left = r.canvases.find((c) => c.band === "left");
       expect(left?.pe).toBe("none");
-      expect(left && left.display !== "none" && left.w >= 24 && left.h > 100).toBeTruthy();
+      expect(left && left.display !== "none" && left.h > 100).toBeTruthy();
+      expect(left?.w).toBe(56); // v5 侧栏右 56px
     } else {
+      expect(topC?.h).toBe(48); // v5 手机顶栏下 48px
       expect(r.navBorder).toBe("0px");
       const bottom = r.canvases.find((c) => c.band === "bottom");
       expect(bottom?.pe).toBe("none");
-      expect(bottom && bottom.display !== "none" && bottom.w > 100 && bottom.h >= 24).toBeTruthy();
+      expect(bottom && bottom.display !== "none" && bottom.w > 100).toBeTruthy();
+      expect(bottom?.h).toBe(48); // v5 手机底栏上 48px
     }
   });
 
