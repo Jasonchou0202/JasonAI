@@ -29,7 +29,7 @@
   flex-wrap: wrap;
   gap: 2px 6px;
   padding: 5px 16px;
-  background: var(--cream-soft);
+  background: transparent; /* 11-11 v3：透明，让顶栏下方白→奶油渐变连续 */
   color: var(--text-warn);
   font-size: var(--fs-1);
   line-height: 1.5;
@@ -58,7 +58,7 @@
   padding: var(--space-7) var(--page-pad-x) var(--space-6);
   min-height: 210px;
   align-items: flex-end;
-  background: var(--bg); /* 11-11 统一：去掉粉色渐变 */
+  background: transparent; /* 11-11 统一：去掉粉色渐变；v3 透明，露出交界渐变 */
 }
 .page-heading::after {
   content: "";

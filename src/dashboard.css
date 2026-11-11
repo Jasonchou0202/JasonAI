@@ -7,7 +7,7 @@
   margin: calc(-1 * var(--page-pad-top)) calc(-1 * var(--page-pad-x)) 0;
   padding: 64px var(--page-pad-x) 48px;
   text-align: center;
-  background: var(--bg); /* 11-11 统一：去掉粉色径向渐变，和全站同一奶油底 */
+  background: transparent; /* 11-11 统一：去掉粉色径向渐变；v3 透明，露出 main-shell 的奶油底和顶栏/侧栏交界渐变 */
 }
 .dash-hero-art {
   position: absolute;

@@ -1084,8 +1084,8 @@
 
 /* ===== 2026-11 优化：客户日程页 苹果官网风卡片（照 22:43 确认样稿） ===== */
 .main-shell:has(.apple-page:not(.apple-section)) {
-  /* 11-11 统一：日程页不再单独换成浅灰，和全站同一奶油底 */
-  background: var(--bg);
+  /* 11-11 统一：日程页不再单独换成浅灰，和全站同一奶油底（v3：只设底色，保留顶栏/侧栏交界渐变） */
+  background-color: var(--bg);
   min-height: 100vh;
 }
 .apple-page {

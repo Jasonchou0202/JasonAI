@@ -67,16 +67,16 @@ for (const [label, size] of [
     });
   }
 }
-test("状态栏 theme-color 与 PWA 清单跟页面同一奶油底", async ({ page }) => {
+test("状态栏 theme-color 与白色顶栏一致；PWA 启动底色仍是奶油", async ({ page }) => {
   await page.goto("./#/dashboard");
   await expect(page.locator('meta[name="theme-color"]')).toHaveAttribute(
     "content",
-    "#fbf3e4",
+    "#ffffff",
   );
   const manifest = await (
     await page.request.get("./manifest.webmanifest")
   ).json();
-  expect(manifest.theme_color).toBe("#fbf3e4");
+  expect(manifest.theme_color).toBe("#ffffff");
   expect(manifest.background_color).toBe("#fbf3e4");
 });
 test("弹窗是白卡；手机底部导航和电脑侧栏保持白色（页面仍是奶油底）", async ({
@@ -126,3 +126,52 @@ test("客户等级 P0–P2 胶囊统一奶油深一档 #F4E6D4，文字团队主
     );
   }
 });
+
+// 11-11 v3（Jason 08:04）：顶栏白色和侧栏一致；奶油内容区和白色顶栏/侧栏/底栏交界处用白→奶油渐变，没有硬分隔线
+for (const [label, size] of [
+  ["1280", { width: 1280, height: 800 }],
+  ["390", { width: 390, height: 844 }],
+] as const) {
+  test(`顶栏白色、交界处白→奶油渐变、无硬分隔线（${label}）`, async ({ page }) => {
+    await page.setViewportSize(size);
+    await page.goto("./#/calendar");
+    await expect(page.locator(".customer-calendar-grid").first()).toBeVisible();
+    const r = await page.evaluate(() => {
+      const st = (s: string, pseudo?: string) => {
+        const el = document.querySelector(s);
+        return el ? getComputedStyle(el, pseudo) : null;
+      };
+      const top = st("header.topbar")!;
+      const shell = st(".main-shell")!;
+      const dock = st(".mobile-dock", "::before");
+      return {
+        topBg: top.backgroundColor,
+        topBorder: top.borderBottomWidth,
+        shellColor: shell.backgroundColor,
+        shellImage: shell.backgroundImage,
+        sidebarBorder: st("aside.sidebar")?.borderRightWidth,
+        dockImage: dock?.backgroundImage,
+        dockPointer: dock?.pointerEvents,
+        dockContent: dock?.content,
+        navBorder: st("nav.mobile-nav")?.borderTopWidth,
+      };
+    });
+    expect(r.topBg).toBe("rgb(255, 255, 255)");
+    expect(r.topBorder).toBe("0px");
+    expect(r.shellColor).toBe(CREAM);
+    // 背景里的渐变：白 → 透明（露出奶油底），画在 main-shell 背景上，不盖内容
+    const grads = r.shellImage.match(/linear-gradient/g) ?? [];
+    expect(r.shellImage).toContain("rgb(255, 255, 255)");
+    expect(r.shellImage).toContain("rgba(255, 255, 255, 0)");
+    if (label === "1280") {
+      expect(grads.length).toBe(2); // 顶栏下方 + 侧栏右侧
+      expect(r.sidebarBorder).toBe("0px");
+    } else {
+      expect(grads.length).toBe(1); // 手机只有顶栏下方
+      expect(r.dockContent).not.toBe("none");
+      expect(r.dockImage).toContain("linear-gradient");
+      expect(r.dockPointer).toBe("none"); // 底栏上方渐变不挡点击
+      expect(r.navBorder).toBe("0px");
+    }
+  });
+}
