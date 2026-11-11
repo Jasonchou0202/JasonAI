@@ -261,15 +261,15 @@ for (const [label, size, radius] of [
     await expect(
       section.getByRole("heading", { name: "客户日程", exact: true }),
     ).toBeVisible();
+    // 11-11 统一底色后：日程区不再单独铺浅灰块，和整页同一奶油底（#FBF3E4），卡片是白的
     expect(
       await section.evaluate((e) => getComputedStyle(e).backgroundColor),
-    ).toBe("rgb(245, 245, 247)");
-    // 只改日程这一区：整页背景不变成浅灰
+    ).toBe("rgba(0, 0, 0, 0)");
     expect(
-      await page
-        .locator(".main-shell")
-        .evaluate((e) => getComputedStyle(e).backgroundColor),
-    ).not.toBe("rgb(245, 245, 247)");
+      await page.evaluate(
+        () => getComputedStyle(document.documentElement).backgroundColor,
+      ),
+    ).toBe("rgb(251, 243, 228)");
     await expect(section.locator(".apple-stats .apple-card")).toHaveCount(3);
     const cards = section.locator(".customer-today .apple-task");
     await expect(cards).toHaveCount(2); // 今天 1 条 + 还没完成的 1 条（已完成的旧日程不进卡片）
@@ -278,8 +278,11 @@ for (const [label, size, radius] of [
       radius,
     );
     expect(
-      await first.evaluate((e) => getComputedStyle(e).boxShadow),
-    ).toContain("rgba(0, 0, 0, 0.04)");
+      await first.evaluate((e) => getComputedStyle(e).backgroundColor),
+    ).toBe("rgb(255, 255, 255)");
+    expect(await first.evaluate((e) => getComputedStyle(e).boxShadow)).not.toBe(
+      "none",
+    );
     await expect(first.locator(".apple-dot")).toBeVisible();
     await expect(first.locator(".apple-chips")).toContainText("老客老品");
     await expect(

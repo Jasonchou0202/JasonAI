@@ -1,7 +1,7 @@
 :root {
   font-family: "Manrope", "PingFang SC", "Microsoft YaHei", sans-serif;
   color: var(--text-1);
-  background: var(--surface-soft);
+  background: var(--bg);
   font-synthesis: none;
   font-weight: 400;
   font-size: 100%;
@@ -47,7 +47,7 @@ select:focus,
 textarea:focus {
   outline: none;
   border-color: #d97757;
-  box-shadow: 0 0 0 3px #f6e3d3;
+  box-shadow: 0 0 0 3px #d9775740; /* 11-11：焦点光圈改珊瑚 25%（原 #f6e3d3 偏粉、在奶油底上看不清） */
 }
 button {
   border: 0;
@@ -216,11 +216,16 @@ label small {
 .app-shell {
   display: flex;
   min-height: 100vh;
+  --sidebar-w: 222px;
+  --topbar-h: 74px;
+  --fade-top: 68px; /* 11-11 v5：顶栏下方粒子带（v4 40px 的 1.7 倍） */
+  --fade-left: 56px; /* 11-11 v5：侧栏右侧粒子带（v4 32px 的 1.75 倍） */
+  --fade-bottom: 48px; /* 11-11 v5：手机底栏上方粒子带（v4 28px 的约 1.7 倍） */
 }
 .sidebar {
   width: 222px;
-  background: var(--surface);
-  border-right: 1px solid var(--border);
+  background: var(--surface); /* 11-11 v2：Jason 定侧栏保持白色；页面底色仍是奶油 */
+  border-right: 0; /* 11-11 v3：去掉硬分隔线，改由内容区左侧白→奶油渐变过渡 */
   padding: 31px 21px 0;
   position: fixed;
   inset: 0 auto 0 0;
@@ -399,15 +404,72 @@ label small {
 .main-shell {
   margin-left: 222px;
   width: calc(100% - 222px);
+  position: relative;
+  /* 11-11 v3：顶栏、侧栏白色，内容区奶油底；交界处白→奶油过渡。
+     v4：默认改成粒子渐变（.edge-fade canvas）；平面渐变仅作为降动回退和 JS 未就绪时的底。
+     顶栏下方那段跟着顶栏一起滚动；粒子层在内容下层，pointer-events:none。 */
+  min-height: 100vh;
+  background-color: var(--bg);
+  background-image:
+    linear-gradient(to bottom, #fff var(--topbar-h), #fff0 calc(var(--topbar-h) + var(--fade-top))),
+    linear-gradient(to right, #fff, #fff0 var(--fade-left));
+  background-repeat: no-repeat;
+}
+/* 粒子就绪后关掉平面渐变，避免叠两层 */
+html.edge-particles-on .main-shell {
+  background-image: none;
+}
+html.edge-particles-on .mobile-dock::before {
+  content: none;
+}
+.edge-fade {
+  pointer-events: none;
+  display: block;
+  transform: translateZ(0);
+}
+.edge-fade-top {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: var(--topbar-h);
+  height: var(--fade-top);
+  width: 100%;
+  z-index: 0;
+}
+.edge-fade-left {
+  position: fixed;
+  left: var(--sidebar-w);
+  top: 0;
+  bottom: 0;
+  width: var(--fade-left);
+  height: 100vh;
+  height: 100dvh;
+  z-index: 0;
+}
+.edge-fade-bottom {
+  display: none;
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 100%;
+  height: var(--fade-bottom, 48px);
+  width: 100%;
+  pointer-events: none;
+}
+.main-shell > .topbar,
+.main-shell > .demo-banner,
+.main-shell > main {
+  position: relative;
+  z-index: 1;
 }
 .topbar {
-  height: 74px;
-  border-bottom: 1px solid var(--border);
+  height: var(--topbar-h, 74px);
+  border-bottom: 0; /* 11-11 v3：去掉硬分隔线，改由渐变过渡 */
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 0 40px;
-  background: #ffffff78;
+  background: var(--surface); /* 11-11 v3：顶栏白色，和侧栏一致 */
 }
 .breadcrumb {
   color: var(--text-3);
@@ -1214,7 +1276,7 @@ label small {
   gap: 8px;
   font-size: var(--fs-1);
   color: var(--text-3);
-  background: var(--cream);
+  background: transparent; /* 11-11 v3：演示提示条透明，让顶栏下方白→奶油渐变连续，不再出现一条色带 */
   padding: 8px 16px;
   line-height: 1.7;
 }
@@ -2039,6 +2101,9 @@ label small {
   }
 }
 @media (max-width: 1024px) {
+  .app-shell {
+    --sidebar-w: 190px;
+  }
   .sidebar {
     width: 190px;
     padding: 26px 16px 0;
@@ -2105,6 +2170,9 @@ label small {
   }
 }
 @media (max-width: 1024px) {
+  .app-shell {
+    --sidebar-w: 172px;
+  }
   .sidebar {
     width: 172px;
     padding-left: 12px;
@@ -2223,8 +2291,25 @@ label small {
     width: 100%;
     margin: 0;
   }
+  .app-shell {
+    --sidebar-w: 0px;
+    --topbar-h: 58px;
+    --fade-top: 48px;
+    --fade-left: 0px;
+    --fade-bottom: 48px;
+  }
+  .main-shell {
+    /* 11-11 v3/v4 手机：没有侧栏，只保留顶栏下方过渡；底栏上方见 .mobile-dock::before / .edge-fade-bottom */
+    background-image: linear-gradient(to bottom, #fff var(--topbar-h), #fff0 calc(var(--topbar-h) + var(--fade-top)));
+  }
+  .edge-fade-left {
+    display: none;
+  }
+  .edge-fade-bottom {
+    display: block;
+  }
   .topbar {
-    height: 58px;
+    height: var(--topbar-h);
     padding: 0 20px;
   }
   .breadcrumb {
@@ -2264,8 +2349,19 @@ label small {
     bottom: 0;
     z-index: 50;
   }
+  /* 11-11 v3：底栏上方 28px 白→奶油渐变，跟着固定底栏走；pointer-events:none 不挡下面内容的点击 */
+  .mobile-dock::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 100%;
+    height: var(--fade-bottom, 48px);
+    background: linear-gradient(to top, #fffffff2, #fff0);
+    pointer-events: none;
+  }
   .mobile-sheet {
-    background: #fffffff2;
+    background: #fffffff2; /* 11-11 v2：Jason 定手机底部导航/抽屉保持白色 */
     border-top: 1px solid var(--line);
     backdrop-filter: blur(12px);
     padding: 8px 12px 2px;
@@ -2469,8 +2565,8 @@ label small {
   .mobile-nav {
     position: static;
     display: flex;
-    background: #fffffff2;
-    border-top: 1px solid var(--line);
+    background: #fffffff2; /* 11-11 v2：Jason 定手机底部导航/抽屉保持白色 */
+    border-top: 0; /* 11-11 v3：去掉硬分隔线，改由上方渐变过渡 */
     backdrop-filter: blur(12px);
     padding: 8px 10px calc(8px + env(safe-area-inset-bottom));
     align-items: flex-end;

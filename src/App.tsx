@@ -29,6 +29,7 @@ import {
 import heroArt800 from "./assets/hero-octopus-800.webp";
 import { stopPush } from "./lib/notifications";
 import { Brand, ErrorNote, Loading, message } from "./components/ui";
+import { EdgeFade } from "./components/EdgeFade";
 import type { Filters, Sale } from "./domain/model";
 import { cloudApi, configured, session, login, logout } from "./lib/cloud";
 import { createDemo } from "./lib/demo";
@@ -535,6 +536,8 @@ export default function App() {
         </div>
       </aside>
       <div className="main-shell">
+        <EdgeFade band="top" />
+        <EdgeFade band="left" />
         <header className="topbar">
           <div className="breadcrumb">
             工作室<span>/</span>
@@ -717,6 +720,7 @@ export default function App() {
         </main>
       </div>
       <div className="mobile-dock">
+        <EdgeFade band="bottom" />
         <div className="mobile-sheet" hidden={mobileSheet === null}>
           {mobileSheet === "sales" && (
             <SalesLinks page={page} onOpen={openSalesItem} />
