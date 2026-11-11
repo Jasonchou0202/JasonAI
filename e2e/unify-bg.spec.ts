@@ -127,51 +127,97 @@ test("客户等级 P0–P2 胶囊统一奶油深一档 #F4E6D4，文字团队主
   }
 });
 
-// 11-11 v3（Jason 08:04）：顶栏白色和侧栏一致；奶油内容区和白色顶栏/侧栏/底栏交界处用白→奶油渐变，没有硬分隔线
+// 11-11 v4（Jason 08:18）：交界带改为粒子渐变；降动时回退 v3 平面白→奶油渐变；不挡点击
 for (const [label, size] of [
   ["1280", { width: 1280, height: 800 }],
   ["390", { width: 390, height: 844 }],
 ] as const) {
-  test(`顶栏白色、交界处白→奶油渐变、无硬分隔线（${label}）`, async ({ page }) => {
+  test(`顶栏白色、交界处粒子渐变、不挡点击（${label}）`, async ({ page }) => {
     await page.setViewportSize(size);
     await page.goto("./#/calendar");
     await expect(page.locator(".customer-calendar-grid").first()).toBeVisible();
     const r = await page.evaluate(() => {
-      const st = (s: string, pseudo?: string) => {
-        const el = document.querySelector(s);
+      const st = (sel: string, pseudo?: string) => {
+        const el = document.querySelector(sel);
         return el ? getComputedStyle(el, pseudo) : null;
       };
       const top = st("header.topbar")!;
       const shell = st(".main-shell")!;
-      const dock = st(".mobile-dock", "::before");
+      const canvases = [...document.querySelectorAll<HTMLCanvasElement>("canvas.edge-fade")].map((c) => ({
+        band: c.dataset.edge,
+        pe: getComputedStyle(c).pointerEvents,
+        display: getComputedStyle(c).display,
+        w: c.getBoundingClientRect().width,
+        h: c.getBoundingClientRect().height,
+      }));
+      const hitTop = (() => {
+        const c = document.querySelector<HTMLElement>("canvas.edge-fade-top");
+        if (!c) return { missed: true, isCanvas: false };
+        const box = c.getBoundingClientRect();
+        const el = document.elementFromPoint(box.left + box.width / 2, box.top + box.height / 2);
+        return { missed: false, isCanvas: el === c, tag: el?.tagName };
+      })();
       return {
         topBg: top.backgroundColor,
         topBorder: top.borderBottomWidth,
         shellColor: shell.backgroundColor,
         shellImage: shell.backgroundImage,
         sidebarBorder: st("aside.sidebar")?.borderRightWidth,
-        dockImage: dock?.backgroundImage,
-        dockPointer: dock?.pointerEvents,
-        dockContent: dock?.content,
         navBorder: st("nav.mobile-nav")?.borderTopWidth,
+        on: document.documentElement.classList.contains("edge-particles-on"),
+        canvases,
+        hitTop,
       };
     });
     expect(r.topBg).toBe("rgb(255, 255, 255)");
     expect(r.topBorder).toBe("0px");
     expect(r.shellColor).toBe(CREAM);
-    // 背景里的渐变：白 → 透明（露出奶油底），画在 main-shell 背景上，不盖内容
-    const grads = r.shellImage.match(/linear-gradient/g) ?? [];
+    expect(r.on).toBe(true);
+    expect(r.shellImage === "none" || r.shellImage === "initial").toBeTruthy();
+    const topC = r.canvases.find((c) => c.band === "top");
+    expect(topC?.pe).toBe("none");
+    expect(topC && topC.w > 100 && topC.h >= 24).toBeTruthy();
+    expect(r.hitTop.isCanvas).toBe(false);
+    if (label === "1280") {
+      expect(r.sidebarBorder).toBe("0px");
+      const left = r.canvases.find((c) => c.band === "left");
+      expect(left?.pe).toBe("none");
+      expect(left && left.display !== "none" && left.w >= 24 && left.h > 100).toBeTruthy();
+    } else {
+      expect(r.navBorder).toBe("0px");
+      const bottom = r.canvases.find((c) => c.band === "bottom");
+      expect(bottom?.pe).toBe("none");
+      expect(bottom && bottom.display !== "none" && bottom.w > 100 && bottom.h >= 24).toBeTruthy();
+    }
+  });
+
+  test(`降动时交界处回退为平面白→奶油渐变（${label}）`, async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await page.setViewportSize(size);
+    await page.goto("./#/calendar");
+    await expect(page.locator(".customer-calendar-grid").first()).toBeVisible();
+    const r = await page.evaluate(() => {
+      const shell = getComputedStyle(document.querySelector(".main-shell")!);
+      const dock = getComputedStyle(document.querySelector(".mobile-dock")!, "::before");
+      return {
+        on: document.documentElement.classList.contains("edge-particles-on"),
+        canvases: document.querySelectorAll("canvas.edge-fade").length,
+        shellImage: shell.backgroundImage,
+        dockContent: dock.content,
+        dockImage: dock.backgroundImage,
+      };
+    });
+    expect(r.on).toBe(false);
+    expect(r.canvases).toBe(0);
+    expect(r.shellImage).toContain("linear-gradient");
     expect(r.shellImage).toContain("rgb(255, 255, 255)");
     expect(r.shellImage).toContain("rgba(255, 255, 255, 0)");
-    if (label === "1280") {
-      expect(grads.length).toBe(2); // 顶栏下方 + 侧栏右侧
-      expect(r.sidebarBorder).toBe("0px");
-    } else {
-      expect(grads.length).toBe(1); // 手机只有顶栏下方
+    const grads = r.shellImage.match(/linear-gradient/g) ?? [];
+    if (label === "1280") expect(grads.length).toBe(2);
+    else {
+      expect(grads.length).toBe(1);
       expect(r.dockContent).not.toBe("none");
       expect(r.dockImage).toContain("linear-gradient");
-      expect(r.dockPointer).toBe("none"); // 底栏上方渐变不挡点击
-      expect(r.navBorder).toBe("0px");
     }
   });
 }
