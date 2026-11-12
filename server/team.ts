@@ -100,6 +100,13 @@ export const OWNER_MEMBER_ACTIONS = new Set(["tasks.claim", "members.directory"]
 export const AVATAR_MEMBER_ACTIONS = new Set(["members.avatar.set", "members.avatar.clear"]);
 /** Jason 的头像等资料：members 里的系统文档（_ 开头，不算成员） */
 export const OWNER_PROFILE_ID = "_owner_profile";
+/** 分色计数器（系统文档，_ 开头不算成员）：下一个入队的人用第 next 个颜色 */
+export const COLOR_COUNTER_ID = "_color_counter";
+interface ColorCounter {
+  uid: string;
+  next: number;
+  updatedAt: string;
+}
 /** 成员只能对自己录入的记录做的操作 → 对应集合 */
 export const OWN_ONLY: Record<string, "sales" | "tasks"> = {
   "sales.update": "sales",
@@ -265,7 +272,7 @@ export async function executeTeam(
     // 日程归属开后更严：成员点名要看别人的，直接拒绝并记一条「被拒」
     if (!admin && ownerOn(team) && typeof p.actor === "string" && p.actor && p.actor !== actor.uid)
       throw new DeniedError("SELF_ONLY", "只能查看自己的操作记录", actor);
-    return { data: await listAudit(store, p as AuditQuery, admin ? undefined : actor.uid) };
+    return { data: await listAudit(store, p as AuditQuery, admin ? undefined : actor.uid, ownerOn(team) ? { groups: true } : {}) };
   }
   if (!team.membersEnabled) throw new Error("团队成员功能尚未开启");
   if (action === "members.redeem") {
@@ -369,22 +376,31 @@ export async function executeTeam(
     if (!uid || uid.startsWith("_")) throw new Error("成员编号无效");
     if (uid === ctx.ownerUid) throw new Error("不能修改管理员本人");
     const status: MemberStatus = action === "members.disable" ? "disabled" : "active";
-    // 入队时自动分色：按已经有颜色的人数往下排，7 色用完从头循环；写入后不再改
-    const colored =
-      action === "members.approve" && ownerOn(team)
-        ? (await store.list<Member>("members")).filter((m) => isMember(m) && isColorKey(m.color)).length
-        : -1;
+    // 入队时自动分色：按分色计数器往下排，7 色用完从头循环；写入后不再改。
+    // 计数器文档 members/_color_counter 在同一个事务里读、写，两个人同时被批准也不会撞色；
+    // 计数器还不存在时（上线第一次）用已有颜色的人数做起点（只是起点，真正的序号以事务里的计数器为准）
+    const colorOn = action === "members.approve" && ownerOn(team);
+    const seed = colorOn
+      ? (await store.list<Member>("members")).filter((m) => isMember(m) && isColorKey(m.color)).length
+      : 0;
     return store.transaction(async (tx) => {
       const old = await tx.get<Member>("members", uid);
       if (!old) throw new Error("成员不存在");
       if (action === "members.approve" && old.status !== "pending") throw new Error("这位成员不在待批准状态");
       if (action === "members.enable" && old.status !== "disabled") throw new Error("这位成员没有被停用");
+      let color: ColorKey | undefined;
+      if (colorOn && !isColorKey(old.color)) {
+        const counter = await tx.get<ColorCounter>("members", COLOR_COUNTER_ID);
+        const n = Math.max(counter?.next ?? 0, seed);
+        color = colorKeyAt(n);
+        await tx.put("members", COLOR_COUNTER_ID, { uid: COLOR_COUNTER_ID, next: n + 1, updatedAt: now() });
+      }
       const row: Member = {
         ...old,
         status,
         updatedAt: now(),
         revision: old.revision + 1,
-        ...(colored >= 0 && !isColorKey(old.color) ? { color: colorKeyAt(colored) } : {}),
+        ...(color ? { color } : {}),
       };
       await tx.put("members", uid, row);
       return { data: row, target: { type: "members", id: uid, before: old, after: row } };
@@ -431,10 +447,13 @@ async function fillColors(store: Store, now: () => string) {
   const rows = (await store.list<Member>("members"))
     .filter((m) => isMember(m) && m.status !== "pending")
     .sort((a, b) => a.createdAt.localeCompare(b.createdAt) || a.uid.localeCompare(b.uid));
-  let n = rows.filter((m) => isColorKey(m.color)).length;
+  const seed = rows.filter((m) => isColorKey(m.color)).length;
   const todo = rows.filter((m) => !isColorKey(m.color));
   const filled: { uid: string; color: ColorKey }[] = [];
   await store.transaction(async (tx) => {
+    // 和入队分色共用同一个计数器，在同一个事务里读写
+    const counter = await tx.get<ColorCounter>("members", COLOR_COUNTER_ID);
+    let n = Math.max(counter?.next ?? 0, seed);
     for (const m of todo) {
       const fresh = await tx.get<Member>("members", m.uid);
       if (!fresh || isColorKey(fresh.color)) continue;
@@ -442,6 +461,7 @@ async function fillColors(store: Store, now: () => string) {
       await tx.put("members", m.uid, { ...fresh, color, updatedAt: now(), revision: fresh.revision + 1 });
       filled.push({ uid: m.uid, color });
     }
+    if (filled.length) await tx.put("members", COLOR_COUNTER_ID, { uid: COLOR_COUNTER_ID, next: n, updatedAt: now() });
   });
   return {
     data: { filled },

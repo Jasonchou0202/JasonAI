@@ -191,7 +191,8 @@ export interface AuditQuery {
 }
 const DAY = /^\d{4}-\d{2}-\d{2}$/;
 /** 查询：按北京日期区间、操作类型、操作人、结果筛选，按时间倒序，用 id 游标分页 */
-export async function listAudit(store: Store, q: AuditQuery, forceActor?: string) {
+/** groups：只有 SCHEDULE_OWNER_ENABLED 开时才认 group:owner / group:delete / group:system；关时按原来的精确/前缀匹配（等于什么都不匹配），与线上一致 */
+export async function listAudit(store: Store, q: AuditQuery, forceActor?: string, opts: { groups?: boolean } = {}) {
   for (const k of ["from", "to", "action", "actor", "result", "cursor"] as const)
     if (q[k] !== undefined && typeof q[k] !== "string") throw new Error("筛选条件无效");
   if ((q.from && !DAY.test(q.from)) || (q.to && !DAY.test(q.to))) throw new Error("筛选日期无效");
@@ -199,11 +200,11 @@ export async function listAudit(store: Store, q: AuditQuery, forceActor?: string
   const actor = forceActor ?? q.actor;
   const rows = (await store.list<AuditEntry>(AUDIT_COLLECTION))
     .filter((r) =>
-      (!actor || r.actorUid === actor || (actor === "group:system" && !forceActor && r.actorUid.startsWith("system:"))) &&
+      (!actor || r.actorUid === actor || (opts.groups && actor === "group:system" && !forceActor && r.actorUid.startsWith("system:"))) &&
       (!q.from || r.day >= q.from) &&
       (!q.to || r.day <= q.to) &&
       (!q.action ||
-        (AUDIT_ACTION_GROUPS[q.action]
+        (opts.groups && Object.hasOwn(AUDIT_ACTION_GROUPS, q.action)
           ? AUDIT_ACTION_GROUPS[q.action](r.action)
           : r.action === q.action || r.action.startsWith(q.action + "."))) &&
       (!q.result || r.result === q.result) &&

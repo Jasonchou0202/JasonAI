@@ -234,6 +234,29 @@ describe("成员颜色", () => {
     await call(OWNER, "members.enable", { uid: "uid-m0" });
     expect((s.data.members["uid-m0"] as any).color).toBe("c1");
   });
+  it("两个人同时被批准：分色计数器在事务里读写，不会撞色；计数器不算成员", async () => {
+    const s = new MemoryStore();
+    member(s, "uid-x", "已有色", "active", "2026-11-01T00:00:00.000Z", { color: "c1" });
+    member(s, "uid-p1", "甲", "pending", "2026-11-02T00:00:00.000Z");
+    member(s, "uid-p2", "乙", "pending", "2026-11-03T00:00:00.000Z");
+    const call = caller(s, OWNER_ON);
+    // 两个请求同时进来：事务外读到的「已有颜色人数」都是 1，真正序号以事务里的计数器为准
+    const [a, b] = await Promise.all([call(OWNER, "members.approve", { uid: "uid-p1" }), call(OWNER, "members.approve", { uid: "uid-p2" })]);
+    expect(a.ok && b.ok).toBe(true);
+    const got = [(s.data.members["uid-p1"] as any).color, (s.data.members["uid-p2"] as any).color].sort();
+    expect(got).toEqual(["c2", "c3"]);
+    expect((s.data.members["_color_counter"] as any).next).toBe(3);
+    // 补色和入队共用计数器
+    member(s, "uid-old", "老成员", "active", "2026-11-04T00:00:00.000Z");
+    expect((await call(OWNER, "members.color.fill")).data.filled).toEqual([{ uid: "uid-old", color: "c4" }]);
+    expect((await call(OWNER, "members.directory")).data.people.some((p: { uid: string }) => p.uid.startsWith("_"))).toBe(false);
+    // 开关关：不写计数器
+    const off = new MemoryStore();
+    member(off, "uid-p3", "丙", "pending");
+    expect((await caller(off, BASE)(OWNER, "members.approve", { uid: "uid-p3" })).ok).toBe(true);
+    expect(off.data.members["_color_counter"]).toBeUndefined();
+    expect((off.data.members["uid-p3"] as any).color).toBeUndefined();
+  });
   it("一次性补色：按入队先后；重复运行不再改；成员调用被拒", async () => {
     const s = new MemoryStore();
     member(s, "uid-b", "后来", "active", "2026-11-05T00:00:00.000Z");
@@ -290,6 +313,22 @@ describe("操作日志按人筛选", () => {
     expect(await call(ALICE, "audit.list", { actor: OWNER })).toMatchObject({ ok: false, code: "SELF_ONLY" });
     expect(logs(s).some((l) => l.action === "audit.list" && l.result === "denied" && l.actorUid === ALICE)).toBe(true);
   });
+  it("组合筛选 group:owner / group:delete / group:system 只在开关开时生效；关时按原样精确匹配（什么都不匹配）", async () => {
+    const s = await team();
+    const on = caller(s, OWNER_ON);
+    await on(OWNER, "tasks.create", { requestId: "t1", task: await task() });
+    await on(OWNER, "tasks.delete", { id: "t1", requestId: "d1", revision: 1 });
+    s.data.audit_logs["zz_sys"] = { ...(Object.values(s.data.audit_logs)[0] as AuditEntry), id: "zz_sys", actorUid: "system:auto", action: "customers.autoCreate" };
+    const rows = async (c: ReturnType<typeof caller>, q: object) => ((await c(OWNER, "audit.list", q)).data.rows as AuditEntry[]).map((r) => r.action);
+    expect(await rows(on, { action: "group:delete" })).toEqual(["tasks.delete"]);
+    expect(await rows(on, { actor: "group:system" })).toEqual(["customers.autoCreate"]);
+    const off = caller(s, BASE);
+    expect(await rows(off, { action: "group:delete" })).toEqual([]);
+    expect(await rows(off, { action: "group:owner" })).toEqual([]);
+    expect(await rows(off, { actor: "group:system" })).toEqual([]);
+    // 原型链上的键不当组合
+    expect(await rows(on, { action: "constructor" })).toEqual([]);
+  });
 });
 
 describe("iPhone 同步：只同步归 Jason 的 + 撤下清单", () => {
@@ -302,7 +341,7 @@ describe("iPhone 同步：只同步归 Jason 的 + 撤下清单", () => {
     await call(OWNER, "tasks.assign", { id: "moved", requestId: "a1", revision: 1, to: BOB });
     await call(OWNER, "tasks.create", { requestId: "deletedMine", task: await task("2026-11-23T04:00:00Z") });
     await call(ALICE, "tasks.delete", { id: "deletedMine", requestId: "d1", revision: 1 });
-    // 老日程（没有 createdBy / ownerUid）= Jason 的；周诗懿式的老成员日程只有 createdBy
+    // 老日程（没有 createdBy / ownerUid）= Jason 的；早期成员（成员A）建的老日程只有 createdBy
     s.data.tasks.legacy = { ...(s.data.tasks.mine as object), id: "legacy", createdBy: undefined, ownerUid: undefined };
     s.data.tasks.oldMember = { ...(s.data.tasks.mine as object), id: "oldMember", createdBy: ALICE, ownerUid: undefined, at: "2026-10-20T04:00:00.000Z" };
     s.data.tasks.tooOld = { ...(s.data.tasks.mine as object), id: "tooOld", createdBy: ALICE, ownerUid: undefined, at: "2026-10-01T04:00:00.000Z" };
@@ -447,6 +486,8 @@ describe("只读预演脚本", () => {
       t("jason", "2026-11-20T04:00:00.000Z"),
       t("old", "2026-11-21T04:00:00.000Z", { createdBy: ALICE }),
       t("past", "2026-11-01T04:00:00.000Z", { createdBy: ALICE }),
+      t("gone", "2026-11-02T04:00:00.000Z", { createdBy: ALICE, deletedAt: NOW }),
+      t("tooOld", "2026-09-01T04:00:00.000Z", { createdBy: ALICE }),
     ];
     const frozen = JSON.stringify(tasks);
     const out = await previewScheduleOwner({
@@ -456,8 +497,13 @@ describe("只读预演脚本", () => {
     });
     expect(out.syncBefore).toBe(2);
     expect(out.syncAfter).toBe(1);
-    expect(out.removeFromPhone.map((r) => [r.id, r.owner])).toEqual([["old", "林小雅"]]);
-    expect(out.withdrawn.map((r) => r.id)).toEqual(["past", "old"]);
+    // 过去 30 天的手机提醒也在第一轮要删的里面（不只是未来 90 天）；已删的只进完整清单
+    expect(out.removeFromPhone.map((r) => [r.id, r.owner, r.window, r.inSyncNow])).toEqual([
+      ["past", "林小雅", "past", false],
+      ["old", "林小雅", "future", true],
+    ]);
+    expect(out.withdrawn.map((r) => r.id)).toEqual(["past", "gone", "old"]);
+    expect(out.counts).toEqual({ withdrawn: 3, past: 2, future: 1, deleted: 1 });
     expect(out.colorPlan).toEqual([{ uid: ALICE, name: "林小雅", color: "c2" }]);
     expect(JSON.stringify(tasks)).toBe(frozen);
   });
