@@ -35,7 +35,7 @@ import { EdgeFade } from "./components/EdgeFade";
 import type { Filters, Sale } from "./domain/model";
 import { cloudApi, configured, session, login, logout } from "./lib/cloud";
 import { createDemo, demoRole, DEMO_ROLE_KEY } from "./lib/demo";
-import { LEGACY_ME, TeamProvider, whoAmI, type Me } from "./lib/team-ui";
+import { LEGACY_ME, ME_AUTO_RETRY_MS, TeamProvider, visibleMe, whoAmI, type Me } from "./lib/team-ui";
 import { contentCloudApi } from "./lib/content-api";
 import { createContentDemo } from "./lib/content-demo";
 import { routeParams, readFilters, filterQuery } from "./lib/routes";
@@ -222,8 +222,9 @@ export default function App() {
   );
   const [me, setMe] = useState<Me>(LEGACY_ME);
   // pending：还在问「我是谁」；ready：已拿到明确结果（含功能未开）；unavailable：临时失败，不按未开跳转
-  const [meLoad, setMeLoad] = useState<"pending" | "ready" | "unavailable">("pending");
+  const [meLoad, setMeLoad] = useState<"pending" | "ready" | "unavailable" | "unauthenticated">("pending");
   const meReq = useRef(0);
+  const meAutoTried = useRef(false);
   const [page, setPage] = useState<Page>(readRoute);
   const [edit, setEdit] = useState<Sale>();
   const [version, setVersion] = useState(0);
@@ -337,25 +338,38 @@ export default function App() {
   );
   // 当前角色：没有团队功能时 = 原来的单人管理员（界面不变）
   // 临时失败不写成「未开」，避免把管理员从团队页踢回看板
-  function requestMe() {
+  function requestMe(opts?: { silent?: boolean }) {
     const id = ++meReq.current;
-    setMeLoad("pending");
+    if (!opts?.silent) setMeLoad("pending");
     void whoAmI(api).then((result) => {
       if (id !== meReq.current) return;
       if (result.status === "ok") {
         setMe(result.me);
         setMeLoad("ready");
-      } else setMeLoad("unavailable");
+        meAutoTried.current = false;
+      } else if (result.status === "unauthenticated") setMeLoad("unauthenticated");
+      else setMeLoad("unavailable");
     });
   }
   useEffect(() => {
     if (mode !== "cloud" && mode !== "demo") return;
+    meAutoTried.current = false;
     requestMe();
     return () => {
       meReq.current += 1;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [api, mode]);
+  // 临时失败时自动补拉一次（有退避）；仍失败就停，靠页面上的重试入口，不会死循环
+  useEffect(() => {
+    if ((mode !== "cloud" && mode !== "demo") || meLoad !== "unavailable" || meAutoTried.current) return;
+    meAutoTried.current = true;
+    const t = window.setTimeout(() => requestMe({ silent: true }), ME_AUTO_RETRY_MS);
+    return () => window.clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [meLoad, mode, api]);
+  const identityReady = meLoad === "ready";
+  const knownMe = visibleMe(me, identityReady);
   // 路由守卫：成员进不了系统页面（云端同样会拒）
   useEffect(() => {
     if (me.role === "member" && ADMIN_PAGES.includes(page))
@@ -458,6 +472,20 @@ export default function App() {
       go("dashboard");
     } catch (e) {
       setToast(message(e));
+    }
+  }
+  async function reLogin() {
+    if (mode === "demo") {
+      void signOut();
+      return;
+    }
+    setLoginBusy(true);
+    try {
+      await login();
+    } catch (e) {
+      setToast(message(e));
+    } finally {
+      setLoginBusy(false);
     }
   }
   if (mode === "loading")
@@ -597,7 +625,7 @@ export default function App() {
             salesOpen={salesOpen}
             contentOpen={contentOpen}
             onToggle={toggleGroup}
-            me={me}
+            me={knownMe}
           />
         </nav>
         <div className="sidebar-bottom">
@@ -611,10 +639,10 @@ export default function App() {
             </p>
           </div>
           <div className="account">
-            <div className="avatar">{me.role === "member" ? (me.name || "成").slice(0, 1) : "章"}</div>
+            <div className="avatar">{!identityReady ? "…" : knownMe.role === "member" ? (knownMe.name || "成").slice(0, 1) : "章"}</div>
             <div>
-              <strong>{me.role === "member" ? me.name || "团队成员" : "章鱼哥"}</strong>
-              <span>{me.role === "member" ? "团队成员" : mode === "demo" ? "演示工作台" : "个人工作室"}</span>
+              <strong>{!identityReady ? "工作台" : knownMe.role === "member" ? knownMe.name || "团队成员" : "章鱼哥"}</strong>
+              <span>{!identityReady ? "正在确认身份…" : knownMe.role === "member" ? "团队成员" : mode === "demo" ? "演示工作台" : "个人工作室"}</span>
             </div>
             <button
               className="icon-button"
@@ -672,7 +700,7 @@ export default function App() {
             >
               <RefreshCw size={16} />
             </button>
-            {me.role === "admin" && (
+            {knownMe.role === "admin" && (
               <button
                 className="mobile-settings icon-button"
                 aria-label="打开设置"
@@ -681,7 +709,7 @@ export default function App() {
                 <SettingsIcon size={18} />
               </button>
             )}
-            <span className="mini-avatar">{me.role === "member" ? (me.name || "成").slice(0, 1) : "章"}</span>
+            <span className="mini-avatar">{!identityReady ? "…" : knownMe.role === "member" ? (knownMe.name || "成").slice(0, 1) : "章"}</span>
           </div>
         </header>
         {mode === "demo" && (
@@ -719,13 +747,29 @@ export default function App() {
             网络已断开，输入内容会保留为草稿，联网后再保存。
           </div>
         )}
+        {meLoad === "unauthenticated" && !["members", "audit", "my-log"].includes(page) && (
+          <div className="me-retry-banner" role="alert">
+            登录已过期，请
+            <button type="button" className="text-button" onClick={() => void reLogin()}>
+              重新登录
+            </button>
+          </div>
+        )}
+        {meLoad === "unavailable" && !["members", "audit", "my-log"].includes(page) && (
+          <div className="me-retry-banner" role="status">
+            暂时连不上，
+            <button type="button" className="text-button" onClick={() => requestMe()}>
+              点重试
+            </button>
+          </div>
+        )}
         <main className="main-content" id="main-content" tabIndex={-1}>
-          {me.role === "admin" && !!me.auditHealth?.failed && (
+          {knownMe.role === "admin" && !!knownMe.auditHealth?.failed && (
             <div className="team-banner" role="alert">
-              有 {me.auditHealth.failed} 次操作日志未能写入（最近一次 {me.auditHealth.lastFailedAt ? new Date(Date.parse(me.auditHealth.lastFailedAt) + 8 * 3600_000).toISOString().slice(0, 16).replace("T", " ") : ""} 北京时间），记账不受影响，请查看云函数日志。
+              有 {knownMe.auditHealth.failed} 次操作日志未能写入（最近一次 {knownMe.auditHealth.lastFailedAt ? new Date(Date.parse(knownMe.auditHealth.lastFailedAt) + 8 * 3600_000).toISOString().slice(0, 16).replace("T", " ") : ""} 北京时间），记账不受影响，请查看云函数日志。
             </div>
           )}
-          <TeamProvider me={me}>
+          <TeamProvider me={knownMe}>
           <InsightsProvider api={api} version={version}>
           <UpdateBoundary key={page}>
             <Suspense fallback={<Loading />}>
@@ -775,7 +819,8 @@ export default function App() {
                   onCustomer={customer}
                 />
               )}
-              {page === "settings" && (
+              {page === "settings" && meLoad === "pending" && <Loading />}
+              {page === "settings" && identityReady && me.role === "admin" && (
                 <Settings
                   api={api}
                   version={version}
@@ -796,7 +841,8 @@ export default function App() {
                   taskId={routeParams().get("task") || undefined}
                 />
               )}
-              {page === "content-entry" && (
+              {page === "content-entry" && meLoad === "pending" && <Loading />}
+              {page === "content-entry" && identityReady && me.role === "admin" && (
                 <ContentEntry
                   key={mode}
                   api={contentApi}
@@ -827,6 +873,14 @@ export default function App() {
                   </button>
                 </ErrorNote>
               )}
+              {(page === "members" || page === "audit" || page === "my-log") && meLoad === "unauthenticated" && (
+                <ErrorNote>
+                  登录已过期，请
+                  <button type="button" className="text-button" onClick={() => void reLogin()}>
+                    重新登录
+                  </button>
+                </ErrorNote>
+              )}
               {page === "members" && meLoad === "ready" && me.role === "admin" && me.membersEnabled && <Members api={api} />}
               {page === "audit" && meLoad === "ready" && me.role === "admin" && me.auditEnabled && <AuditLog api={api} mode="admin" />}
               {page === "my-log" && meLoad === "ready" && me.auditEnabled && <AuditLog api={api} mode="self" />}
@@ -844,7 +898,7 @@ export default function App() {
                 salesOpen={salesOpen}
                 contentOpen={contentOpen}
                 onToggle={toggleGroup}
-                me={me}
+                me={knownMe}
               />
             </div>
           </footer>
@@ -854,7 +908,7 @@ export default function App() {
         <EdgeFade band="bottom" />
         <div className="mobile-sheet" hidden={mobileSheet === null}>
           {mobileSheet === "sales" && (
-            <SalesLinks page={page} onOpen={openSalesItem} me={me} />
+            <SalesLinks page={page} onOpen={openSalesItem} me={knownMe} />
           )}
           {mobileSheet === "content" && (
             <ContentLinks page={page} onOpen={openSalesItem} />
@@ -882,7 +936,7 @@ export default function App() {
             </span>
             <small>记一笔</small>
           </button>
-          {me.role === "admin" && (
+          {knownMe.role === "admin" && (
             <button
               type="button"
               className={mobileSheet === "content" ? "active" : ""}

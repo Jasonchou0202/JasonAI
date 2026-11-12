@@ -1,4 +1,5 @@
 import type { Api } from "../domain/model";
+import { ApiError, errorCode, isAuthError } from "./team-me";
 export const configured = Boolean(
   import.meta.env.VITE_CLOUDBASE_ENV_ID &&
   import.meta.env.VITE_CLOUDBASE_PUBLISHABLE_KEY,
@@ -23,22 +24,29 @@ export const cloudApi: Api = {
     if (!navigator.onLine)
       throw new Error("网络已断开，草稿已保留，请联网后重试");
     const app = await cloud();
-    const response = await app.callFunction({
-      name: import.meta.env.VITE_CLOUDBASE_FUNCTION || "sales",
-      data: { action, payload },
-    });
-    const result = response.result;
-    if (!result || typeof result.ok !== "boolean")
-      throw new Error("后台响应异常，请稍后重试");
-    if (!result.ok) {
-      if (
-        typeof result.code === "string" &&
-        /^[A-Za-z0-9_.-]{1,100}$/.test(result.code)
-      )
-        console.warn("云端错误码", result.code);
-      throw new Error(result.error || "操作未完成");
+    try {
+      const response = await app.callFunction({
+        name: import.meta.env.VITE_CLOUDBASE_FUNCTION || "sales",
+        data: { action, payload },
+      });
+      const result = response.result;
+      if (!result || typeof result.ok !== "boolean")
+        throw new Error("后台响应异常，请稍后重试");
+      if (!result.ok) {
+        const code =
+          typeof result.code === "string" && /^[A-Za-z0-9_.-]{1,100}$/.test(result.code)
+            ? result.code
+            : undefined;
+        if (code) console.warn("云端错误码", code);
+        throw new ApiError(result.error || "操作未完成", code);
+      }
+      return result.data as T;
+    } catch (error) {
+      if (error instanceof ApiError) throw error;
+      if (isAuthError(error))
+        throw new ApiError("登录已过期，请重新登录", errorCode(error) || "NOT_SIGNED_IN");
+      throw error;
     }
-    return result.data as T;
   },
 };
 export async function session() {
