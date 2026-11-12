@@ -1,5 +1,6 @@
 /* 团队账号 / 操作日志：沿用奶油底 + 白卡片 + 珊瑚主色 */
-.team-panel { display: grid; gap: 14px; margin-bottom: 18px; }
+.team-panel { display: grid; gap: 14px; margin-bottom: 18px; padding: 22px 24px; }
+@media (max-width: 720px) { .team-panel { padding: 16px; } }
 .team-panel h2 { font-size: 17px; margin: 0; }
 .team-panel h3 { font-size: 15px; margin: 8px 0 0; }
 .team-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
