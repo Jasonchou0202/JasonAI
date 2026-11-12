@@ -43,37 +43,22 @@ export function errorCode(error: unknown): string | undefined {
   return raw;
 }
 
-/** 当前云函数尚未返回这些码；前端先认下，后端补上即可生效。 */
-const FEATURE_OFF_CODES = new Set([
-  "UNSUPPORTED_ACTION",
-  "UNKNOWN_ACTION",
-  "FEATURE_OFF",
-  "MEMBERS_DISABLED",
-  "TEAM_DISABLED",
-  "NOT_IMPLEMENTED",
-]);
+/**
+ * 服务端实际会带上的码（只认这些，不预留尚未存在的码）：
+ * - 功能未开：开关全关 / 不传开关时走 legacy，members.me 只返回 { error: "不支持的操作" }，没有 code。
+ * - 登录失效：团队路径未带 uid 时返回 NOT_SIGNED_IN。
+ */
+const AUTH_CODES = new Set(["NOT_SIGNED_IN"]);
+const FEATURE_OFF_MESSAGE = "不支持的操作";
 
-const AUTH_CODES = new Set([
-  "NOT_SIGNED_IN",
-  "UNAUTHENTICATED",
-  "AUTH_EXPIRED",
-  "AUTH_INVALID",
-  "AUTH_REQUIRED",
-  "NOT_LOGIN",
-  "LOGIN_REQUIRED",
-  "SESSION_EXPIRED",
-  "TOKEN_EXPIRED",
-  "AUTH_INVALID_ACCESS_TOKEN",
-  "INVALID_ACCESS_TOKEN",
-]);
-
-/** 明确「功能未开」：只按错误码判断，不比对中文。 */
+/** 明确「功能未开」：有可用错误码时按码；无码时兜底认「不支持的操作」（线上开关全关就是这样）。 */
 export function isFeatureOffError(error: unknown): boolean {
   const code = errorCode(error);
-  return !!code && FEATURE_OFF_CODES.has(normalizeCode(code));
+  if (code) return false; // 服务端目前没有功能未开的错误码；有码就交给别的判断
+  return error instanceof Error && error.message === FEATURE_OFF_MESSAGE;
 }
 
-/** 未登录 / 会话过期：只按错误码判断。 */
+/** 未登录 / 会话过期：按服务端实际返回的错误码判断。 */
 export function isAuthError(error: unknown): boolean {
   const code = errorCode(error);
   return !!code && AUTH_CODES.has(normalizeCode(code));

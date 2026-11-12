@@ -4,7 +4,7 @@ import { handle } from "../../server/handler";
 import { addDays, today } from "../domain/dates";
 import { NEW_CUTOFF } from "../domain/insights";
 import type { Api, AppState, Product, Sale } from "../domain/model";
-import { ApiError, LEGACY_ME } from "./team-me";
+import { ApiError } from "./team-me";
 export async function sha256(value: string | ArrayBuffer): Promise<string> {
   const buffer =
     typeof value === "string" ? new TextEncoder().encode(value) : value;
@@ -101,7 +101,7 @@ export function createDemo(role: "admin" | "member" | null = null): Api {
     async call<T>(action: string, payload: unknown = {}) {
       if (!navigator.onLine)
         throw new Error("网络已断开，草稿已保留，请联网后重试");
-      // e2e：模拟登录过期 / members.me 临时断网；普通演示直接返回开关关闭的身份（不靠中文错误）
+      // e2e：模拟登录过期 / members.me 临时断网。普通演示不短路，走下面的 execute，会抛出「不支持的操作」（与线上开关全关一致）
       if (action === "members.me") {
         if (sessionStorage.getItem("zhangyuge-demo-me-auth") === "1")
           throw new ApiError("登录已过期，请重新登录", "NOT_SIGNED_IN");
@@ -110,7 +110,6 @@ export function createDemo(role: "admin" | "member" | null = null): Api {
           sessionStorage.setItem("zhangyuge-demo-me-fail", String(left - 1));
           throw new Error("网络已断开，草稿已保留，请联网后重试");
         }
-        if (!role) return { ...LEGACY_ME, uid: "demo" } as T;
       }
       if (action.startsWith("import.") || action === "backup.restore")
         throw new Error("演示账本不接收真实数据，请连接云端后导入");

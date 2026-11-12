@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { describe, expect, it } from "vitest";
 import type { Api } from "../src/domain/model";
 import {
@@ -9,6 +10,10 @@ import {
   visibleMe,
   whoAmI,
 } from "../src/lib/team-me";
+import { MemoryStore } from "../server/memory-store";
+import { handle } from "../server/handler";
+import type { Context } from "../server/service";
+import type { TeamConfig } from "../server/team";
 
 function api(impl: (action: string) => unknown): Api {
   return { call: async (action) => impl(action) as never };
@@ -16,28 +21,28 @@ function api(impl: (action: string) => unknown): Api {
 
 describe("errorCode / isFeatureOffError / isAuthError", () => {
   it("只取合法错误码，非法值忽略", () => {
-    expect(errorCode(new ApiError("x", "UNSUPPORTED_ACTION"))).toBe("UNSUPPORTED_ACTION");
-    expect(errorCode({ code: "not_login" })).toBe("not_login");
+    expect(errorCode(new ApiError("x", "NOT_SIGNED_IN"))).toBe("NOT_SIGNED_IN");
     expect(errorCode(new Error("不支持的操作"))).toBeUndefined();
     expect(errorCode({ code: "有中文" })).toBeUndefined();
     expect(errorCode({ code: "a".repeat(101) })).toBeUndefined();
     expect(errorCode({ code: 401 })).toBeUndefined();
   });
 
-  it("功能未开只认错误码，不比对中文", () => {
-    expect(isFeatureOffError(new ApiError("不支持的操作", "UNSUPPORTED_ACTION"))).toBe(true);
-    expect(isFeatureOffError(new ApiError("anything", "feature-off"))).toBe(true);
-    expect(isFeatureOffError(new ApiError("不支持的操作"))).toBe(false);
-    expect(isFeatureOffError(new Error("不支持的操作"))).toBe(false);
+  it("无错误码且文案为「不支持的操作」视为功能未开；有别的码则不认", () => {
+    expect(isFeatureOffError(new Error("不支持的操作"))).toBe(true);
+    expect(isFeatureOffError(new ApiError("不支持的操作"))).toBe(true);
+    expect(isFeatureOffError(new ApiError("不支持的操作", "NOT_SIGNED_IN"))).toBe(false);
+    expect(isFeatureOffError(new Error("网络已断开，草稿已保留，请联网后重试"))).toBe(false);
     expect(isFeatureOffError(new ApiError("x", "NOT_SIGNED_IN"))).toBe(false);
   });
 
-  it("登录失效只认错误码", () => {
-    expect(isAuthError(new ApiError("登录已过期，请重新登录", "NOT_SIGNED_IN"))).toBe(true);
-    expect(isAuthError({ code: "not_login" })).toBe(true);
-    expect(isAuthError({ code: "SESSION_EXPIRED" })).toBe(true);
+  it("登录失效只认服务端实际返回的 NOT_SIGNED_IN", () => {
+    expect(isAuthError(new ApiError("无权访问这个私人账本", "NOT_SIGNED_IN"))).toBe(true);
+    expect(isAuthError({ code: "not_signed_in" })).toBe(true);
+    expect(isAuthError({ code: "not_login" })).toBe(false);
+    expect(isAuthError({ code: "SESSION_EXPIRED" })).toBe(false);
     expect(isAuthError(new Error("登录已过期，请重新登录"))).toBe(false);
-    expect(isAuthError(new ApiError("x", "UNSUPPORTED_ACTION"))).toBe(false);
+    expect(isAuthError(new Error("不支持的操作"))).toBe(false);
   });
 });
 
@@ -92,25 +97,16 @@ describe("whoAmI", () => {
     expect(result.me.auditEnabled).toBe(false);
   });
 
-  it("错误码 UNSUPPORTED_ACTION 视为功能明确未开（旧后台）", async () => {
-    const result = await whoAmI(
-      api(() => {
-        throw new ApiError("不支持的操作", "UNSUPPORTED_ACTION");
-      }),
-    );
-    expect(result).toEqual({ status: "ok", me: LEGACY_ME });
-  });
-
-  it("没有错误码的中文「不支持的操作」不再当成未开", async () => {
+  it("没有错误码的「不支持的操作」视为功能明确未开（线上开关全关）", async () => {
     const result = await whoAmI(
       api(() => {
         throw new Error("不支持的操作");
       }),
     );
-    expect(result).toEqual({ status: "unavailable" });
+    expect(result).toEqual({ status: "ok", me: LEGACY_ME });
   });
 
-  it("NOT_SIGNED_IN 视为登录已过期，不是暂时连不上", async () => {
+  it("NOT_SIGNED_IN 视为登录已过期，不是暂时连不上，也不是功能未开", async () => {
     const result = await whoAmI(
       api(() => {
         throw new ApiError("无权访问这个私人账本", "NOT_SIGNED_IN");
@@ -137,5 +133,56 @@ describe("whoAmI", () => {
       );
       expect(result, message).toEqual({ status: "unavailable" });
     }
+  });
+});
+
+describe("whoAmI 经真实 sales handler（不部署）", () => {
+  const OWNER = "uid-owner";
+  const NOW = "2026-11-12T04:00:00.000Z";
+  const hash = async (s: string) => createHash("sha256").update(s).digest("hex");
+  const ctx: Context = { uid: OWNER, ownerUid: OWNER, now: () => NOW, hash };
+
+  /** 与前端 cloud.ts 一样：把 handler 的 { ok, error, code } 转成 ApiError / 数据 */
+  function apiFromHandle(team?: TeamConfig): Api {
+    const store = new MemoryStore();
+    return {
+      async call<T>(action: string, payload: unknown = {}) {
+        const r = (await handle(
+          () => store,
+          ctx,
+          { action, payload },
+          undefined,
+          undefined,
+          team,
+        )) as { ok: boolean; data?: unknown; error?: string; code?: string };
+        if (!r.ok) {
+          const code =
+            typeof r.code === "string" && /^[A-Za-z0-9_.-]{1,100}$/.test(r.code) ? r.code : undefined;
+          throw new ApiError(r.error || "操作未完成", code);
+        }
+        return r.data as T;
+      },
+    };
+  }
+
+  async function rawMembersMe(team?: TeamConfig) {
+    const store = new MemoryStore();
+    return handle(() => store, ctx, { action: "members.me", payload: {} }, undefined, undefined, team);
+  }
+
+  it("开关全关：handler 只返回中文「不支持的操作」、不带 code，whoAmI 为单人管理员", async () => {
+    const raw = await rawMembersMe({ membersEnabled: false, auditEnabled: false });
+    expect(raw).toEqual({ ok: false, error: "不支持的操作" });
+    expect(raw).not.toHaveProperty("code");
+    const result = await whoAmI(apiFromHandle({ membersEnabled: false, auditEnabled: false }));
+    expect(result).toEqual({ status: "ok", me: LEGACY_ME });
+  });
+
+  it("不传开关：与开关全关相同，whoAmI 为单人管理员", async () => {
+    const raw = await rawMembersMe(undefined);
+    expect(raw).toEqual({ ok: false, error: "不支持的操作" });
+    expect(raw).not.toHaveProperty("code");
+    const result = await whoAmI(apiFromHandle(undefined));
+    expect(result).toEqual({ status: "ok", me: LEGACY_ME });
   });
 });
