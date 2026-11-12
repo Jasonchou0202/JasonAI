@@ -875,6 +875,7 @@ function TaskCard({
   onEdit: () => void;
   onNext: () => void;
 }) {
+  const team = useTeam();
   const mutation = useCustomerMutation(api, mode, `task-${task.id}`);
   const [confirmPurge, setConfirmPurge] = useState(false);
   async function act(action: string) {
@@ -1006,14 +1007,17 @@ function TaskCard({
               <Plus size={14} />
               安排下一次
             </button>
-            <button
-              className="text-button negative"
-              disabled={mutation.busy}
-              onClick={() => void act("delete")}
-            >
-              <Trash2 size={14} />
-              删除
-            </button>
+            {/* 成员只在自己建的日程上看到删除（没有录入人 = 管理员建的，藏起来）；真正的拦截在云端 */}
+            {team.canChange(task) && (
+              <button
+                className="text-button negative"
+                disabled={mutation.busy}
+                onClick={() => void act("delete")}
+              >
+                <Trash2 size={14} />
+                删除
+              </button>
+            )}
           </>
         )}
       </div>
