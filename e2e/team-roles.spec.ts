@@ -86,8 +86,9 @@ test("成员：看不到系统入口，直达系统页被送回；只能删自�
   await page.goto("./#/audit");
   await expect(page).toHaveURL(/#\/my-log$/);
   await page.goto("./#/calendar");
-  await expect(page.getByRole("button", { name: "已完成" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "回收站" })).toHaveCount(0);
+  const seg = page.locator(".apple-seg");
+  await expect(seg.getByRole("button", { name: "已完成", exact: true })).toBeVisible();
+  await expect(seg.getByRole("button", { name: "回收站" })).toHaveCount(0);
   await page.goto("./#/details");
   await expect(page.getByRole("button", { name: "回收站" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "导出明细" })).toHaveCount(0);
