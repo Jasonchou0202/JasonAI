@@ -7,7 +7,7 @@ import {
   summarize,
   type AuditInput,
 } from "./audit";
-import { authorize, DeniedError, executeTeam, type Actor, type TeamConfig } from "./team";
+import { authorize, DeniedError, executeTeam, hideDeleted, memberResult, type Actor, type TeamConfig } from "./team";
 
 function failure(error: unknown, diagnose?: (code: string) => void) {
   const code =
@@ -165,11 +165,14 @@ async function teamHandle(
       ...(team.membersEnabled ? { actorUid: actor.uid } : {}),
       ...(team.auditEnabled ? { onAutoCreate: (ids: string[]) => void autoCreated.push(...ids) } : {}),
     };
-    const business = guardAudit(base());
+    // 成员的读操作：看不到回收站里的销售/日程（含 dashboard、客户详情、导出等全部读路径）
+    const memberRead = actor.role === "member" && !AUDITED_ACTIONS.has(action);
+    const business = memberRead ? hideDeleted(guardAudit(base())) : guardAudit(base());
     data =
       action.startsWith("push.") && extra
         ? await extra(business, action, payload)
         : await execute(business, execCtx, action, payload);
+    if (actor.role === "member") data = memberResult(action, data);
     if (autoCreated.length)
       await log().append({
         actorUid: "system:auto",

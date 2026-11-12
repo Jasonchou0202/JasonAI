@@ -27,6 +27,8 @@ export interface AuditEntry {
 export type AuditInput = Omit<AuditEntry, "id" | "at" | "atBj" | "day">;
 
 export const AUDIT_COLLECTION = "audit_logs" as const;
+/** 日志写失败计数：放在新集合 members 里的固定文档（不写入任何已有集合）；members.list 会过滤掉 _ 开头的文档 */
+export const AUDIT_HEALTH_COLLECTION = "members" as const;
 export const AUDIT_HEALTH_ID = "_audit_health";
 export const AUDIT_MAX_BYTES = 4000;
 const TEXT_MAX = 40;
@@ -116,7 +118,7 @@ export interface AuditLog {
 }
 /**
  * 只追加的写入口。日志自己写失败时（方案 a）：不影响主操作，
- * 记云函数告警日志，并尽力把失败次数记到 batches/_audit_health，管理员打开系统时提示。
+ * 记云函数告警日志，并尽力把失败次数记到 members/_audit_health，管理员打开系统时提示。
  */
 export function appendOnly(store: Store, now: () => string, warn?: (code: string) => void): AuditLog {
   return Object.freeze({
@@ -128,8 +130,8 @@ export function appendOnly(store: Store, now: () => string, warn?: (code: string
       } catch {
         warn?.("audit.write_failed");
         try {
-          const old = await store.get<{ failed?: number }>("batches", AUDIT_HEALTH_ID);
-          await store.put("batches", AUDIT_HEALTH_ID, {
+          const old = await store.get<{ failed?: number }>(AUDIT_HEALTH_COLLECTION, AUDIT_HEALTH_ID);
+          await store.put(AUDIT_HEALTH_COLLECTION, AUDIT_HEALTH_ID, {
             failed: (old?.failed ?? 0) + 1,
             lastFailedAt: at,
           });

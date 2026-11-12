@@ -223,7 +223,7 @@ describe("源码隔离", () => {
 });
 
 describe("销售那边一个字节都不变", () => {
-  it("数据库规则清单：原有 7 条原样不动，只在末尾追加 3 条 content_ 规则、同步日志 taskSyncLog 和团队 members/invites/audit_logs", () => {
+  it("数据库规则清单：原有 7 条原样不动，只在末尾追加 3 条 content_ 规则、同步日志 taskSyncLog 和团队 members/invites/audit_logs/redeem_attempts", () => {
     const lines = readFileSync("database.rules.json", "utf8").split("\n");
     expect(lines.slice(0, 8)).toEqual([
       "{",
@@ -247,6 +247,7 @@ describe("销售那边一个字节都不变", () => {
       "members",
       "invites",
       "audit_logs",
+      "redeem_attempts",
     ]);
     for (const v of Object.values(rules))
       expect(v).toEqual({ read: false, write: false });

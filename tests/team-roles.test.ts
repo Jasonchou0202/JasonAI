@@ -349,7 +349,11 @@ describe("操作日志", () => {
     expect(r.ok).toBe(true);
     expect(s.data.sales.s1).toBeDefined();
     expect(warns).toContain("audit.write_failed");
-    expect((s.data.batches._audit_health as any).failed).toBeGreaterThan(0);
+    // 失败计数放在新集合 members 的系统文档里，不写进已有的 batches
+    expect((s.data.members._audit_health as any).failed).toBeGreaterThan(0);
+    expect(s.data.batches._audit_health).toBeUndefined();
+    expect((await caller(s, ON)(OWNER, "members.list")).data.members).toEqual([]);
+    expect((await caller(s, ON)(OWNER, "members.disable", { uid: "_audit_health" })).ok).toBe(false);
     const me = await caller(s, ON)(OWNER, "members.me");
     expect(me.data.auditHealth.failed).toBeGreaterThan(0);
   });
@@ -460,7 +464,8 @@ describe("复审修复（防刷、并发、已删日程）", () => {
     expect(await call(STRANGER, "members.redeem", { code: "乱填" })).toMatchObject({ code: "REDEEM_LOCKED" });
     expect(await call(STRANGER, "members.redeem", { code: good.data.code })).toMatchObject({ code: "REDEEM_LOCKED" });
     expect(s.data.members).toEqual({});
-    const attempts = Object.entries(s.data.batches).filter(([k]) => k.startsWith("_redeem_"));
+    expect(Object.keys(s.data.batches).filter((k) => k.includes("redeem"))).toEqual([]);
+    const attempts = Object.entries(s.data.redeem_attempts);
     expect(attempts).toHaveLength(1);
     expect((attempts[0][1] as any).count).toBe(5);
     const denied = logs(s).filter((l) => l.action === "members.redeem");
@@ -495,5 +500,124 @@ describe("复审修复（防刷、并发、已删日程）", () => {
     expect((await call(OWNER, "tasks.list", { deleted: true })).data.map((t: any) => t.id)).toEqual(["t1"]);
     expect((await call(OWNER, "tasks.get", { id: "t1" })).data.deletedAt).toBeTruthy();
     expect((await call(OWNER, "sales.get", { id: "o1" })).data.deletedAt).toBeTruthy();
+  });
+});
+
+describe("第二次复审修复（回收站全路径、冻结集合）", () => {
+  // 一条已删销售 + 一条已删日程 + 一个目录回收站里的客户；成员任何读路径都不应看到
+  async function trashFixture() {
+    const s = new MemoryStore();
+    activeMember(s, ALICE, "小甲");
+    const call = caller(s, ON);
+    await call(OWNER, "sales.create", { requestId: "live1", sale: sale() });
+    await call(OWNER, "sales.create", { requestId: "gone1", sale: { ...sale("示例客户·回收"), note: "回收站标记" } });
+    await call(OWNER, "sales.delete", { id: "gone1", requestId: "d1", revision: 1 });
+    await call(OWNER, "tasks.create", { requestId: "tgone", task: { ...(await taskInput("示例客户·甲")), title: "已删日程标记" } });
+    await call(OWNER, "tasks.delete", { id: "tgone", requestId: "d2", revision: 1 });
+    return { s, call };
+  }
+  it("④ export 带 deleted:true 被拒；不带时也不含已删；deleted 任何真值、任何 action 都拒", async () => {
+    const { call } = await trashFixture();
+    expect(await call(ALICE, "export", { deleted: true })).toMatchObject({ ok: false, code: "ADMIN_ONLY" });
+    for (const v of [1, "true", "yes", {}, []])
+      for (const action of ["export", "sales.list", "tasks.list", "dashboard", "customers.detail", "customers.ranking", "products.catalog"])
+        expect(await call(ALICE, action, { deleted: v }), action + ":" + JSON.stringify(v)).toMatchObject({ ok: false, code: "ADMIN_ONLY" });
+    const rows = (await call(ALICE, "export", {})).data;
+    expect(rows.map((r: any) => r.id)).toEqual(["live1"]);
+    // deleted:false 等同于不传
+    expect((await call(ALICE, "export", { deleted: false })).data.map((r: any) => r.id)).toEqual(["live1"]);
+    // 管理员不变
+    expect((await call(OWNER, "export", { deleted: true })).data.map((r: any) => r.id)).toEqual(["gone1"]);
+  });
+  it("④ 排查：成员所有读 action 的返回里都没有已删销售/已删日程", async () => {
+    const { s, call } = await trashFixture();
+    const cust = await customerId("示例客户·回收", hash);
+    const reads: [string, unknown][] = [
+      ["dashboard", {}], ["sales.list", {}], ["sales.get", { id: "gone1" }], ["export", {}],
+      ["customers", {}], ["customers.list", {}], ["customers.ranking", { period: "all" }],
+      ["customers.suggestions", {}], ["customers.detail", { id: cust, month: "all" }],
+      ["tasks.list", {}], ["tasks.get", { id: "tgone" }], ["products.list", {}], ["products.catalog", {}],
+    ];
+    const memberReads = [...MEMBER_ACTIONS].filter((a) => !a.startsWith("members.") && a !== "audit.list" && a !== "session" && !/\.(create|update|delete|complete|reopen|save)$/.test(a));
+    expect(memberReads.sort()).toEqual(reads.map(([a]) => a).filter((a, i, all) => all.indexOf(a) === i).sort());
+    for (const [action, payload] of reads) {
+      const r = await call(ALICE, action, payload);
+      const text = JSON.stringify(r);
+      expect(text, action).not.toContain("gone1");
+      expect(text, action).not.toContain("回收站标记");
+      expect(text, action).not.toContain("tgone");
+      expect(text, action).not.toContain("已删日程标记");
+    }
+    // 排行/看板的合计里也不算已删的那笔
+    expect((await call(ALICE, "customers.ranking", { period: "all" })).data.totals.count).toBe(1);
+    // 管理员读同样的数据照常带回收站内容（行为不变）
+    expect(JSON.stringify((await call(OWNER, "sales.list", { deleted: true })).data)).toContain("gone1");
+    expect((await call(OWNER, "tasks.get", { id: "tgone" })).ok).toBe(true);
+    expect(s.data.sales.gone1).toBeDefined();
+  });
+  it("④ 目录回收站里（已归档）的客户：成员客户详情返回不存在、疑似重复里不出现；管理员不变", async () => {
+    const s = new MemoryStore();
+    activeMember(s, ALICE, "小甲");
+    const call = caller(s, ON);
+    await call(OWNER, "sales.create", { requestId: "c1", sale: sale("Demo客户") });
+    await call(OWNER, "sales.create", { requestId: "c2", sale: sale("demo客户") });
+    await call(OWNER, "sales.create", { requestId: "c3", sale: sale("DEMO客户") });
+    await call(OWNER, "customers.list");
+    const gone = (await customerId("DEMO客户", hash))!;
+    s.data.customers[gone] = { ...(s.data.customers[gone] as any), archivedAt: NOW };
+    expect(await call(ALICE, "customers.detail", { id: gone, month: "all" })).toEqual({ ok: false, error: "客户不存在" });
+    expect((await call(OWNER, "customers.detail", { id: gone, month: "all" })).ok).toBe(true);
+    const admin = (await call(OWNER, "customers.suggestions")).data;
+    expect(JSON.stringify(admin)).toContain(gone);
+    const mine = (await call(ALICE, "customers.suggestions")).data;
+    expect(JSON.stringify(mine)).not.toContain(gone);
+    expect(mine.length).toBe(1);
+    expect(mine[0].members).toHaveLength(2);
+    expect(mine[0].totals.count).toBe(mine[0].members.reduce((n: number, m: any) => n + m.totals.count, 0));
+  });
+  it("冻结：已有 11 个集合里不出现任何新类型文档（与开关全关时逐项相同，只多 createdBy 字段）", async () => {
+    const FROZEN = ["sales", "products", "batches", "customers", "tasks", "subscriptions", "deliveries", "content_daily", "content_audit", "content_receipts", "taskSyncLog"];
+    const strip = (v: unknown): unknown =>
+      Array.isArray(v) ? v.map(strip)
+        : v && typeof v === "object" ? Object.fromEntries(Object.entries(v).filter(([k]) => k !== "createdBy").map(([k, x]) => [k, strip(x)]))
+          : v;
+    async function run(team: TeamConfig) {
+      const s = new MemoryStore();
+      const call = caller(s, team);
+      await call(OWNER, "sales.create", { requestId: "s1", sale: sale() });
+      await call(OWNER, "tasks.create", { requestId: "t1", task: await taskInput("示例客户·甲") });
+      await call(OWNER, "sales.delete", { id: "s1", requestId: "d1", revision: 1 });
+      await call(OWNER, "dashboard");
+      if (team.membersEnabled) {
+        // 团队专有动作：邀请、乱填码到锁定、越权被刷、日志写失败
+        await call(OWNER, "members.invite.create", { name: "小庚" });
+        for (let i = 0; i < 7; i++) await call(STRANGER, "members.redeem", { code: String(i % 10).repeat(32) });
+        for (let i = 0; i < 5; i++) await call(STRANGER, "sales.list");
+        const put = s.put.bind(s);
+        s.put = (async (c: string, id: string, v: unknown) => {
+          if (c === AUDIT_COLLECTION) throw new Error("audit down");
+          return put(c as never, id, v);
+        }) as Store["put"];
+        await call(OWNER, "dashboard", { requestId: "x" });
+        await call(OWNER, "products.save", { id: "nope" });
+        s.put = put;
+        await call(OWNER, "members.me");
+        await call(OWNER, "members.list");
+      }
+      return s.data as Record<string, Record<string, unknown>>;
+    }
+    const off = await run(OFF);
+    const on = await run(ON);
+    for (const c of FROZEN) {
+      expect(Object.keys(on[c] ?? {}).sort(), c).toEqual(Object.keys(off[c] ?? {}).sort());
+      expect(strip(on[c] ?? {}), c).toEqual(off[c] ?? {});
+    }
+    expect(Object.keys(on.redeem_attempts)).toHaveLength(1);
+    expect(on.members._audit_health).toBeDefined();
+    // 源码层面：团队代码里没有写已有集合的 put/del
+    for (const f of ["server/team.ts", "server/audit.ts", "server/handler.ts", "server/cloud.ts"]) {
+      const src = readFileSync(f, "utf8");
+      expect(src, f).not.toMatch(/\.(put|del)\(\s*"(sales|products|batches|customers|tasks|subscriptions|deliveries|content_\w+|taskSyncLog)"/);
+    }
   });
 });

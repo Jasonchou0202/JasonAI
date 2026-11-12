@@ -5,7 +5,7 @@
  * - 成员能做什么是白名单，没列出的 action 一律拒绝（新功能默认只有管理员能用）。
  */
 import type { Context, Store } from "./service";
-import { listAudit, type AuditLog, type AuditQuery } from "./audit";
+import { AUDIT_HEALTH_COLLECTION, AUDIT_HEALTH_ID, listAudit, type AuditLog, type AuditQuery } from "./audit";
 
 export interface TeamConfig {
   membersEnabled: boolean;
@@ -77,6 +77,10 @@ export const OWN_ONLY: Record<string, "sales" | "tasks"> = {
 };
 /** 未入队/待批准/已停用的人也能调用的 action（查自己状态、兑换邀请码） */
 const GATE_ACTIONS = new Set(["members.me", "members.redeem"]);
+export const REDEEM_COLLECTION = "redeem_attempts" as const;
+/** members 集合里 _ 开头的是系统文档（如 _audit_health），不是成员 */
+const isMember = (m: Partial<Member> | null | undefined): m is Member =>
+  !!m && typeof m.uid === "string" && !m.uid.startsWith("_");
 const ID = /^[\w-]{1,128}$/;
 
 /** 录入人：没有 createdBy 的旧数据一律视为管理员录入 */
@@ -95,7 +99,7 @@ export async function authorize(
   if (!ctx.uid) throw new DeniedError("NOT_SIGNED_IN", LEGACY_DENIED);
   if (ctx.uid === ctx.ownerUid) return { uid: ctx.uid, role: "admin", name: "管理员" };
   if (!team.membersEnabled) throw new DeniedError("NOT_OWNER", LEGACY_DENIED);
-  const member = await store.get<Member>("members", ctx.uid);
+  const member = ctx.uid.startsWith("_") ? null : await store.get<Member>("members", ctx.uid);
   if (GATE_ACTIONS.has(action))
     return {
       uid: ctx.uid,
@@ -110,7 +114,8 @@ export async function authorize(
   const actor: Actor = { ...who, role: "member" };
   if (!MEMBER_ACTIONS.has(action))
     throw new DeniedError("ADMIN_ONLY", "这个操作只有管理员可以进行", actor);
-  if ((action === "sales.list" || action === "tasks.list") && payload.deleted)
+  // 回收站只给管理员：成员任何 action 只要带了 deleted（sales.list / tasks.list / export 等）一律拒绝
+  if (payload.deleted !== undefined && payload.deleted !== false && payload.deleted !== null)
     throw new DeniedError("ADMIN_ONLY", "回收站只有管理员可以查看", actor);
   // 已删除（在回收站里）的记录成员看不到，与列表一致
   if ((action === "sales.get" || action === "tasks.get") && typeof payload.id === "string" && ID.test(payload.id)) {
@@ -124,6 +129,57 @@ export async function authorize(
       throw new DeniedError("NOT_OWNER_OF_RECORD", "只能修改或删除自己录入的记录", actor);
   }
   return actor;
+}
+
+/**
+ * 成员读数据时用的存储视图：sales / tasks 里已删除（回收站）的记录读不到，
+ * 列表里没有、按 id 取返回空——dashboard / 客户详情 / 排行 / 导出等所有读路径一律看不到已删数据。
+ * 只用于成员的读操作；写操作和管理员仍用原存储。
+ */
+export function hideDeleted(store: Store): Store {
+  const trash = (c: string) => c === "sales" || c === "tasks";
+  const alive = <T>(c: string, row: T | null): T | null =>
+    trash(c) && row && (row as { deletedAt?: unknown }).deletedAt ? null : row;
+  return {
+    get: async <T>(c: Parameters<Store["get"]>[0], id: string) => alive<T>(c, await store.get<T>(c, id)),
+    list: async <T>(c: Parameters<Store["list"]>[0]) =>
+      (await store.list<T>(c)).filter((r) => alive(c, r) !== null),
+    put: (c, id, v) => store.put(c, id, v),
+    del: (c, id) => store.del(c, id),
+    transaction: (fn) =>
+      store.transaction((tx) =>
+        fn({
+          get: async <T>(c: Parameters<Store["get"]>[0], id: string) => alive<T>(c, await tx.get<T>(c, id)),
+          put: (c, id, v) => tx.put(c, id, v),
+          del: (c, id) => tx.del(c, id),
+        }),
+      ),
+  } as Store;
+}
+/** 成员读结果再过滤：目录回收站里（已归档）的客户成员也看不到 */
+export function memberResult(action: string, data: unknown): unknown {
+  const archived = (c: unknown) => !!(c && typeof c === "object" && (c as { archivedAt?: unknown }).archivedAt);
+  if (action === "customers.detail" && data && typeof data === "object" && archived((data as { customer?: unknown }).customer))
+    throw new Error("客户不存在");
+  if (action === "customers.suggestions" && Array.isArray(data))
+    return data
+      .map((g) => {
+        const members = (g.members as { customer: unknown; totals: { revenue: number; cost: number; profit: number; count: number }; taskCount: number }[])
+          .filter((m) => !archived(m.customer));
+        if (members.length === g.members.length) return g;
+        if (members.length < 2 || !members.some((m) => (m.customer as { id: string }).id === g.targetId)) return null;
+        return {
+          ...g,
+          members,
+          totals: members.reduce(
+            (t, m) => ({ revenue: t.revenue + m.totals.revenue, cost: t.cost + m.totals.cost, profit: t.profit + m.totals.profit, count: t.count + m.totals.count }),
+            { revenue: 0, cost: 0, profit: 0, count: 0 },
+          ),
+          taskCount: members.reduce((n, m) => n + m.taskCount, 0),
+        };
+      })
+      .filter(Boolean);
+  return data;
 }
 
 function text(v: unknown, max: number, label: string) {
@@ -158,7 +214,7 @@ export async function executeTeam(
       auditEnabled: team.auditEnabled,
     };
     if (admin && team.auditEnabled)
-      out.auditHealth = await store.get("batches", "_audit_health");
+      out.auditHealth = await store.get(AUDIT_HEALTH_COLLECTION, AUDIT_HEALTH_ID);
     return { data: out };
   }
   if (action === "audit.list") {
@@ -170,13 +226,14 @@ export async function executeTeam(
   if (action === "members.redeem") {
     if (admin) throw new Error("管理员不需要兑换邀请");
     const time = now();
-    const attemptsId = "_redeem_" + (await ctx.hash("redeem:" + actor.uid)).slice(0, 40);
-    const attempts = await store.get<{ count: number; since: string }>("batches", attemptsId);
+    // 尝试次数放在新集合 redeem_attempts（规则全不可读写），不写入任何已有集合
+    const attemptsId = "r_" + (await ctx.hash("redeem:" + actor.uid)).slice(0, 40);
+    const attempts = await store.get<{ count: number; since: string }>(REDEEM_COLLECTION, attemptsId);
     const inWindow = !!attempts && Date.parse(time) - Date.parse(attempts.since) < REDEEM_WINDOW_MS;
     if (inWindow && attempts!.count >= REDEEM_MAX_FAILS)
       throw new DeniedError("REDEEM_LOCKED", "邀请码尝试次数过多，请 24 小时后再试或联系管理员");
     const fail = async (error: DeniedError): Promise<never> => {
-      await store.put("batches", attemptsId, {
+      await store.put(REDEEM_COLLECTION, attemptsId, {
         count: inWindow ? attempts!.count + 1 : 1,
         since: inWindow ? attempts!.since : time,
       });
@@ -221,7 +278,7 @@ export async function executeTeam(
     ]);
     return {
       data: {
-        members: members.sort((a, b) => a.createdAt.localeCompare(b.createdAt)),
+        members: members.filter(isMember).sort((a, b) => a.createdAt.localeCompare(b.createdAt)),
         invites: invites
           .filter((i) => !i.usedBy && !i.revokedAt)
           .map(({ codeHash: _hidden, ...rest }) => rest)
@@ -260,7 +317,7 @@ export async function executeTeam(
   }
   if (action === "members.approve" || action === "members.disable" || action === "members.enable") {
     const uid = typeof p.uid === "string" && ID.test(p.uid) ? p.uid : "";
-    if (!uid) throw new Error("成员编号无效");
+    if (!uid || uid.startsWith("_")) throw new Error("成员编号无效");
     if (uid === ctx.ownerUid) throw new Error("不能修改管理员本人");
     const status: MemberStatus = action === "members.disable" ? "disabled" : "active";
     return store.transaction(async (tx) => {
