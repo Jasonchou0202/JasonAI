@@ -89,8 +89,8 @@ describe("开关关闭：行为与现在完全一致", () => {
     const { out, data } = await script(OFF);
     expect(out[6]).toEqual({ ok: false, error: "无权访问这个私人账本" });
     expect(out[7]).toEqual({ ok: false, error: "无权访问这个私人账本" });
-    expect(out[8]).toEqual({ ok: false, error: "不支持的操作" });
-    expect(out[9]).toEqual({ ok: false, error: "不支持的操作" });
+    expect(out[8]).toEqual({ ok: false, code: "UNSUPPORTED_ACTION", error: "不支持的操作" });
+    expect(out[9]).toEqual({ ok: false, code: "UNSUPPORTED_ACTION", error: "不支持的操作" });
     expect(data.members).toEqual({});
     expect(data.invites).toEqual({});
     expect(data.audit_logs).toEqual({});

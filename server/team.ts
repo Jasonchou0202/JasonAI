@@ -4,7 +4,7 @@
  * - MEMBERS_ENABLED 关：只认 OWNER_UID（与原来完全一致）；AUDIT_ENABLED 关：不写日志。
  * - 成员能做什么是白名单，没列出的 action 一律拒绝（新功能默认只有管理员能用）。
  */
-import type { Context, Store } from "./service";
+import { UnsupportedActionError, type Context, type Store } from "./service";
 import { AUDIT_HEALTH_COLLECTION, AUDIT_HEALTH_ID, listAudit, type AuditLog, type AuditQuery } from "./audit";
 
 export interface TeamConfig {
@@ -330,7 +330,7 @@ export async function executeTeam(
       return { data: row, target: { type: "members", id: uid, before: old, after: row } };
     });
   }
-  throw new Error("不支持的操作");
+  throw new UnsupportedActionError();
 }
 
 /** 方便日志：某个审计日志对象（来自 audit.ts） */

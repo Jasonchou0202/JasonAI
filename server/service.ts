@@ -85,6 +85,14 @@ interface Ledger {
   restoreId?: string | null;
 }
 export const CHUNK_SIZE = 20;
+/** 不支持的操作：带稳定错误码 UNSUPPORTED_ACTION；中文提示保持原样，旧前端按文案兜底仍可用。 */
+export class UnsupportedActionError extends Error {
+  readonly code = "UNSUPPORTED_ACTION";
+  constructor() {
+    super("不支持的操作");
+  }
+}
+
 export function identity(ctx: Context) {
   if (!ctx.ownerUid) throw new Error("后台尚未绑定所有者，暂不允许访问");
   if (!ctx.uid || ctx.uid !== ctx.ownerUid)
@@ -1214,7 +1222,7 @@ export async function execute(
       });
     }
     default:
-      throw new Error("不支持的操作");
+      throw new UnsupportedActionError();
   }
 }
 function validateImport(value: unknown): ImportRow[] {
