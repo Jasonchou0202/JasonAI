@@ -54,6 +54,7 @@ npm run build:server
 - **建集合**（上线时由本人在控制台建，代码不会自动建）：`members`、`invites`、`audit_logs`，权限均为“所有用户不可读写”，规则 `{"read":false,"write":false}`（已写入 `database.rules.json`）。
 - **建议索引**（`audit_logs`，日志多了再建也可以）：`actorUid 升序 + at 降序`、`day 升序 + at 降序`、`action 升序 + at 降序`。一期查询按 `_id` 翻页读出后在函数内筛选。
 - 日志**只追加**：代码里没有任何修改/删除日志的接口（管理员也没有）；一期不自动清理。
+- 被拒请求不逐条写库（防刷）：同步接口错密钥/限流、非成员被拒按「代码/uid + 北京时间小时」只记首条，过小时追加一条汇总（count）；成员同一越权按 uid+action+小时去重。邀请码同一 uid 24 小时失败 5 次即锁定（计数在 `batches/_redeem_*`）
 - 日志自己写失败时不挡记账：云函数日志打 `audit.write_failed`，并在 `batches/_audit_health` 记失败次数，管理员打开系统时顶部提示。
 - 绝不入日志：`TASK_SYNC_KEY`、Authorization 头、邀请码明文与哈希、推送 endpoint/密钥、备份正文、原始 payload。
 - 邀请链接形如 `…/JasonAI/#/join?code=…`，72 小时有效、只能用一次；成员兑换后为「待批准」，管理员在「成员管理」点批准才生效；停用即时生效。
