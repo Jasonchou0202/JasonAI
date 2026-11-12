@@ -9,6 +9,12 @@ export interface Me {
   membersEnabled: boolean;
   auditEnabled: boolean;
   auditHealth?: { failed?: number; lastFailedAt?: string } | null;
+  /** 日程归属 + 成员颜色（云端 SCHEDULE_OWNER_ENABLED 开时才有） */
+  scheduleOwnerEnabled?: boolean;
+  /** 管理员 uid（日程归属开时才给，用来判断「归 Jason」） */
+  ownerUid?: string;
+  /** 成员头像（AVATARS_ENABLED 开时才有） */
+  avatarsEnabled?: boolean;
 }
 export const LEGACY_ME: Me = {
   uid: "",

@@ -2,6 +2,8 @@ import { useState } from "react";
 import type { Api } from "../domain/model";
 import { ErrorNote, Loading, useQuery } from "./ui";
 import "../team.css";
+import { MemberAvatar, MemberTag, useDirectory } from "../lib/members-ui";
+import { addDays, today as bjToday } from "../domain/dates";
 
 interface Row {
   id: string;
@@ -30,6 +32,20 @@ const TYPES: [string, string][] = [
   ["export", "导出"],
   ["push", "推送"],
 ];
+/** 日程归属开后多两个组合类型（云端 listAudit 认 group:*） */
+const OWNER_TYPES: [string, string][] = [
+  ["", "全部"],
+  ["tasks", "日程"],
+  ["group:owner", "认领·指派"],
+  ["group:delete", "删除"],
+  ["sales", "销售"],
+  ["members", "成员"],
+];
+const RANGES: [string, string, number][] = [
+  ["today", "今天", 0],
+  ["7", "近 7 天", 6],
+  ["30", "近 30 天", 29],
+];
 const RESULT = { ok: "成功", denied: "被拒", failed: "失败" } as const;
 const ROLE: Record<string, string> = { admin: "管理员", member: "成员", system: "系统", none: "未入队" };
 function brief(v?: Record<string, unknown> | null) {
@@ -55,6 +71,7 @@ export function AuditLog({ api, mode }: { api: Api; mode: "admin" | "self" }) {
   const [action, setAction] = useState("");
   const [actor, setActor] = useState("");
   const [cursors, setCursors] = useState<string[]>([]);
+  const dir = useDirectory();
   const cursor = cursors[cursors.length - 1];
   const query = {
     ...(from ? { from } : {}),
@@ -70,6 +87,14 @@ export function AuditLog({ api, mode }: { api: Api; mode: "admin" | "self" }) {
     setCursors([]);
   };
   const people = [...new Map((data?.rows || []).map((r) => [r.actorUid, r.actorName || r.actorUid])).entries()];
+  const range = RANGES.find(([, , back]) => to === bjToday() && from === addDays(bjToday(), -back))?.[0] ?? (from || to ? "custom" : "");
+  // 认领/指派：显示「从谁 → 给谁」
+  const transfer = (r: Row) =>
+    dir.on && (r.action === "tasks.claim" || r.action === "tasks.assign") && r.result === "ok" && r.after?.ownerUid ? (
+      <span className="m-meta">
+        <MemberTag uid={String(r.before?.ownerUid ?? "")} size={16} /> → <MemberTag uid={String(r.after.ownerUid)} size={16} />
+      </span>
+    ) : null;
   return (
     <>
       <div className="page-heading">
@@ -82,6 +107,76 @@ export function AuditLog({ api, mode }: { api: Api; mode: "admin" | "self" }) {
         </div>
       </div>
       <section className="panel team-panel">
+        {dir.on && (
+          <div className="m-audit-filters">
+            <div className="m-filter" role="group" aria-label="按操作人">
+              <span className="m-filter-label">操作人</span>
+              <div className="m-filter-chips">
+                {mode === "admin" ? (
+                  <>
+                    {[
+                      ["", "全部"],
+                      ...dir.people.map((p) => [p.uid, p.name]),
+                      ["group:system", "系统"],
+                    ].map(([uid, name]) => (
+                      <button
+                        key={uid}
+                        type="button"
+                        className={`m-chip ${actor === uid ? "on" : ""}`}
+                        aria-pressed={actor === uid}
+                        style={actor === uid || !uid ? undefined : { background: dir.color(uid === "group:system" ? "system:x" : uid).tint }}
+                        onClick={() => reset(() => setActor(uid))}
+                      >
+                        {uid && <MemberAvatar uid={uid === "group:system" ? "system:x" : uid} size={20} />}
+                        <span className="m-chip-name">{name}</span>
+                      </button>
+                    ))}
+                  </>
+                ) : (
+                  <>
+                    <span className="m-chip on">
+                      <MemberAvatar uid={dir.meUid} size={20} />
+                      {dir.name(dir.meUid)}
+                    </span>
+                    <small className="subtle">只能看自己的记录</small>
+                  </>
+                )}
+              </div>
+            </div>
+            <div className="m-filter" role="group" aria-label="按类型">
+              <span className="m-filter-label">类型</span>
+              <div className="m-filter-chips">
+                {OWNER_TYPES.map(([v, l]) => (
+                  <button key={v} type="button" className={`m-chip ${action === v ? "on" : ""}`} aria-pressed={action === v} onClick={() => reset(() => setAction(v))}>
+                    {l}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="m-filter" role="group" aria-label="按时间">
+              <span className="m-filter-label">时间</span>
+              <div className="m-filter-chips">
+                {RANGES.map(([k, l, back]) => (
+                  <button
+                    key={k}
+                    type="button"
+                    className={`m-chip ${range === k ? "on" : ""}`}
+                    aria-pressed={range === k}
+                    onClick={() =>
+                      reset(() => {
+                        setFrom(addDays(bjToday(), -back));
+                        setTo(bjToday());
+                      })
+                    }
+                  >
+                    {l}
+                  </button>
+                ))}
+                <span className={`m-chip ${range === "custom" ? "on" : ""}`}>自选 ↓</span>
+              </div>
+            </div>
+          </div>
+        )}
         <div className="filters">
           <label>
             从
@@ -98,7 +193,7 @@ export function AuditLog({ api, mode }: { api: Api; mode: "admin" | "self" }) {
               </option>
             ))}
           </select>
-          {mode === "admin" && (
+          {mode === "admin" && !dir.on && (
             <select aria-label="操作人" value={actor} onChange={(e) => reset(() => setActor(e.target.value))}>
               <option value="">全部人</option>
               {people.map(([uid, name]) => (
@@ -131,7 +226,17 @@ export function AuditLog({ api, mode }: { api: Api; mode: "admin" | "self" }) {
                     <td className="team-time">{r.atBj}</td>
                     {mode === "admin" && (
                       <td>
-                        {r.actorName || r.actorUid}
+                        {dir.on ? (
+                          r.role === "system" ? (
+                            <span className="m-meta">
+                              <MemberAvatar uid="system:x" size={18} /> {r.actorName || "系统"}
+                            </span>
+                          ) : (
+                            <MemberTag uid={r.actorUid} size={18} />
+                          )
+                        ) : (
+                          r.actorName || r.actorUid
+                        )}
                         <small> {ROLE[r.role] || r.role}</small>
                       </td>
                     )}
@@ -141,7 +246,10 @@ export function AuditLog({ api, mode }: { api: Api; mode: "admin" | "self" }) {
                         .filter(Boolean)
                         .join(" / ")}
                     </td>
-                    <td className="team-diff">{diff(r.before, r.after)}</td>
+                    <td className="team-diff">
+                      {transfer(r) ?? diff(r.before, r.after)}
+                      {dir.on && r.after?.othersRecord === true && <small className="m-same-color"> · 删的是别人的</small>}
+                    </td>
                     <td>
                       <span className={`team-status ${r.result}`}>{RESULT[r.result]}</span>
                       {r.reason && <small> {r.reason}</small>}

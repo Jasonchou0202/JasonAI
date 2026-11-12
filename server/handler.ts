@@ -1,13 +1,16 @@
 import { execute, identity, type Collection, type Context, type Store } from "./service";
 import {
   AUDITED_ACTIONS,
+  OWNER_AUDITED_ACTIONS,
   appendOnly,
   defaultThrottle,
   guardAudit,
   summarize,
   type AuditInput,
 } from "./audit";
-import { authorize, DeniedError, executeTeam, hideDeleted, memberResult, type Actor, type TeamConfig } from "./team";
+import { authorize, DeniedError, executeTeam, hideDeleted, memberResult, ownerOn, salesActorOn, type Actor, type TeamConfig } from "./team";
+import { OWNER_ACTIONS, transferOwner } from "./schedule-owner";
+import { taskOwner } from "../src/domain/members";
 
 function failure(error: unknown, diagnose?: (code: string) => void) {
   const code =
@@ -136,7 +139,8 @@ async function teamHandle(
     if (payload && typeof payload === "object" && !Array.isArray(payload))
       p = payload as Record<string, any>;
     actor = await authorize(base(), ctx, team, action, p);
-    const audited = team.auditEnabled && AUDITED_ACTIONS.has(action);
+    const audited =
+      team.auditEnabled && (AUDITED_ACTIONS.has(action) || (ownerOn(team) && OWNER_AUDITED_ACTIONS.has(action)));
     let data: unknown;
     if (action.startsWith("members.") || action === "audit.list") {
       const r = await executeTeam(base(), ctx, team, actor, action, p, now);
@@ -151,6 +155,20 @@ async function teamHandle(
         });
       return { ok: true, data };
     }
+    // 认领 / 指派（开关关时不进这里：管理员照旧得到 UNSUPPORTED_ACTION，成员照旧被白名单拒）
+    if (ownerOn(team) && OWNER_ACTIONS.has(action)) {
+      target = audited ? targetOf(action, p) : {};
+      const r = await transferOwner(guardAudit(base()), { ...ctx, now }, actor, action, p, now);
+      if (audited)
+        await record({
+          targetType: "tasks",
+          targetId: r.target.id,
+          before: summarize("tasks", r.target.before),
+          after: summarize("tasks", r.target.after),
+          result: "ok",
+        });
+      return { ok: true, data: r.data };
+    }
     if (action === "session" && team.membersEnabled)
       return { ok: true, data: { uid: actor.uid, role: actor.role, name: actor.name } };
     target = audited ? targetOf(action, p) : {};
@@ -164,6 +182,10 @@ async function teamHandle(
       uid: ctx.ownerUid,
       ...(team.membersEnabled ? { actorUid: actor.uid } : {}),
       ...(team.auditEnabled ? { onAutoCreate: (ids: string[]) => void autoCreated.push(...ids) } : {}),
+      // 冻结集合的新字段：各自开关开才写（关着时不带这个键，业务代码与现在一字不差）
+      ...(ownerOn(team) || salesActorOn(team)
+        ? { actorFields: { ...(ownerOn(team) ? { tasks: true } : {}), ...(salesActorOn(team) ? { sales: true } : {}) } }
+        : {}),
     };
     // 成员的读操作：看不到回收站里的销售/日程（含 dashboard、客户详情、导出等全部读路径）
     const memberRead = actor.role === "member" && !AUDITED_ACTIONS.has(action);
@@ -184,14 +206,21 @@ async function teamHandle(
         after: { count: autoCreated.length, ids: autoCreated.slice(0, 20) },
         result: "ok",
       });
-    if (audited)
+    if (audited) {
+      let afterSummary = action.startsWith("push.") ? null : summarize(target.type ?? action, data);
+      // 删除留痕：补上归属人，并标记「删的是别人的」
+      if (action === "tasks.delete" && ownerOn(team) && before && afterSummary) {
+        const owner = taskOwner(before as { ownerUid?: string; createdBy?: string }, ctx.ownerUid);
+        afterSummary = { ...afterSummary, owner, ...(owner !== actor.uid ? { othersRecord: true } : {}) };
+      }
       await record({
         ...(target.type ? { targetType: target.type } : {}),
         ...(target.id ? { targetId: target.id } : {}),
         before: action.startsWith("push.") ? null : summarize(target.type, before),
-        after: action.startsWith("push.") ? null : summarize(target.type ?? action, data),
+        after: afterSummary,
         result: "ok",
       });
+    }
     return { ok: true, data };
   } catch (error) {
     if (error instanceof DeniedError) {
@@ -218,7 +247,7 @@ async function teamHandle(
           /* appendOnly 自己已兜底告警 */
         }
       }
-    } else if (team.auditEnabled && AUDITED_ACTIONS.has(action)) {
+    } else if (team.auditEnabled && (AUDITED_ACTIONS.has(action) || (ownerOn(team) && OWNER_AUDITED_ACTIONS.has(action)))) {
       await record({
         ...(target.type ? { targetType: target.type } : {}),
         ...(target.id ? { targetId: target.id } : {}),

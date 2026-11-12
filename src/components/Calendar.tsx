@@ -1,5 +1,6 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { useTeam } from "../lib/team-ui";
+import { AssignPicker, MemberAvatar, MemberDot, MemberFilter, MemberTag, useDirectory } from "../lib/members-ui";
 import {
   CalendarDays,
   ChevronLeft,
@@ -100,6 +101,10 @@ function CustomerCalendar({
   const [openLogs, setOpenLogs] = useState<Set<string>>(() => new Set());
   const { insights } = useInsights();
   const team = useTeam();
+  const dir = useDirectory();
+  // ④ 按成员看（多选）；开关关时永远是空集合 = 全部，与现在一致
+  const [owners, setOwners] = useState<Set<string>>(() => new Set());
+  const ownerMatch = (t: CustomerTask) => !dir.on || !owners.size || owners.has(dir.ownerOf(t));
   const effectiveCustomerId = customerId || filterCustomerId;
   const base = effectiveCustomerId ? { customerId: effectiveCustomerId } : {};
   const tasks = useCustomerQuery<CustomerTask[]>(
@@ -145,7 +150,7 @@ function CustomerCalendar({
     !customerSearch.trim() ||
     matchingIds.has(customerRoot(customers.data || [], t.customerId));
   const activeTasks = (tasks.data || [])
-    .filter((t) => !t.deletedAt && matchesName(t))
+    .filter((t) => !t.deletedAt && matchesName(t) && ownerMatch(t))
     .sort((a, b) => a.at.localeCompare(b.at));
   const grouped = new Map<string, CustomerTask[]>();
   for (const task of activeTasks) {
@@ -248,6 +253,7 @@ function CustomerCalendar({
   const query = search.trim().toLocaleLowerCase();
   const historyRows = (history === "deleted" ? deleted.data || [] : activeTasks)
     .filter(matchesName)
+    .filter(ownerMatch)
     .filter((t) => history !== "completed" || Boolean(t.completedAt))
     .filter((t) => {
       const c = names.get(t.customerId);
@@ -418,6 +424,15 @@ function CustomerCalendar({
           <p className="eyebrow">记下约定，及时跟进</p>
           {customerId ? <h2>客户日程</h2> : <h1>跟进日历</h1>}
           <p className="subtle">北京时间 · 一次沟通，一次记录</p>
+          {/* ⑨ 客户详情的「跟进人」：这位客户日程的归属人（只读） */}
+          {dir.on && customerId && activeTasks.length > 0 && (
+            <p className="m-meta" aria-label="跟进人">
+              跟进人
+              {[...new Set(activeTasks.map((t) => dir.ownerOf(t)))].map((uid) => (
+                <MemberTag key={uid} uid={uid} size={18} />
+              ))}
+            </p>
+          )}
         </div>
         {!customerId && (
           <dl className="hero-figures" aria-label="今日跟进">
@@ -477,6 +492,17 @@ function CustomerCalendar({
             }}
           />
           <span className="subtle">月历、待办和历史记录同步筛选</span>
+        </div>
+      )}
+      {dir.on && !customerId && (
+        <div className="panel m-filter-panel">
+          <MemberFilter
+            selected={owners}
+            onChange={(next) => {
+              setOwners(next);
+              setHistoryLimit(historyPage);
+            }}
+          />
         </div>
       )}
       {taskId && (
@@ -648,6 +674,15 @@ function CustomerCalendar({
                     <small className="customer-day-total">
                       {counts.complete}/{dayTasks.length}
                     </small>
+                    {/* ①a 月历格子只放归属人色点（最多 4 个，多了 +n），不放头像 */}
+                    {dir.on && (
+                      <span className="m-dots" aria-label={`归属：${[...new Set(dayTasks.map((t) => dir.name(dir.ownerOf(t))))].join("、")}`}>
+                        {dayTasks.slice(0, 4).map((t) => (
+                          <MemberDot key={t.id} uid={dir.ownerOf(t)} />
+                        ))}
+                        {dayTasks.length > 4 && <small>+{dayTasks.length - 4}</small>}
+                      </span>
+                    )}
                   </>
                 )}
               </button>
@@ -876,8 +911,23 @@ function TaskCard({
   onNext: () => void;
 }) {
   const team = useTeam();
+  const dir = useDirectory();
   const mutation = useCustomerMutation(api, mode, `task-${task.id}`);
   const [confirmPurge, setConfirmPurge] = useState(false);
+  const [ownerDialog, setOwnerDialog] = useState<"" | "claim" | "assign" | "delete">("");
+  const owner = dir.on ? dir.ownerOf(task) : "";
+  const creator = task.createdBy || dir.ownerUid;
+  async function transfer(to?: string) {
+    const ok = await mutation.run(to ? "tasks.assign" : "tasks.claim", {
+      id: task.id,
+      revision: task.revision,
+      ...(to ? { to } : {}),
+    });
+    if (ok) {
+      setOwnerDialog("");
+      onChange(to ? `日程已指派给${dir.name(to)}` : "日程已认领到你名下");
+    }
+  }
   async function act(action: string) {
     if (
       await mutation.run(`tasks.${action}`, {
@@ -899,7 +949,8 @@ function TaskCard({
   }
   return (
     <article
-      className={`customer-task task-${taskTone(task, now)} ${task.deletedAt ? "deleted" : ""}`}
+      className={`customer-task task-${taskTone(task, now)} ${task.deletedAt ? "deleted" : ""} ${dir.on ? "has-owner-bar" : ""}`}
+      style={dir.on ? ({ "--owner-bar": dir.color(owner).bar } as React.CSSProperties) : undefined}
     >
       <div className="customer-task-top">
         <time dateTime={task.at}>
@@ -931,6 +982,38 @@ function TaskCard({
           <strong>下一步</strong>
           {task.nextAction}
         </p>
+      )}
+      {dir.on && (
+        /* ②a/②b 归属人、创建人、最后修改人；⑩ 回收站里显示谁删的 */
+        <dl className="m-detail" aria-label="日程归属">
+          <dt>归属人</dt>
+          <dd>
+            <MemberTag uid={owner} />
+            <small className="subtle">{owner === dir.ownerUid ? "同步到 Jason 的 iPhone 和 Notion" : "不同步到 iPhone"}</small>
+          </dd>
+          <dt>创建人</dt>
+          <dd>
+            <MemberTag uid={creator} size={18} />
+          </dd>
+          {task.deletedAt ? (
+            <>
+              <dt>谁删的</dt>
+              <dd>{task.updatedBy ? <MemberTag uid={task.updatedBy} size={18} /> : <span className="subtle">不详</span>}</dd>
+            </>
+          ) : (
+            task.updatedBy && (
+              <>
+                <dt>最后修改</dt>
+                <dd>
+                  <span className="m-small">
+                    <MemberAvatar uid={task.updatedBy} size={16} />
+                    {dir.name(task.updatedBy)} · {beijingInput(task.updatedAt).slice(5).replace("T", " ")}
+                  </span>
+                </dd>
+              </>
+            )
+          )}
+        </dl>
       )}
       <small className="subtle">
         {task.reminder === "off"
@@ -1007,12 +1090,23 @@ function TaskCard({
               <Plus size={14} />
               安排下一次
             </button>
-            {/* 成员只在自己建的日程上看到删除（没有录入人 = 管理员建的，藏起来）；真正的拦截在云端 */}
-            {team.canChange(task) && (
+            {/* ③ 认领：任何人把别人的日程转到自己名下；指派：只有 Jason */}
+            {dir.on && owner !== dir.meUid && (
+              <button className="text-button" disabled={mutation.busy} onClick={() => setOwnerDialog("claim")}>
+                认领
+              </button>
+            )}
+            {dir.on && team.isAdmin && (
+              <button className="text-button" disabled={mutation.busy} onClick={() => setOwnerDialog("assign")}>
+                指派
+              </button>
+            )}
+            {/* 开关关：成员只在自己建的日程上看到删除（没有录入人 = 管理员建的，藏起来）；开关开：所有人都能删（进回收站）。真正的拦截在云端 */}
+            {(dir.on || team.canChange(task)) && (
               <button
                 className="text-button negative"
                 disabled={mutation.busy}
-                onClick={() => void act("delete")}
+                onClick={() => (dir.on && owner !== dir.meUid ? setOwnerDialog("delete") : void act("delete"))}
               >
                 <Trash2 size={14} />
                 删除
@@ -1021,6 +1115,51 @@ function TaskCard({
           </>
         )}
       </div>
+      {ownerDialog && (
+        <Modal
+          title={ownerDialog === "claim" ? "认领这条日程" : ownerDialog === "assign" ? "指派给…" : "删除别人的日程"}
+          onClose={() => setOwnerDialog("")}
+        >
+          <div className="m-confirm">
+            {ownerDialog === "assign" ? (
+              <>
+                <p>
+                  现在归 <MemberTag uid={owner} />。指派给 Jason 会加回 iPhone；指派给成员会从 Jason 的 iPhone 删除。
+                </p>
+                <AssignPicker current={owner} busy={mutation.busy} onPick={(uid) => void transfer(uid)} />
+              </>
+            ) : (
+              <>
+                <p>
+                  {ownerDialog === "claim" ? (
+                    <>
+                      这条日程现在归 <MemberTag uid={owner} />，认领后归你。
+                      {owner === dir.ownerUid && <b> 认领后会从 Jason 的 iPhone 删除。</b>}
+                    </>
+                  ) : (
+                    <>
+                      这条日程归 <MemberTag uid={owner} />。删除后进回收站，只有 Jason 能恢复；操作日志会记下是你删的。
+                    </>
+                  )}
+                </p>
+                <div className="team-row">
+                  <button className="button secondary" onClick={() => setOwnerDialog("")}>
+                    取消
+                  </button>
+                  <button
+                    className={`button ${ownerDialog === "delete" ? "danger" : "primary"}`}
+                    disabled={mutation.busy}
+                    onClick={() => (ownerDialog === "claim" ? void transfer() : void act("delete").then(() => setOwnerDialog("")))}
+                  >
+                    {ownerDialog === "claim" ? "确认认领" : "确认删除"}
+                  </button>
+                </div>
+              </>
+            )}
+            {mutation.error && <ErrorNote>{mutation.error}</ErrorNote>}
+          </div>
+        </Modal>
+      )}
     </article>
   );
 }

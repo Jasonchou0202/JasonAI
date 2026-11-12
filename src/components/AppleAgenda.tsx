@@ -1,6 +1,7 @@
 // 客户日程页「苹果官网风」卡片（2026-11 优化，照 Jason 22:43 确认的样稿）：
 // 三张待办数字卡、今日日程横向卡片排、日程记录卡、客户搜索卡。功能全部接现有接口，不新增写入动作。
 import { useEffect, useRef, useState, type ReactNode } from "react";
+import { MemberAvatar, MemberDot, MemberTag, useDirectory } from "../lib/members-ui";
 import { ArrowUpRight, ChevronRight, Search } from "lucide-react";
 import type { Api } from "../domain/model";
 import { displayCustomerName } from "../domain/customers";
@@ -132,8 +133,14 @@ export function AppleTaskCard({
       onChange(action === "complete" ? "日程已完成" : "日程已重新打开");
   }
   const name = customer ? displayCustomerName(customer.name) : "查看客户";
+  const dir = useDirectory();
+  const owner = dir.on ? dir.ownerOf(task) : "";
   return (
-    <article className={`apple-task ${state.tone}`} data-task-id={task.id}>
+    <article
+      className={`apple-task ${state.tone} ${dir.on ? "has-owner-bar" : ""}`}
+      data-task-id={task.id}
+      style={dir.on ? ({ "--owner-bar": dir.color(owner).bar } as React.CSSProperties) : undefined}
+    >
       <span className="apple-state">
         <i className="apple-dot" aria-hidden="true" />
         {state.text}
@@ -169,6 +176,19 @@ export function AppleTaskCard({
         </p>
       )}
       <QuadCapsules has={quadrants} />
+      {/* ①b 当天列表：3px 色条 + 归属人头像 */}
+      {dir.on && (
+        <div className="m-meta">
+          <MemberTag uid={owner} />
+          {task.updatedBy && (
+            <span className="m-small">
+              最后修改：
+              <MemberAvatar uid={task.updatedBy} size={14} />
+              {dir.name(task.updatedBy)}
+            </span>
+          )}
+        </div>
+      )}
       {mutation.error && <ErrorNote>{mutation.error}</ErrorNote>}
       <div className="apple-acts">
         {mutation.hasPending ? (
@@ -312,6 +332,7 @@ export function AppleLogRow({
   const state = appleState(task, now);
   const day = beijingDay(task.at);
   const name = customer ? displayCustomerName(customer.name) : "客户";
+  const dir = useDirectory();
   return (
     <li className={`apple-log ${open ? "open" : ""}`}>
       <button
@@ -321,7 +342,9 @@ export function AppleLogRow({
         onClick={onToggle}
         title={`${name} · ${task.title}`}
       >
-        <span className="apple-log-d">{day.slice(5)}</span>
+        <span className="apple-log-d">
+          {dir.on && <MemberDot uid={dir.ownerOf(task)} />} {day.slice(5)}
+        </span>
         <span className="apple-log-t">
           <b>{name}</b> · {task.title}
         </span>

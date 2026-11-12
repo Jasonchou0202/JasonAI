@@ -28,3 +28,7 @@ cloudfunctions/content/index.js
 cloudfunctions/content/node_modules/
 cloudfunctions/content/package-lock.json
 __pycache__/
+
+# 日程归属开发期：本机评审材料和真人头像一律不进仓库（仓库公开）
+review/
+*owner_avatar*

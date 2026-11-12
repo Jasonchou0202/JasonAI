@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef, useState } from "react";
+import { MemberTag, useDirectory } from "../lib/members-ui";
 import { Save } from "lucide-react";
 import type { Api } from "../domain/model";
 import { displayCustomerName } from "../domain/customers";
@@ -86,6 +87,7 @@ function TaskEditor({
   const [done, setDone] = useState(false);
   const [refresh, setRefresh] = useState(0);
   const prefix = useId();
+  const dir = useDirectory();
   const mutation = useCustomerMutation(api, mode, `form-${scope}`);
   const customers = useCustomerQuery<Customer[]>(
     api,
@@ -328,6 +330,16 @@ function TaskEditor({
           placeholder="下一次准备跟进什么"
           onChange={(e) => change("nextAction", e.target.value)}
         />
+        {/* ②c 归属人：只显示，不在表单里改（改错字不转归属；要接手请点「认领」） */}
+        {dir.on && (
+          <>
+            <span className="m-form-label">归属人</span>
+            <div className="m-form-owner">
+              <MemberTag uid={edit ? dir.ownerOf(edit) : dir.meUid} />
+              <small className="subtle">{edit ? "修改不会改变归属；要接手请点「认领」" : "谁新建就归谁"}</small>
+            </div>
+          </>
+        )}
         <label htmlFor={`${prefix}-reminder`}>提醒</label>
         <select
           id={`${prefix}-reminder`}

@@ -5,6 +5,7 @@ import { validateTaskInput } from "../src/domain/tasks";
 import { stripMoney } from "../src/domain/taskSyncTitle.mjs";
 import { utcInstant } from "../src/domain/tasks";
 import { mutation, nextTaskRow, type Context, type Store, type Transaction } from "./service";
+import { taskOwner } from "../src/domain/members";
 
 /**
  * iPhone 提醒事项双向同步接口。只接受专用同步密钥（环境变量 TASK_SYNC_KEY，至少 32 字节），
@@ -21,6 +22,9 @@ export const MIN_SYNC_KEY_BYTES = 32;
 export const MAX_FUTURE_MS = 5 * 60_000;
 export const RATE_LIMIT = { windowMs: 60_000, max: 60 };
 const DAY = 86400000;
+/** 撤下清单的时间范围：过去 30 天到未来 90 天（Jason 11-12 定） */
+export const WITHDRAW_PAST_DAYS = 30;
+export const WITHDRAW_FUTURE_DAYS = 90;
 
 export function toShanghaiLocal(iso: string | null | undefined): string {
   if (!iso) return "";
@@ -118,7 +122,12 @@ function completedValue(value: unknown, nowIso: string): string | null {
   return new Date(value).toISOString();
 }
 
-export async function syncList(store: Store, nowIso: string) {
+/**
+ * owner：日程归属开关开时传管理员 uid。传了就只同步归 Jason 的日程，并另给一份撤下清单 withdrawn
+ * （过去 30 天到未来 90 天里归属不是 Jason 的日程编号；被删除但仍归 Jason 的不在里面）。
+ * 不传时返回与现在逐字一致。
+ */
+export async function syncList(store: Store, nowIso: string, owner?: string) {
   const [tasks, customers] = await Promise.all([
     store.list<CustomerTask>("tasks"),
     store.list<Customer>("customers"),
@@ -132,6 +141,7 @@ export async function syncList(store: Store, nowIso: string) {
   const rows: SyncTask[] = tasks
     .filter((t) => {
       if (t.deletedAt) return false;
+      if (owner && taskOwner(t, owner) !== owner) return false;
       const at = Date.parse(t.at);
       return !Number.isNaN(at) && at > from && at <= to;
     })
@@ -151,7 +161,27 @@ export async function syncList(store: Store, nowIso: string) {
         revision: t.revision,
       };
     });
-  return { now: nowIso, from: new Date(from).toISOString(), to: new Date(to).toISOString(), tasks: rows };
+  if (!owner)
+    return { now: nowIso, from: new Date(from).toISOString(), to: new Date(to).toISOString(), tasks: rows };
+  const wFrom = now - WITHDRAW_PAST_DAYS * DAY,
+    wTo = now + WITHDRAW_FUTURE_DAYS * DAY;
+  const withdrawn = tasks
+    .filter((t) => {
+      if (taskOwner(t, owner) === owner) return false;
+      const at = Date.parse(t.at);
+      return !Number.isNaN(at) && at >= wFrom && at <= wTo;
+    })
+    .sort((a, b) => Date.parse(a.at) - Date.parse(b.at) || a.id.localeCompare(b.id))
+    .map((t) => t.id);
+  return {
+    now: nowIso,
+    from: new Date(from).toISOString(),
+    to: new Date(to).toISOString(),
+    tasks: rows,
+    withdrawn,
+    withdrawnFrom: new Date(wFrom).toISOString(),
+    withdrawnTo: new Date(wTo).toISOString(),
+  };
 }
 
 export async function syncComplete(
@@ -159,6 +189,7 @@ export async function syncComplete(
   ctx: Context,
   nowIso: string,
   payload: Record<string, unknown>,
+  owner?: string,
 ) {
   const id = payload.id,
     requestId = payload.requestId;
@@ -183,6 +214,9 @@ export async function syncComplete(
       const old = await tx.get<CustomerTask>("tasks", id);
       if (!old) throw new SyncError("SYNC_NOT_FOUND", "日程不存在");
       if (old.deletedAt) throw new SyncError("SYNC_DELETED", "日程已删除");
+      // 已经不归 Jason 的日程：手机上不能再完成/重开，下一轮对账按撤下清单删掉
+      if (owner && taskOwner(old, owner) !== owner)
+        throw new SyncError("SYNC_NOT_OWNED", "这条日程已转出 Jason 名下");
       // 幂等：已经是目标状态（已完成 / 未完成）就原样返回，不写库、不报冲突
       if ((old.completedAt === null) === (completedAt === null))
         return { id, completedAt: old.completedAt, revision: old.revision, unchanged: true };
@@ -314,7 +348,9 @@ export function syncFailure(error: unknown) {
 export async function handleSync(
   store: () => Store,
   env: { key: string | undefined; now: () => string; hash: Context["hash"]; /** 密钥校验失败时调用；超限时抛出 SYNC_RATE_LIMITED */
-    limit?: SyncLimiter },
+    limit?: SyncLimiter;
+    /** 日程归属开关开时传管理员 uid（OWNER_UID）；不传 = 与现在一致 */
+    owner?: string },
   parsed: { action: unknown; payload: Record<string, unknown>; key: unknown },
 ) {
   try {
@@ -330,11 +366,11 @@ export async function handleSync(
     }
     const ctx: Context = { uid: null, ownerUid: "", now: () => nowIso, hash: env.hash };
     if (parsed.action === "tasks.sync.list")
-      return { ok: true, data: await syncList(store(), nowIso) };
+      return { ok: true, data: await syncList(store(), nowIso, env.owner) };
     if (parsed.action === "tasks.sync.complete")
-      return { ok: true, data: await syncComplete(store(), ctx, nowIso, parsed.payload) };
+      return { ok: true, data: await syncComplete(store(), ctx, nowIso, parsed.payload, env.owner) };
     if (parsed.action === "tasks.sync.uncomplete")
-      return { ok: true, data: await syncComplete(store(), ctx, nowIso, { ...parsed.payload, completedAt: null }) };
+      return { ok: true, data: await syncComplete(store(), ctx, nowIso, { ...parsed.payload, completedAt: null }, env.owner) };
     if (parsed.action === "tasks.sync.create")
       return { ok: true, data: await syncCreate(store(), ctx, nowIso, parsed.payload) };
     throw new SyncError("SYNC_FORBIDDEN", "同步密钥只能调用同步接口");

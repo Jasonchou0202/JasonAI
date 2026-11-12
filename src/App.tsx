@@ -36,6 +36,8 @@ import type { Filters, Sale } from "./domain/model";
 import { cloudApi, configured, session, login, logout } from "./lib/cloud";
 import { createDemo, demoRole, DEMO_ROLE_KEY } from "./lib/demo";
 import { LEGACY_ME, ME_AUTO_RETRY_MS, TeamProvider, visibleMe, whoAmI, type Me } from "./lib/team-ui";
+import { DirectoryProvider } from "./lib/members-ui";
+import { AvatarEditor, MeBadge } from "./components/MemberProfile";
 import { contentCloudApi } from "./lib/content-api";
 import { createContentDemo } from "./lib/content-demo";
 import { routeParams, readFilters, filterQuery } from "./lib/routes";
@@ -370,6 +372,7 @@ export default function App() {
   }, [meLoad, mode, api]);
   const identityReady = meLoad === "ready";
   const knownMe = visibleMe(me, identityReady);
+  const [avatarFor, setAvatarFor] = useState("");
   // 路由守卫：成员进不了系统页面（云端同样会拒）
   useEffect(() => {
     if (me.role === "member" && ADMIN_PAGES.includes(page))
@@ -607,6 +610,7 @@ export default function App() {
       </div>
     );
   return (
+    <DirectoryProvider api={api} me={knownMe}>
     <div className="app-shell">
       <button
         type="button"
@@ -639,7 +643,12 @@ export default function App() {
             </p>
           </div>
           <div className="account">
-            <div className="avatar">{!identityReady ? "…" : knownMe.role === "member" ? (knownMe.name || "成").slice(0, 1) : "章"}</div>
+            <MeBadge
+              className="avatar"
+              size={40}
+              fallback={!identityReady ? "…" : knownMe.role === "member" ? (knownMe.name || "成").slice(0, 1) : "章"}
+              onOpen={() => setAvatarFor(knownMe.uid)}
+            />
             <div>
               <strong>{!identityReady ? "工作台" : knownMe.role === "member" ? knownMe.name || "团队成员" : "章鱼哥"}</strong>
               <span>{!identityReady ? "正在确认身份…" : knownMe.role === "member" ? "团队成员" : mode === "demo" ? "演示工作台" : "个人工作室"}</span>
@@ -709,7 +718,12 @@ export default function App() {
                 <SettingsIcon size={18} />
               </button>
             )}
-            <span className="mini-avatar">{!identityReady ? "…" : knownMe.role === "member" ? (knownMe.name || "成").slice(0, 1) : "章"}</span>
+            <MeBadge
+              className="mini-avatar"
+              size={30}
+              fallback={!identityReady ? "…" : knownMe.role === "member" ? (knownMe.name || "成").slice(0, 1) : "章"}
+              onOpen={() => setAvatarFor(knownMe.uid)}
+            />
           </div>
         </header>
         {mode === "demo" && (
@@ -957,6 +971,8 @@ export default function App() {
           {toast}
         </div>
       )}
+      {avatarFor && <AvatarEditor api={api} uid={avatarFor} onClose={() => setAvatarFor("")} />}
     </div>
+    </DirectoryProvider>
   );
 }

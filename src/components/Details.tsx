@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useTeam } from "../lib/team-ui";
+import { MemberTag, useDirectory } from "../lib/members-ui";
 import {
   Download,
   Plus,
@@ -39,6 +40,7 @@ import {
 } from "./ui";
 import { downloadCsv } from "../lib/files";
 import { QuadrantDot, QuadrantBlocks, TierBadge, useInsights } from "../lib/insights-ui";
+const NO_AUDIT = { call: async <T,>() => ({ rows: [] }) as unknown as T };
 export function Details({
   api,
   version,
@@ -59,6 +61,16 @@ export function Details({
   onCustomer: (id: string, month?: string) => void;
 }) {
   const team = useTeam();
+  const dir = useDirectory();
+  // ⑩ 销售回收站「谁删的」：先看 sales.deletedBy（单独解冻后才有），没有就从操作日志里读（只读），都没有写「不详」
+  const auditDeletes = useQuery<{ rows: { targetId?: string; actorUid: string; result: string }[] }>(
+    dir.on && filters.deleted && team.isAdmin && team.me.auditEnabled ? api : NO_AUDIT,
+    "audit.list",
+    { action: "sales.delete", result: "ok", limit: 100 },
+    version,
+  );
+  const deleter = (r: Sale) =>
+    r.deletedBy || auditDeletes.data?.rows.find((l) => l.targetId === r.id)?.actorUid || "";
   const { data, error, loading } = useQuery<SalesPage>(
     api,
     "sales.list",
@@ -305,6 +317,12 @@ export function Details({
                           : "未填写客户"}
                       </span>
                       {r.note && <small>{r.note}</small>}
+                      {dir.on && (
+                        <small className="m-meta">
+                          谁删的
+                          {deleter(r) ? <MemberTag uid={deleter(r)} size={16} /> : <span>不详</span>}
+                        </small>
+                      )}
                     </div>
                   ) : (
                     <button
@@ -323,6 +341,12 @@ export function Details({
                           : "未填写客户"}
                       </span>
                       {r.note && <small>{r.note}</small>}
+                      {/* ⑧b 录入人：只读现有的 sales.createdBy，没有 = Jason */}
+                      {dir.on && (
+                        <small className="m-meta">
+                          录入人 <MemberTag uid={r.createdBy || dir.ownerUid} size={16} />
+                        </small>
+                      )}
                     </button>
                   )}
                   <div className="detail-numbers">

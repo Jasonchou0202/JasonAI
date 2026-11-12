@@ -18,6 +18,10 @@ export interface Sale extends SaleInput {
   lastMutation?: string;
   /** 录入人 uid（团队模式起才有；旧数据没有 = 管理员录入） */
   createdBy?: string;
+  /** 最后修改人 uid（SALES_ACTOR_FIELDS_ENABLED 开后才写） */
+  updatedBy?: string;
+  /** 删除人 uid（SALES_ACTOR_FIELDS_ENABLED 开后才写；恢复时去掉） */
+  deletedBy?: string;
 }
 export interface Product {
   category?: string;
@@ -159,6 +163,10 @@ export interface CustomerTask extends CustomerTaskInput {
   reminderStartAt: string;
   /** 建日程的人 uid（团队模式起才有） */
   createdBy?: string;
+  /** 归属人 uid（SCHEDULE_OWNER_ENABLED 开后才写；没有时按 createdBy → 管理员） */
+  ownerUid?: string;
+  /** 最后修改人 uid（SCHEDULE_OWNER_ENABLED 开后才写） */
+  updatedBy?: string;
 }
 export interface BackupV1 {
   format: "zhangyuge-sales";
