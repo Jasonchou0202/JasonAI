@@ -1,7 +1,16 @@
 import { createContext, useContext, type ReactNode } from "react";
 import { LEGACY_ME, type Me } from "./team-me";
 export type { Me, WhoAmI } from "./team-me";
-export { LEGACY_ME, isFeatureOffError, whoAmI } from "./team-me";
+export {
+  ApiError,
+  LEGACY_ME,
+  ME_AUTO_RETRY_MS,
+  errorCode,
+  isAuthError,
+  isFeatureOffError,
+  visibleMe,
+  whoAmI,
+} from "./team-me";
 
 const TeamContext = createContext<Me>(LEGACY_ME);
 export function TeamProvider({ me, children }: { me: Me; children: ReactNode }) {

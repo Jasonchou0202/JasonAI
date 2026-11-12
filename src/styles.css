@@ -1298,6 +1298,25 @@ html.edge-particles-on .mobile-dock::before {
   font-size: var(--fs-1);
   color: var(--text-warn);
 }
+.me-retry-banner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  background: var(--danger-soft);
+  padding: 10px;
+  font-size: var(--fs-1);
+  color: var(--text-danger);
+}
+.me-retry-banner .text-button {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  padding: 0;
+  font-size: inherit;
+  font-weight: 600;
+}
 .toast {
   position: fixed;
   z-index: 150;
