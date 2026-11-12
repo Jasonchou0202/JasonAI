@@ -10,6 +10,7 @@ import {
   RotateCcw,
 } from "lucide-react";
 import type { Api, Customer, Product, Sale, SaleInput } from "../domain/model";
+import { useTeam } from "../lib/team-ui";
 import { today } from "../domain/dates";
 import { displayCustomerName } from "../domain/customers";
 import { money, moneyInput, parseYuan } from "../domain/finance";
@@ -119,6 +120,7 @@ export function SaleForm({
   const [pendingSchedule, setPendingSchedule] = useState<PendingSchedule>();
   const [productVersion, setProductVersion] = useState(0);
   const [addingProduct, setAddingProduct] = useState(false);
+  const team = useTeam();
   const { data: products, error: productError } = useQuery<Product[]>(
     api,
     "products.list",
@@ -402,14 +404,17 @@ export function SaleForm({
               <label htmlFor="product-name">
                 商品名称<span className="required">*</span>
               </label>
-              <button
-                type="button"
-                className="text-button add-product-button"
-                onClick={() => setAddingProduct(true)}
-              >
-                <Plus size={15} />
-                新增商品
-              </button>
+              {/* 新建商品属于商品目录维护，只给管理员（云端同样只允许管理员） */}
+              {team.isAdmin && (
+                <button
+                  type="button"
+                  className="text-button add-product-button"
+                  onClick={() => setAddingProduct(true)}
+                >
+                  <Plus size={15} />
+                  新增商品
+                </button>
+              )}
             </div>
             <div className="combo-input">
               <input
@@ -722,7 +727,7 @@ export function SaleForm({
           </div>
         </aside>
       </div>
-      {addingProduct && (
+      {addingProduct && team.isAdmin && (
         <ProductEditor
           api={api}
           onClose={() => setAddingProduct(false)}

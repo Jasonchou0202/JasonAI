@@ -221,6 +221,8 @@ export default function App() {
     "loading",
   );
   const [me, setMe] = useState<Me>(LEGACY_ME);
+  // 「我是谁」已从后台拿到（之前用默认值，不能据此跳转）
+  const [meReady, setMeReady] = useState(false);
   const [page, setPage] = useState<Page>(readRoute);
   const [edit, setEdit] = useState<Sale>();
   const [version, setVersion] = useState(0);
@@ -336,7 +338,12 @@ export default function App() {
   useEffect(() => {
     if (mode !== "cloud" && mode !== "demo") return;
     let alive = true;
-    void whoAmI(api).then((m) => alive && setMe(m));
+    setMeReady(false);
+    void whoAmI(api).then((m) => {
+      if (!alive) return;
+      setMe(m);
+      setMeReady(true);
+    });
     return () => {
       alive = false;
     };
@@ -345,8 +352,15 @@ export default function App() {
   useEffect(() => {
     if (me.role === "member" && ADMIN_PAGES.includes(page))
       go(page === "audit" ? "my-log" : "dashboard");
+    // 功能没开（单人版、普通演示账本）时直接输团队页面地址：回到看板，不出现报错空页
+    else if (
+      meReady &&
+      (((page === "audit" || page === "my-log") && !me.auditEnabled) ||
+        (page === "members" && !me.membersEnabled))
+    )
+      go("dashboard");
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [me.role, page]);
+  }, [me.role, me.auditEnabled, me.membersEnabled, meReady, page]);
   const contentApi = useMemo(
     () => (mode === "demo" ? createContentDemo() : contentCloudApi),
     [mode],
@@ -796,9 +810,9 @@ export default function App() {
                   onEditSale={editSale}
                 />
               )}
-              {page === "members" && me.role === "admin" && <Members api={api} />}
-              {page === "audit" && me.role === "admin" && <AuditLog api={api} mode="admin" />}
-              {page === "my-log" && <AuditLog api={api} mode="self" />}
+              {page === "members" && me.role === "admin" && me.membersEnabled && <Members api={api} />}
+              {page === "audit" && me.role === "admin" && me.auditEnabled && <AuditLog api={api} mode="admin" />}
+              {page === "my-log" && me.auditEnabled && <AuditLog api={api} mode="self" />}
             </Suspense>
           </UpdateBoundary>
           </InsightsProvider>
