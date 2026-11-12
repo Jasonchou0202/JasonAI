@@ -45,16 +45,18 @@ export function errorCode(error: unknown): string | undefined {
 
 /**
  * 服务端实际会带上的码（只认这些，不预留尚未存在的码）：
- * - 功能未开：开关全关 / 不传开关时走 legacy，members.me 只返回 { error: "不支持的操作" }，没有 code。
+ * - 功能未开：开关全关 / 不传开关时走 legacy，members.me 返回 UNSUPPORTED_ACTION（文案「不支持的操作」）。
+ *   旧版云函数只回文案、不带 code，所以暂留文案兜底；新云函数上线核对后再删兜底。
  * - 登录失效：团队路径未带 uid 时返回 NOT_SIGNED_IN。
  */
 const AUTH_CODES = new Set(["NOT_SIGNED_IN"]);
+const FEATURE_OFF_CODES = new Set(["UNSUPPORTED_ACTION"]);
 const FEATURE_OFF_MESSAGE = "不支持的操作";
 
-/** 明确「功能未开」：有可用错误码时按码；无码时兜底认「不支持的操作」（线上开关全关就是这样）。 */
+/** 明确「功能未开」：有错误码时只认 UNSUPPORTED_ACTION；无码时兜底认「不支持的操作」（旧版云函数开关全关就是这样）。 */
 export function isFeatureOffError(error: unknown): boolean {
   const code = errorCode(error);
-  if (code) return false; // 服务端目前没有功能未开的错误码；有码就交给别的判断
+  if (code) return FEATURE_OFF_CODES.has(normalizeCode(code));
   return error instanceof Error && error.message === FEATURE_OFF_MESSAGE;
 }
 

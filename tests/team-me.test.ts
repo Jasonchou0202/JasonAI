@@ -36,6 +36,14 @@ describe("errorCode / isFeatureOffError / isAuthError", () => {
     expect(isFeatureOffError(new ApiError("x", "NOT_SIGNED_IN"))).toBe(false);
   });
 
+  it("UNSUPPORTED_ACTION 视为功能未开（大小写/连字符归一），文案无关", () => {
+    expect(isFeatureOffError(new ApiError("不支持的操作", "UNSUPPORTED_ACTION"))).toBe(true);
+    expect(isFeatureOffError(new ApiError("别的提示", "UNSUPPORTED_ACTION"))).toBe(true);
+    expect(isFeatureOffError({ code: "unsupported-action" })).toBe(true);
+    expect(isFeatureOffError(new ApiError("不支持的操作", "UNSUPPORTED"))).toBe(false);
+    expect(isAuthError(new ApiError("不支持的操作", "UNSUPPORTED_ACTION"))).toBe(false);
+  });
+
   it("登录失效只认服务端实际返回的 NOT_SIGNED_IN", () => {
     expect(isAuthError(new ApiError("无权访问这个私人账本", "NOT_SIGNED_IN"))).toBe(true);
     expect(isAuthError({ code: "not_signed_in" })).toBe(true);
@@ -95,6 +103,15 @@ describe("whoAmI", () => {
     if (result.status !== "ok") return;
     expect(result.me.membersEnabled).toBe(false);
     expect(result.me.auditEnabled).toBe(false);
+  });
+
+  it("带 UNSUPPORTED_ACTION 码视为功能明确未开（新云函数开关全关）", async () => {
+    const result = await whoAmI(
+      api(() => {
+        throw new ApiError("不支持的操作", "UNSUPPORTED_ACTION");
+      }),
+    );
+    expect(result).toEqual({ status: "ok", me: LEGACY_ME });
   });
 
   it("没有错误码的「不支持的操作」视为功能明确未开（线上开关全关）", async () => {
@@ -170,18 +187,16 @@ describe("whoAmI 经真实 sales handler（不部署）", () => {
     return handle(() => store, ctx, { action: "members.me", payload: {} }, undefined, undefined, team);
   }
 
-  it("开关全关：handler 只返回中文「不支持的操作」、不带 code，whoAmI 为单人管理员", async () => {
+  it("开关全关：handler 返回 code UNSUPPORTED_ACTION、文案仍是「不支持的操作」，whoAmI 为单人管理员", async () => {
     const raw = await rawMembersMe({ membersEnabled: false, auditEnabled: false });
-    expect(raw).toEqual({ ok: false, error: "不支持的操作" });
-    expect(raw).not.toHaveProperty("code");
+    expect(raw).toEqual({ ok: false, code: "UNSUPPORTED_ACTION", error: "不支持的操作" });
     const result = await whoAmI(apiFromHandle({ membersEnabled: false, auditEnabled: false }));
     expect(result).toEqual({ status: "ok", me: LEGACY_ME });
   });
 
-  it("不传开关：与开关全关相同，whoAmI 为单人管理员", async () => {
+  it("不传开关：与开关全关相同（UNSUPPORTED_ACTION + 原文案），whoAmI 为单人管理员", async () => {
     const raw = await rawMembersMe(undefined);
-    expect(raw).toEqual({ ok: false, error: "不支持的操作" });
-    expect(raw).not.toHaveProperty("code");
+    expect(raw).toEqual({ ok: false, code: "UNSUPPORTED_ACTION", error: "不支持的操作" });
     const result = await whoAmI(apiFromHandle(undefined));
     expect(result).toEqual({ status: "ok", me: LEGACY_ME });
   });

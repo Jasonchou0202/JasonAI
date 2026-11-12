@@ -204,7 +204,7 @@ for (const [label, size] of [["1280", { width: 1280, height: 800 }], ["390", { w
   });
 }
 
-// 普通演示走真实 execute：「不支持的操作」（无 code），由 whoAmI 兜底当成功能未开，不能短路返回 LEGACY
+// 普通演示走真实 execute：抛 UNSUPPORTED_ACTION（文案「不支持的操作」），由 whoAmI 认作功能未开，不能短路返回 LEGACY
 test("小修补：普通演示账本（团队功能没开）直接输 #/audit、#/my-log、#/members 回到看板，不出现报错空页", async ({ page }) => {
   await demo(page, null);
   for (const route of ["audit", "my-log", "members"]) {
