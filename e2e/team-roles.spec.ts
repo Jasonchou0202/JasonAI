@@ -9,12 +9,13 @@ function row(id: string, customer: string, createdBy?: string) {
     deletedAt: null, revision: 1, ...(createdBy ? { createdBy } : {}),
   };
 }
-async function demo(page: Page, role: "admin" | "member" | null) {
+async function demo(page: Page, role: "admin" | "member" | null, meFail = 0) {
   await page.clock.setFixedTime(new Date(instant));
   await page.addInitScript(
-    ([role, data]) => {
+    ([role, data, meFail]) => {
       sessionStorage.setItem("zhangyuge-demo", "true");
       if (role) sessionStorage.setItem("zhangyuge-demo-role", role);
+      if (meFail) sessionStorage.setItem("zhangyuge-demo-me-fail", String(meFail));
       if (!localStorage.getItem("zhangyuge-demo-v1"))
         localStorage.setItem("zhangyuge-demo-v1", data);
     },
@@ -26,6 +27,7 @@ async function demo(page: Page, role: "admin" | "member" | null) {
           legacy: row("legacy", "示例客户·旧数据"),
         },
       }),
+      meFail,
     ] as const,
   );
 }
@@ -222,4 +224,43 @@ test("小修补：团队预览管理员直输 #/audit、#/members 仍能打开�
   await page.goto("./#/members");
   await expect(page.getByRole("heading", { name: "成员管理" })).toBeVisible();
   await expect(page).toHaveURL(/#\/members$/);
+});
+
+// ---- members.me 临时失败：停页重试；明确未开才跳回看板 ----
+const retryShots = process.env.ME_RETRY_SHOTS;
+const retryShot = (page: Page, name: string) =>
+  retryShots ? page.screenshot({ path: `${retryShots}/${name}.png` }) : undefined;
+
+test("members.me 临时失败：停在 #/audit 显示重试提示，不跳转", async ({ page }) => {
+  await demo(page, "admin", 9);
+  await page.goto("./#/audit");
+  await expect(page.getByRole("alert")).toContainText("暂时连不上，点");
+  await expect(page.getByRole("button", { name: "重试" })).toBeVisible();
+  await expect(page).toHaveURL(/#\/audit$/);
+  await expect(page.getByRole("table", { name: "操作日志" })).toHaveCount(0);
+  await retryShot(page, "me-fail-audit-1280");
+});
+
+test("members.me 临时失败后点重试成功：正常显示操作日志", async ({ page }) => {
+  await demo(page, "admin", 1);
+  await page.goto("./#/audit");
+  await expect(page.getByRole("button", { name: "重试" })).toBeVisible();
+  await expect(page).toHaveURL(/#\/audit$/);
+  await retryShot(page, "me-fail-before-retry-1280");
+  await page.getByRole("button", { name: "重试" }).click();
+  await expect(page.getByRole("table", { name: "操作日志" })).toBeVisible();
+  await expect(page).toHaveURL(/#\/audit$/);
+  await expect(page.getByText("暂时连不上")).toHaveCount(0);
+  await retryShot(page, "me-retry-ok-audit-1280");
+});
+
+test("明确功能未开：直输 #/audit、#/my-log、#/members 仍跳回看板", async ({ page }) => {
+  await demo(page, null);
+  for (const route of ["audit", "my-log", "members"]) {
+    await page.goto("./#/" + route);
+    await expect(page).toHaveURL(/#\/dashboard$/);
+    await expect(page.getByText("暂时连不上")).toHaveCount(0);
+    await expect(page.getByText("不支持的操作")).toHaveCount(0);
+  }
+  await retryShot(page, "me-off-redirect-1280");
 });
