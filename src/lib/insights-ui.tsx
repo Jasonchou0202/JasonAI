@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useMemo, useState, type ReactNode
 import type { Api, Customer, Sale } from "../domain/model";
 import { buildInsights, QUADRANT_INFO, QUADRANTS, tierOf, type Insights, type Quadrant } from "../domain/insights";
 import { parseActions, type EffectiveAction } from "../domain/actions";
+import { useDirectory } from "./members-ui";
 
 interface Ctx { insights?: Insights; sales: Sale[]; customers: Customer[] }
 const InsightsContext = createContext<Ctx>({ sales: [], customers: [] });
@@ -33,18 +34,44 @@ export function TierBadge({ profit }: { profit?: number }) {
 
 /** 四个小色块：有该象限成交就上色，没有显示灰色（待开拓） */
 export function QuadrantBlocks({ has }: { has?: Set<Quadrant> }) {
+  const so = useDirectory().on;
   return (
     <span className="quad-blocks" role="img" aria-label={"客户 × 产品矩阵：" + QUADRANTS.map((q) => `${QUADRANT_INFO[q].label}${has?.has(q) ? "有成交" : "待开拓"}`).join("，")}>
       {QUADRANTS.map((q) => (
         <i key={q} title={`${QUADRANT_INFO[q].label} · ${has?.has(q) ? "有成交" : "待开拓"}`}
+          className={so && has?.has(q) ? "on" : undefined}
           style={{ background: has?.has(q) ? QUADRANT_INFO[q].color : undefined }} />
       ))}
     </span>
   );
 }
+/**
+ * 商品分类标记：只用形状区分、统一中性深棕 #5E4D43，绝不用成员色
+ * 新客老品 = 实心方块，新客新品 = 空心方块，老客老品 = 实心菱形，老客新品 = 空心菱形
+ */
+export function QuadrantMark({ q, size = 9 }: { q: Quadrant; size?: number }) {
+  const diamond = q === "oldOld" || q === "oldNew";
+  const hollow = q === "newNew" || q === "oldNew";
+  return (
+    <svg className="quad-mark" width={size} height={size} viewBox="0 0 10 10" aria-hidden="true" focusable="false">
+      {diamond ? (
+        <path d="M5 0.9 9.1 5 5 9.1 0.9 5Z" fill={hollow ? "none" : "#5E4D43"} stroke="#5E4D43" strokeWidth={hollow ? 1.5 : 0} />
+      ) : (
+        <rect x={hollow ? 1.25 : 0.5} y={hollow ? 1.25 : 0.5} width={hollow ? 7.5 : 9} height={hollow ? 7.5 : 9} rx="1.2" fill={hollow ? "none" : "#5E4D43"} stroke="#5E4D43" strokeWidth={hollow ? 1.5 : 0} />
+      )}
+    </svg>
+  );
+}
 export function QuadrantDot({ q }: { q?: Quadrant }) {
+  const so = useDirectory().on;
   if (!q) return null;
-  return <i className="quad-dot" style={{ background: QUADRANT_INFO[q].color }} title={QUADRANT_INFO[q].label} aria-label={QUADRANT_INFO[q].label} />;
+  // 开关关：与线上一样的彩色圆点
+  if (!so) return <i className="quad-dot" style={{ background: QUADRANT_INFO[q].color }} title={QUADRANT_INFO[q].label} aria-label={QUADRANT_INFO[q].label} />;
+  return (
+    <i className="quad-dot" title={QUADRANT_INFO[q].label} aria-label={QUADRANT_INFO[q].label}>
+      <QuadrantMark q={q} />
+    </i>
+  );
 }
 
 const actionKey = (mode: string) => `zhangyuge-effective-actions-${mode}-v1`;

@@ -16,6 +16,7 @@ import { Empty, ErrorNote, Loading, Money } from "./ui";
 import { TIERS, TIER_RULES, tierCounts, tierOf, NEW_RULE_TEXT, type Tier } from "../domain/insights";
 import { QuadrantBlocks, TierBadge, useInsights } from "../lib/insights-ui";
 import "../customer.css";
+import { ZhDateHint } from "../lib/members-ui";
 
 const PERIOD_TABS: { type: RankPeriodType; label: string }[] = [
   { type: "all", label: "全部" },
@@ -162,6 +163,9 @@ export function CustomerRanking({
               <strong className="ranking-period-label">
                 {rankPeriodLabel(period)}
               </strong>
+            )}
+            {period.type === "month" && (
+              <ZhDateHint value={period.value || currentMonth()} kind="month" />
             )}
             {period.type !== "all" && (
               <button

@@ -644,6 +644,7 @@ export default function App() {
           </div>
           <div className="account">
             <MeBadge
+              as="div"
               className="avatar"
               size={40}
               fallback={!identityReady ? "…" : knownMe.role === "member" ? (knownMe.name || "成").slice(0, 1) : "章"}
@@ -676,7 +677,7 @@ export default function App() {
                 {
                   dashboard: "生意看板",
                   entry: edit ? "编辑销售" : "记一笔",
-                  details: "销售明细",
+                  details: filters.deleted && knownMe.scheduleOwnerEnabled ? "销售回收站" : "销售明细",
                   settings: "账本设置",
                   calendar: "客户日程",
                   customer: "客户详情",

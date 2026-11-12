@@ -1,6 +1,6 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { useTeam } from "../lib/team-ui";
-import { AssignPicker, MemberAvatar, MemberDot, MemberFilter, MemberTag, useDirectory } from "../lib/members-ui";
+import { AssignPicker, MemberAvatar, MemberDot, MemberFilter, MemberTag, useDirectory, ZhDateHint } from "../lib/members-ui";
 import {
   CalendarDays,
   ChevronLeft,
@@ -594,6 +594,7 @@ function CustomerCalendar({
               value={month}
               onChange={(e) => moveMonth(e.target.value)}
             />
+            <ZhDateHint value={month} kind="month" />
             <button
               className="icon-button"
               aria-label="日历下个月"

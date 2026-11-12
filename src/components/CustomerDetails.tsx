@@ -24,6 +24,7 @@ import { Empty, ErrorNote, Loading, Money } from "./ui";
 import { QuadrantDot, useInsights } from "../lib/insights-ui";
 import { CustomerChips, CustomerProfileEditor } from "./CustomerProfile";
 import "../customer.css";
+import { ZhDateHint } from "../lib/members-ui";
 
 export interface CustomerDetailsProps {
   api: Api;
@@ -271,6 +272,7 @@ function CustomerProfile({
                       value={month}
                       onChange={(e) => changeMonth(e.target.value)}
                     />
+                    <ZhDateHint value={month} kind="month" />
                     <button
                       className="icon-button"
                       aria-label="客户销售下个月"

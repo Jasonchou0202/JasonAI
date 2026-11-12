@@ -17,7 +17,7 @@
 .quad-blocks i{width:8px;height:8px;border-radius:2px;background:#f0dcc8}
 .customer-rank-profit .quad-blocks{margin-bottom:4px;align-self:flex-end}
 .customer-insight-line{display:flex;align-items:center;gap:8px;margin:6px 0}.customer-insight-line .quad-blocks{grid-template-columns:repeat(2,12px)}.customer-insight-line .quad-blocks i{width:12px;height:12px}.customer-insight-line small{color:var(--text-3)}
-.quad-dot{display:inline-block;width:8px;height:8px;border-radius:2px;/* 方块：不和成员色的圆点混 */ margin-right:6px;vertical-align:middle;flex:none}
+.quad-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;vertical-align:middle;flex:none}
 .quad-panel .panel-heading{flex-wrap:wrap;gap:10px}
 .quad-cell.empty{background:#FBF3E4;color:var(--text-2)}
 .quad-cell.empty .quad-name{color:var(--text-2)}

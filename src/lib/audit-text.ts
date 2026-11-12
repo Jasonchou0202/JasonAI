@@ -175,7 +175,8 @@ export function targetText(r: AuditRowLike, n: Names): string {
       if (typeof s.name === "string") return displayCustomerName(s.name);
       const ids = Array.isArray(s.ids) ? (s.ids as string[]) : id ? [id] : [];
       const names = ids.map((x) => n.customer(x)).filter((x): x is string => !!x);
-      if (names.length) return names.slice(0, 2).join("、") + (ids.length > 2 ? ` 等 ${ids.length} 位` : "");
+      // 「等 N 位」用不换行空格连在一起，不会把「位」挤到下一行
+      if (names.length) return names[0] + (ids.length > 1 ? `\u00a0等\u00a0${ids.length}\u00a0位` : "");
       return ids.length > 1 ? `${ids.length} 位客户` : "某位客户";
     }
     case "members":

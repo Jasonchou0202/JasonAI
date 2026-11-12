@@ -1,5 +1,5 @@
 /* 日程归属 + 成员颜色 + 头像（只在 SCHEDULE_OWNER_ENABLED 开时出现） */
-.m-avatar {
+.so-on .m-avatar {
   display: inline-flex !important;
   align-items: center;
   justify-content: center;
@@ -14,7 +14,7 @@
   overflow: hidden;
   user-select: none;
 }
-.m-avatar img {
+.so-on .m-avatar img {
   width: 100%;
   height: 100%;
   object-fit: cover;
@@ -22,31 +22,31 @@
   border-radius: 50%;
   display: block;
 }
-.m-avatar.system {
+.so-on .m-avatar.system {
   background: transparent;
   border: 1.5px solid #b8a79b;
   box-sizing: border-box;
 }
-.m-dot {
+.so-on .m-dot {
   display: inline-block;
   width: 7px;
   height: 7px;
   border-radius: 50%;
   flex: none;
 }
-.m-dots {
+.so-on .m-dots {
   display: flex;
   gap: 3px;
   align-items: center;
   flex-wrap: nowrap;
   min-height: 8px;
 }
-.m-dots small {
+.so-on .m-dots small {
   font-size: 10px;
   color: var(--text-3);
   margin-left: 1px;
 }
-.m-tag {
+.so-on .m-tag {
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -58,11 +58,11 @@
   line-height: 1.6;
   white-space: nowrap;
 }
-.m-tag-name {
+.so-on .m-tag-name {
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.m-meta {
+.so-on .m-meta {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -71,12 +71,12 @@
   font-size: var(--fs-1);
   color: var(--text-3);
 }
-.m-meta .m-small {
+.so-on .m-meta .m-small {
   display: inline-flex;
   align-items: center;
   gap: 4px;
 }
-.m-detail {
+.so-on .m-detail {
   display: grid;
   grid-template-columns: auto 1fr;
   gap: 6px 12px;
@@ -85,28 +85,28 @@
   color: var(--text-2);
   align-items: center;
 }
-.m-detail dt {
+.so-on .m-detail dt {
   color: var(--text-3);
 }
-.m-detail dd {
+.so-on .m-detail dd {
   margin: 0;
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
   align-items: center;
 }
-.m-filter {
+.so-on .m-filter {
   display: flex;
   align-items: center;
   gap: 12px;
   min-width: 0;
 }
-.m-filter-label {
+.so-on .m-filter-label {
   font-size: var(--fs-2);
   color: var(--text-2);
   white-space: nowrap;
 }
-.m-filter-chips {
+.so-on .m-filter-chips {
   display: flex;
   gap: 8px;
   overflow-x: auto;
@@ -114,10 +114,10 @@
   padding: 3px 2px;
   min-width: 0;
 }
-.m-filter-chips::-webkit-scrollbar {
+.so-on .m-filter-chips::-webkit-scrollbar {
   display: none;
 }
-.m-chip {
+.so-on .m-chip {
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -132,29 +132,29 @@
   font-size: var(--fs-2);
   cursor: pointer;
 }
-.m-chip:first-child {
+.so-on .m-chip:first-child {
   padding-left: 12px;
 }
-.m-chip.on {
+.so-on .m-chip.on {
   background: #fff;
   border-color: #2b211c;
   font-weight: 700;
 }
-.m-chip:focus-visible {
+.so-on .m-chip:focus-visible {
   outline: 2px solid var(--coral);
   outline-offset: 2px;
 }
-.panel.m-filter-panel {
+.so-on .panel.m-filter-panel {
   padding: 14px 18px;
 }
-.m-picker {
+.so-on .m-picker {
   list-style: none;
   margin: 0;
   padding: 0;
   display: grid;
   gap: 6px;
 }
-.m-picker button {
+.so-on .m-picker button {
   width: 100%;
   display: flex;
   align-items: center;
@@ -167,41 +167,41 @@
   text-align: left;
   cursor: pointer;
 }
-.m-picker button:disabled {
+.so-on .m-picker button:disabled {
   cursor: default;
   background: var(--surface-soft);
 }
-.m-picker .m-picker-text {
+.so-on .m-picker .m-picker-text {
   display: grid;
   flex: 1;
   min-width: 0;
 }
-.m-picker small {
+.so-on .m-picker small {
   color: var(--text-3);
   font-size: var(--fs-1);
 }
-.m-picker em {
+.so-on .m-picker em {
   font-style: normal;
   font-size: var(--fs-1);
   color: var(--coral-ink);
 }
-.m-confirm {
+.so-on .m-confirm {
   display: grid;
   gap: 12px;
 }
-.m-confirm p {
+.so-on .m-confirm p {
   margin: 0;
   color: var(--text-2);
 }
-.m-confirm .team-row {
+.so-on .m-confirm .team-row {
   justify-content: flex-end;
 }
 /* 日程卡片左边 3px 归属色条 */
-.has-owner-bar {
+.so-on .has-owner-bar {
   border-left: 3px solid var(--owner-bar, transparent) !important;
 }
 /* 管理员胶囊：描边款，不和实心「完成」胶囊混 */
-.m-admin-pill {
+.so-on .m-admin-pill {
   display: inline-block;
   padding: 0 8px;
   border: 1px solid #b4532f;
@@ -212,21 +212,21 @@
   font-weight: 600;
   line-height: 1.6;
 }
-.m-same-color {
+.so-on .m-same-color {
   font-size: var(--fs-1);
   color: var(--text-3);
 }
-.m-avatar-editor {
+.so-on .m-avatar-editor {
   display: grid;
   gap: 14px;
   justify-items: start;
 }
-.m-avatar-editor .m-preview {
+.so-on .m-avatar-editor .m-preview {
   display: flex;
   gap: 18px;
   align-items: center;
 }
-.m-avatar-editor canvas {
+.so-on .m-avatar-editor canvas {
   width: 160px;
   height: 160px;
   border-radius: 50%;
@@ -234,7 +234,7 @@
   cursor: grab;
 }
 /* 缩放滑块：标签在左，滑块和拇指都是深珊瑚 #B4532F（不用浏览器默认蓝） */
-.m-zoom {
+.so-on .m-zoom {
   display: flex;
   align-items: center;
   gap: 12px;
@@ -242,7 +242,7 @@
   color: #6b5a50;
   font-weight: 600;
 }
-.m-avatar-editor input[type="range"] {
+.so-on .m-avatar-editor input[type="range"] {
   width: 180px;
   accent-color: #b4532f;
   -webkit-appearance: none;
@@ -257,12 +257,12 @@
   background: transparent;
   outline: none;
 }
-.m-avatar-editor input[type="range"]::-webkit-slider-runnable-track {
+.so-on .m-avatar-editor input[type="range"]::-webkit-slider-runnable-track {
   height: 6px;
   border-radius: 999px;
   background: linear-gradient(to right, #b4532f var(--fill, 0%), #f0dcc8 var(--fill, 0%));
 }
-.m-avatar-editor input[type="range"]::-webkit-slider-thumb {
+.so-on .m-avatar-editor input[type="range"]::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
   width: 18px;
@@ -274,17 +274,17 @@
   box-shadow: 0 0 0 1px #b4532f;
   cursor: pointer;
 }
-.m-avatar-editor input[type="range"]::-moz-range-track {
+.so-on .m-avatar-editor input[type="range"]::-moz-range-track {
   height: 6px;
   border-radius: 999px;
   background: #f0dcc8;
 }
-.m-avatar-editor input[type="range"]::-moz-range-progress {
+.so-on .m-avatar-editor input[type="range"]::-moz-range-progress {
   height: 6px;
   border-radius: 999px;
   background: #b4532f;
 }
-.m-avatar-editor input[type="range"]::-moz-range-thumb {
+.so-on .m-avatar-editor input[type="range"]::-moz-range-thumb {
   width: 14px;
   height: 14px;
   border-radius: 50%;
@@ -292,27 +292,27 @@
   border: 2px solid #fff;
   box-shadow: 0 0 0 1px #b4532f;
 }
-.m-avatar-editor input[type="range"]:focus-visible {
+.so-on .m-avatar-editor input[type="range"]:focus-visible {
   outline: 2px solid #b4532f;
   outline-offset: 4px;
 }
 /* 禁用的主按钮：浅奶油底 + 深棕字（不用发白的珊瑚） */
-.m-avatar-editor .button.primary:disabled,
-.m-confirm .button.primary:disabled {
+.so-on .m-avatar-editor .button.primary:disabled,
+.so-on .m-confirm .button.primary:disabled {
   background: #f0dcc8;
   border-color: #f0dcc8;
   color: #6b5a50;
   opacity: 1;
 }
-.m-avatar-editor .subtle {
+.so-on .m-avatar-editor .subtle {
   margin: 0;
 }
-.mini-avatar.m-me,
-.avatar.m-me {
+.so-on .mini-avatar.m-me,
+.so-on .avatar.m-me {
   background: transparent !important;
   padding: 0;
 }
-.m-who {
+.so-on .m-who {
   display: inline-flex;
   align-items: center;
   gap: 8px;
@@ -324,17 +324,17 @@
 }
 /* ⑪ 小屏：筛选条只显示头像、可左右滑，点一下显示名字 */
 @media (max-width: 640px) {
-  .m-filter {
+  .so-on .m-filter {
     gap: 8px;
   }
-  .m-filter-label {
+  .so-on .m-filter-label {
     display: none;
   }
-  .m-chip:not(:first-child) {
+  .so-on .m-chip:not(:first-child) {
     padding: 3px;
   }
   /* 没选中的只剩头像：44×44 正圆底 */
-  .m-chip:not(:first-child):not(.on) {
+  .so-on .m-chip:not(:first-child):not(.on) {
     width: 44px;
     height: 44px;
     min-height: 44px;
@@ -342,53 +342,53 @@
     justify-content: center;
     border-radius: 50%;
   }
-  .m-chip:not(:first-child):not(.on) .m-chip-name {
+  .so-on .m-chip:not(:first-child):not(.on) .m-chip-name {
     display: none;
   }
 }
-.m-form-label {
+.so-on .m-form-label {
   font-size: var(--fs-2);
   font-weight: 600;
 }
-.m-form-owner {
+.so-on .m-form-owner {
   display: flex;
   align-items: center;
   gap: 10px;
   flex-wrap: wrap;
 }
-.apple-task.has-owner-bar {
+.so-on .apple-task.has-owner-bar {
   border-left-width: 3px;
 }
-.m-audit-filters {
+.so-on .m-audit-filters {
   display: grid;
   gap: 10px;
   margin-bottom: 14px;
 }
-.m-audit-filters .m-filter-label {
+.so-on .m-audit-filters .m-filter-label {
   min-width: 3.5em;
 }
-.team-table .m-meta {
+.so-on .team-table .m-meta {
   margin: 0;
 }
 
 /* 操作日志（开关开）：目标、改前改后都是大白话，不在词中间断行 */
-.m-audit-target {
+.so-on .m-audit-target {
   max-width: 220px;
   word-break: keep-all;
   overflow-wrap: break-word;
 }
-.team-diff.m-audit-diff {
+.so-on .team-diff.m-audit-diff {
   word-break: keep-all;
   overflow-wrap: break-word;
 }
-.m-audit-diff .m-lines {
+.so-on .m-audit-diff .m-lines {
   display: grid;
   gap: 2px;
 }
-.m-audit-filters .m-filter-chips {
+.so-on .m-audit-filters .m-filter-chips {
   flex-wrap: wrap;
 }
-.team-table td .m-admin-pill {
+.so-on .team-table td .m-admin-pill {
   margin-left: 6px;
   color: #6b5a50;
   border-color: #b4532f;
@@ -396,7 +396,7 @@
 
 /* 11-12 品牌复审 */
 /* 日程记录行的日期（含色点）不换行 */
-.apple-log-d {
+.so-on .apple-log-d {
   flex: 0 0 auto;
   min-width: 46px;
   display: inline-flex;
@@ -405,41 +405,45 @@
   white-space: nowrap;
 }
 /* 日期和时间之间留出空隙（文字本身仍是「2026-11-12 10:00」） */
-.customer-task-top time {
+.so-on .customer-task-top time {
   word-spacing: 0.4em;
   white-space: nowrap;
 }
 /* 「今日待办」胶囊改用「进行中」款 */
-.task-urgent .customer-task-status {
+.so-on .task-urgent .customer-task-status {
   background: #fbe3d4;
   color: #9c4526;
   box-shadow: inset 0 0 0 1px #e9a178;
 }
 /* 确认弹窗：「取消」和确认按钮间距 12px */
-.m-avatar-editor .team-row,
-.m-confirm .team-row {
+.so-on .m-avatar-editor .team-row,
+.so-on .m-confirm .team-row {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 12px;
 }
 /* 成员表：头像和颜色名并排，和名字一起垂直居中 */
-.m-members-table td {
+.so-on .team-table.m-members-table td {
+  vertical-align: middle;
+  line-height: 1.4;
+}
+.so-on .team-table.m-members-table td .m-admin-pill {
   vertical-align: middle;
 }
-.m-member-cell {
+.so-on .m-member-cell {
   display: inline-flex;
   align-items: center;
   gap: 10px;
   white-space: nowrap;
 }
-.team-table td small.m-color-name {
+.so-on .team-table td small.m-color-name {
   color: #6b5a50;
   font-size: var(--fs-1);
 }
 /* 手机：顶部演示提示一行放下（「退出」不掉到第二行） */
 @media (max-width: 640px) {
-  aside.demo-banner {
+  .so-on aside.demo-banner {
     flex-wrap: nowrap;
     white-space: nowrap;
     justify-content: center;
@@ -448,25 +452,65 @@
     padding: 5px 8px;
     font-size: 11.5px;
   }
-  aside.demo-banner .demo-text {
+  .so-on aside.demo-banner .demo-text {
     overflow: hidden;
     text-overflow: ellipsis;
     min-width: 0;
   }
-  aside.demo-banner .demo-exit {
+  .so-on aside.demo-banner .demo-exit {
     gap: 3px;
     flex: none;
   }
-  aside.demo-banner button {
+  .so-on aside.demo-banner button {
     padding: 2px;
     font-size: 11.5px;
   }
 }
 /* 表单里的「归属人」：和上一项留出和其他字段一样的间距 */
-.m-form-label {
+.so-on .m-form-label {
   display: block;
   margin-top: 14px;
 }
-.m-form-owner {
+.so-on .m-form-owner {
   margin: 6px 0 4px;
+}
+
+/* ===== 11-12 品牌复审：只在 SCHEDULE_OWNER_ENABLED 开时生效（整份文件都挂在 html.so-on 下），开关关时与线上一模一样 ===== */
+/* 逾期统一砖红 #9E2A1E，完成统一深珊瑚 #B4532F（去掉系统红、绿） */
+.so-on .apple-page {
+  --apple-red-text: var(--red);
+  --apple-green-text: var(--green);
+  --apple-red: var(--red);
+  --apple-green: var(--green);
+}
+/* 团队页：不用绿；「使用中/成功」用「未开始」款；告警用砖红 */
+.so-on .team-table th { color: #6B5A50; }
+.so-on .team-table td small { color: #6B5A50; }
+.so-on .team-diff { color: #4A3B32; word-break: normal; overflow-wrap: anywhere; line-break: strict; }
+.so-on .team-status.active, .so-on .team-status.ok { background: #F0DCC8; color: #4F4038; }
+.so-on .team-status.disabled, .so-on .team-status.denied, .so-on .team-status.failed { background: #F8DAD4; color: #9E2A1E; }
+.so-on .team-banner { background: #F8DAD4; color: #9E2A1E; }
+/* 商品分类（老客老品等）：一律中性胶囊 #F4E6D4 底 #5E4D43 字，只靠形状标记区分，绝不用成员色 */
+.so-on .quad-mark { display: inline-block; flex: none; vertical-align: middle; }
+.so-on .quad-dot { width: auto; height: auto; border-radius: 0; background: none !important; display: inline-flex; align-items: center; line-height: 0; }
+.so-on .quad-capsule,
+.so-on .apple-page .action-group h3 { display: inline-flex; align-items: center; gap: 5px; background: #F4E6D4 !important; color: #5E4D43 !important; }
+.so-on .action-group { border-top: 1px solid var(--line-soft, var(--line)); }
+.so-on .action-group.focused { box-shadow: 0 0 0 3px #F0DCC8; }
+.so-on .action-group h3 i { display: none; }
+.so-on .action-chip { border-color: #F0DCC8; background: #fff; }
+.so-on .action-chip.on { background: #F4E6D4; border-color: #5E4D43; color: #5E4D43; }
+.so-on .quad-blocks i.on { background: #5E4D43 !important; }
+/* 销售回收站：「恢复 / 彻底删除 / 查看客户」拉开间距，查看客户前加分隔线 */
+.so-on .detail-actions.trash-actions { display: flex; align-items: center; flex-wrap: wrap; justify-content: flex-end; gap: 18px; }
+.so-on .detail-actions.trash-actions > .text-button:last-child:not(.negative) { padding-left: 18px; border-left: 1px solid var(--line, #f0dcc8); }
+/* 原生日期框旁边的中文日期 */
+.so-on .zh-date { display: inline-block; margin-left: 6px; font-size: var(--fs-1); color: #6B5A50; white-space: nowrap; }
+/* 手机：成员筛选条可以左右滑，右边渐隐提示后面还有人 */
+@media (max-width: 640px) {
+  .so-on .m-filter-chips {
+    -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 36px), transparent);
+    mask-image: linear-gradient(to right, #000 calc(100% - 36px), transparent);
+    padding-right: 28px;
+  }
 }

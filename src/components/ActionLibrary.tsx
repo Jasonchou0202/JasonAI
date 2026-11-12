@@ -2,11 +2,13 @@ import { useEffect, useRef, useState } from "react";
 import { CalendarPlus, Check, Pencil, Plus, RotateCcw, Trash2, Sparkles } from "lucide-react";
 import { QUADRANTS, QUADRANT_INFO, type Quadrant } from "../domain/insights";
 import { PRESET_ACTIONS, type EffectiveAction } from "../domain/actions";
-import { useActionLibrary } from "../lib/insights-ui";
+import { QuadrantMark, useActionLibrary } from "../lib/insights-ui";
+import { useDirectory } from "../lib/members-ui";
 
 /** 日程管理里的「有效动作库」：按客户 × 产品矩阵分组，可增改删，可一键加入日程 */
 export function ActionLibrary({ mode, focus, onSchedule }: { mode: string; focus?: Quadrant; onSchedule: (a: EffectiveAction) => void }) {
   const { actions, save } = useActionLibrary(mode);
+  const so = useDirectory().on;
   const [adding, setAdding] = useState<Quadrant | null>(null);
   const [editing, setEditing] = useState<string | null>(null);
   const [text, setText] = useState("");
@@ -39,8 +41,8 @@ export function ActionLibrary({ mode, focus, onSchedule }: { mode: string; focus
           const list = actions.filter((a) => a.quadrant === q);
           const form = adding === q || Boolean(editing && list.some((a) => a.id === editing));
           return (
-            <div key={q} className={`action-group ${focus === q ? "focused" : ""}`} data-quadrant={q} style={{ ["--q" as string]: info.color }}>
-              <h3><i style={{ background: info.color }} />{info.label}</h3>
+            <div key={q} className={`action-group ${focus === q ? "focused" : ""}`} data-quadrant={q} style={so ? undefined : { ["--q" as string]: info.color }}>
+              <h3>{so ? <QuadrantMark q={q} /> : <i style={{ background: info.color }} />}{info.label}</h3>
               <ul>
                 {list.map((a) => (
                   <li key={a.id}>
@@ -87,6 +89,7 @@ export function ActionPicker({
   onToggle: (a: EffectiveAction, on: boolean) => void;
 }) {
   const { actions } = useActionLibrary(mode);
+  const so = useDirectory().on;
   const groups = QUADRANTS.filter((q) => quadrants?.has(q));
   return (
     <div className="action-picker" role="group" aria-label="有效动作（按客户色块，可多选）">
@@ -102,8 +105,8 @@ export function ActionPicker({
         groups.map((q) => {
           const list = actions.filter((a) => a.quadrant === q);
           return (
-            <div key={q} className="action-picker-group" data-quadrant={q} style={{ ["--q" as string]: QUADRANT_INFO[q].color }}>
-              <span className="quad-capsule">{QUADRANT_INFO[q].short}</span>
+            <div key={q} className="action-picker-group" data-quadrant={q} style={so ? undefined : { ["--q" as string]: QUADRANT_INFO[q].color }}>
+              <span className="quad-capsule">{so && <QuadrantMark q={q} />}{QUADRANT_INFO[q].short}</span>
               <div>
                 {list.length ? list.map((a) => {
                   const on = selected.has(a.id);

@@ -29,6 +29,7 @@ import { beijingToUTC, customerRoot } from "../lib/customer-ui";
 import { useQuery, ErrorNote, message } from "./ui";
 import { groupProducts } from "../domain/catalog";
 import { ProductEditor } from "./ProductEditor";
+import { ZhDateHint } from "../lib/members-ui";
 type Draft = {
   productId: string;
   productName: string;
@@ -493,6 +494,7 @@ export function SaleForm({
                 <>
                   <label htmlFor="sale-date">
                     成交日期<span className="required">*</span>
+                    <ZhDateHint value={form.date} />
                   </label>
                   <input
                     id="sale-date"
@@ -608,7 +610,10 @@ export function SaleForm({
                     onToggle={toggleAction}
                   />
                   <div>
-                    <label htmlFor="schedule-at">跟进时间</label>
+                    <label htmlFor="schedule-at">
+                      跟进时间
+                      <ZhDateHint value={form.scheduleAt || defaultFollowUp(form.date)} kind="datetime" />
+                    </label>
                     <input
                       id="schedule-at"
                       type="datetime-local"

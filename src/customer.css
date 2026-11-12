@@ -1097,12 +1097,11 @@
   --apple-fill: var(--bg); /* 白卡里的输入框、分段控件、头像条底：奶油 #FBF3E4 */
   --apple-fill-2: var(--cream); /* 次按钮「改期」等：奶油深一档 #F4E6D4 */
   --apple-coral-text: var(--green); /* 白卡上的小号珊瑚字用深珊瑚 #B4532F（对白 4.98:1） */
-  /* 11-12 品牌复审：去掉系统红和绿。逾期统一砖红 #9E2A1E（对白 7.9:1），完成统一深珊瑚 #B4532F */
-  --apple-red-text: var(--red);
-  --apple-green-text: var(--green);
+  --apple-red-text: #d70015; /* 小号「逾期」字：同色系加深（对白 5.4:1）；圆点和大数字仍 #ff3b30 */
+  --apple-green-text: #1e7b34; /* 小号「完成」字：同色系加深（对白 5.3:1）；圆点仍 #34c759 */
   --apple-coral: #d97757;
-  --apple-red: var(--red);
-  --apple-green: var(--green);
+  --apple-red: #ff3b30;
+  --apple-green: #34c759;
   --apple-shadow: var(--shadow-card);
   gap: 24px;
   padding-bottom: 48px;

@@ -87,6 +87,12 @@ export function DirectoryProvider({ api, me, children }: { api: Api; me: Me; chi
       refresh,
     };
   }, [enabled, people, me.ownerUid, me.uid, me.avatarsEnabled, refresh]);
+  // 品牌复审的样式（members.css 整份）只挂在 html.so-on 下：开关关时不加这个类，页面与线上一模一样
+  useEffect(() => {
+    const root = document.documentElement;
+    root.classList.toggle("so-on", value.on);
+    return () => root.classList.remove("so-on");
+  }, [value.on]);
   return <DirectoryContext.Provider value={value}>{children}</DirectoryContext.Provider>;
 }
 
@@ -216,5 +222,27 @@ export function AssignPicker({ current, onPick, busy }: { current: string; onPic
           </li>
         ))}
     </ul>
+  );
+}
+
+/** 原生日期框跟浏览器语言走（英文系统会显示 mm/dd/yyyy）：旁边总是用中文再写一遍选中的日期。只在开关开时出现 */
+export function zhDateText(value: string | undefined | null, kind: "date" | "month" | "datetime") {
+  if (!value) return "";
+  const m = /^(\d{4})-(\d{2})(?:-(\d{2}))?(?:T(\d{2}):(\d{2}))?/.exec(value);
+  if (!m) return "";
+  const [, y, mo, d, h, mi] = m;
+  const base = `${y}年${Number(mo)}月`;
+  if (kind === "month") return base;
+  if (!d) return base;
+  return kind === "datetime" && h ? `${base}${Number(d)}日 ${h}:${mi}` : `${base}${Number(d)}日`;
+}
+export function ZhDateHint({ value, kind = "date" }: { value: string | undefined | null; kind?: "date" | "month" | "datetime" }) {
+  const dir = useDirectory();
+  const text = zhDateText(value, kind);
+  if (!dir.on || !text) return null;
+  return (
+    <span className="zh-date" aria-hidden="true">
+      {text}
+    </span>
   );
 }

@@ -6,6 +6,7 @@ import { ArrowUpRight, ChevronRight, Search } from "lucide-react";
 import type { Api } from "../domain/model";
 import { displayCustomerName } from "../domain/customers";
 import { QUADRANTS, QUADRANT_INFO, type Quadrant } from "../domain/insights";
+import { QuadrantMark } from "../lib/insights-ui";
 import {
   beijingDay,
   beijingInput,
@@ -48,6 +49,7 @@ export function appleTime(iso: string, now: number) {
   return `${Number(day.slice(5, 7))}月${Number(day.slice(8))}日 ${hm}`;
 }
 export function QuadCapsules({ has }: { has?: ReadonlySet<Quadrant> }) {
+  const so = useDirectory().on;
   const list = QUADRANTS.filter((q) => has?.has(q));
   if (!list.length) return null;
   return (
@@ -56,8 +58,9 @@ export function QuadCapsules({ has }: { has?: ReadonlySet<Quadrant> }) {
         <span
           key={q}
           className="quad-capsule"
-          style={{ ["--q" as string]: QUADRANT_INFO[q].color }}
+          style={so ? undefined : { ["--q" as string]: QUADRANT_INFO[q].color }}
         >
+          {so && <QuadrantMark q={q} />}
           {QUADRANT_INFO[q].short}
         </span>
       ))}

@@ -120,7 +120,7 @@ export function Members({ api }: { api: Api }) {
           </p>
         )}
         {data && data.members.length > 0 && (
-          <table className={`team-table ${dir.on ? "m-members-table" : ""}`}>
+          <table className={dir.on ? "team-table m-members-table" : "team-table"}>
             <thead>
               <tr>
                 {dir.on && <th>头像 · 颜色</th>}

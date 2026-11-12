@@ -23,6 +23,7 @@ import { QUADRANT_INFO } from "../domain/insights";
 import { useInsights } from "../lib/insights-ui";
 import { customerRoot } from "../lib/customer-ui";
 import "../customer.css";
+import { ZhDateHint } from "../lib/members-ui";
 
 export type TaskDraft = Partial<TaskInput>;
 interface StoredDraft {
@@ -275,6 +276,7 @@ function TaskEditor({
         </select>
         <label htmlFor={`${prefix}-at`}>
           跟进时间 <small>北京时间 UTC+8</small>
+          <ZhDateHint value={at} kind="datetime" />
         </label>
         <input
           id={`${prefix}-at`}

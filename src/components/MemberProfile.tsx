@@ -6,9 +6,22 @@ import { AVATAR_ACCEPT, drawCrop, encodeAvatar, loadImage, type Crop } from "../
 import { ErrorNote, Modal, message } from "./ui";
 
 /** ⑦ 顶栏「我是谁」：日程归属开时显示头像（可点开换头像），关时原样 */
-export function MeBadge({ fallback, className, size = 32, onOpen }: { fallback: React.ReactNode; className: string; size?: number; onOpen?: () => void }) {
+export function MeBadge({
+  fallback,
+  className,
+  size = 32,
+  onOpen,
+  as = "span",
+}: {
+  fallback: React.ReactNode;
+  className: string;
+  size?: number;
+  onOpen?: () => void;
+  /** 开关关时用和线上一样的标签（侧栏是 div，顶栏是 span） */
+  as?: "div" | "span";
+}) {
   const dir = useDirectory();
-  if (!dir.on || !dir.meUid) return <span className={className}>{fallback}</span>;
+  if (!dir.on || !dir.meUid) return as === "div" ? <div className={className}>{fallback}</div> : <span className={className}>{fallback}</span>;
   const inner = <MemberAvatar uid={dir.meUid} size={size} />;
   return dir.avatars && onOpen ? (
     <button type="button" className={`${className} m-me m-who`} aria-label={`我是${dir.name(dir.meUid)}，换头像`} title="换头像" onClick={onOpen}>

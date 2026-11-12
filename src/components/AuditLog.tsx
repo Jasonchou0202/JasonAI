@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import type { Api } from "../domain/model";
 import { ErrorNote, Loading, useQuery } from "./ui";
 import "../team.css";
-import { MemberAvatar, MemberTag, useDirectory } from "../lib/members-ui";
+import { MemberAvatar, MemberTag, useDirectory, ZhDateHint } from "../lib/members-ui";
 import { addDays, today as bjToday } from "../domain/dates";
 import type { Customer } from "../domain/model";
 import { displayCustomerName } from "../domain/customers";
@@ -199,10 +199,12 @@ export function AuditLog({ api, mode }: { api: Api; mode: "admin" | "self" }) {
           <label>
             从
             <input aria-label="日志起始日期" type="date" value={from} onChange={(e) => reset(() => setFrom(e.target.value))} />
+            <ZhDateHint value={from} />
           </label>
           <label>
             至
             <input aria-label="日志结束日期" type="date" value={to} onChange={(e) => reset(() => setTo(e.target.value))} />
+            <ZhDateHint value={to} />
           </label>
           <select aria-label="操作类型" value={action} onChange={(e) => reset(() => setAction(e.target.value))}>
             {TYPES.map(([v, l]) => (
@@ -255,7 +257,11 @@ export function AuditLog({ api, mode }: { api: Api; mode: "admin" | "self" }) {
                         ) : (
                           r.actorName || r.actorUid
                         )}
-                        {dir.on && r.role === "admin" ? <span className="m-admin-pill">管理员</span> : <small> {ROLE[r.role] || r.role}</small>}
+                        {dir.on && r.role === "admin" ? (
+                          <span className="m-admin-pill">管理员</span>
+                        ) : dir.on && r.role === "system" ? null : (
+                          <small> {ROLE[r.role] || r.role}</small>
+                        )}
                       </td>
                     )}
                     {dir.on ? (
