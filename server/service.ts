@@ -78,6 +78,12 @@ export interface Context {
   actorUid?: string;
   /** 操作日志：读的时候自动补建了客户，回报新建的客户 id */
   onAutoCreate?: (ids: string[]) => void;
+  /**
+   * 冻结集合的新字段开关（只由团队入口按环境变量写入；缺省全关，与原来完全一致）：
+   * - tasks：SCHEDULE_OWNER_ENABLED=1 → 新建写 ownerUid，修改类操作写 updatedBy；
+   * - sales：SALES_ACTOR_FIELDS_ENABLED=1 → 修改/删除/恢复写 updatedBy，删除写 deletedBy。
+   */
+  actorFields?: { tasks?: boolean; sales?: boolean };
 }
 interface Ledger {
   hasSales: boolean;
@@ -116,7 +122,7 @@ function filters(value: Record<string, unknown>): Filters {
     throw new Error("筛选日期无效");
   return f;
 }
-async function writable(tx: Transaction) {
+export async function writable(tx: Transaction) {
   const ledger = await tx.get<Ledger>("batches", "_ledger");
   if (ledger?.restoreId) throw new Error("正在恢复备份，请完成恢复后再记账");
   return ledger || { hasSales: false };
@@ -333,6 +339,8 @@ export async function nextTaskRow(
       ? await ctx.hash(JSON.stringify([old.reminderGeneration, requestId, action]))
       : old.reminderGeneration,
     reminderStartAt: reminderChanged ? time : old.reminderStartAt,
+    // 最后修改人（开关开才写；iPhone 同步没有 actorUid，不写）。归属 ownerUid 原样保留，不转
+    ...(ctx.actorFields?.tasks && ctx.actorUid ? { updatedBy: ctx.actorUid } : {}),
   };
 }
 export async function mutation<T>(
@@ -587,6 +595,8 @@ export async function execute(
               JSON.stringify([id, time, "create"]),
             ),
             ...(ctx.actorUid ? { createdBy: ctx.actorUid } : {}),
+            // 方案 C：谁创建就归谁
+            ...(ctx.actorFields?.tasks && ctx.actorUid ? { ownerUid: ctx.actorUid } : {}),
           };
           await tx.put("tasks", id, task);
           await tx.put("batches", "_ledger", { ...ledger, hasData: true });
@@ -943,6 +953,12 @@ export async function execute(
           revision: old.revision + 1,
           lastMutation: requestId,
         };
+        // 冻结集合 sales 的新字段：只在 SALES_ACTOR_FIELDS_ENABLED 开时写（单独解冻）
+        if (ctx.actorFields?.sales && ctx.actorUid) {
+          row.updatedBy = ctx.actorUid;
+          if (action === "sales.delete") row.deletedBy = ctx.actorUid;
+          if (action === "sales.restore") delete row.deletedBy;
+        }
         await tx.put("sales", id, row);
         await ensureCustomer(
           tx,

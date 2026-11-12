@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useTeam } from "../lib/team-ui";
+import { MemberTag, useDirectory, ZhDateHint } from "../lib/members-ui";
 import {
   Download,
   Plus,
@@ -39,6 +40,7 @@ import {
 } from "./ui";
 import { downloadCsv } from "../lib/files";
 import { QuadrantDot, QuadrantBlocks, TierBadge, useInsights } from "../lib/insights-ui";
+const NO_AUDIT = { call: async <T,>() => ({ rows: [] }) as unknown as T };
 export function Details({
   api,
   version,
@@ -59,6 +61,18 @@ export function Details({
   onCustomer: (id: string, month?: string) => void;
 }) {
   const team = useTeam();
+  const dir = useDirectory();
+  // 回收站自己的页头、按钮间距和「查看客户」：只在日程归属开关开时（关时与线上一样）
+  const trashOwn = dir.on && !!filters.deleted;
+  // ⑩ 销售回收站「谁删的」：先看 sales.deletedBy（单独解冻后才有），没有就从操作日志里读（只读），都没有写「不详」
+  const auditDeletes = useQuery<{ rows: { targetId?: string; actorUid: string; result: string }[] }>(
+    dir.on && filters.deleted && team.isAdmin && team.me.auditEnabled ? api : NO_AUDIT,
+    "audit.list",
+    { action: "sales.delete", result: "ok", limit: 100 },
+    version,
+  );
+  const deleter = (r: Sale) =>
+    r.deletedBy || auditDeletes.data?.rows.find((l) => l.targetId === r.id)?.actorUid || "";
   const { data, error, loading } = useQuery<SalesPage>(
     api,
     "sales.list",
@@ -146,14 +160,20 @@ export function Details({
     <>
       <div className="page-heading">
         <div>
-          <p className="eyebrow">每一笔，都有迹可查</p>
+          <p className="eyebrow">{trashOwn ? "删掉的记录先放在这里" : "每一笔，都有迹可查"}</p>
           <h1>{filters.deleted ? "回收站" : "销售明细"}</h1>
-          <p className="subtle">找到记录，核对收入，把生意理清楚。</p>
+          <p className="subtle">
+            {trashOwn
+              ? "误删的销售记录可以恢复；彻底删除后就找不回来了。"
+              : "找到记录，核对收入，把生意理清楚。"}
+          </p>
         </div>
-        <button className="button primary heading-new" onClick={onNew}>
-          <Plus size={17} />
-          记一笔
-        </button>
+        {!trashOwn && (
+          <button className="button primary heading-new" onClick={onNew}>
+            <Plus size={17} />
+            记一笔
+          </button>
+        )}
       </div>
       <section className="panel detail-panel">
         <div className="filter-top">
@@ -186,6 +206,7 @@ export function Details({
               value={filters.from || ""}
               onChange={(e) => filter({ from: e.target.value })}
             />
+            <ZhDateHint value={filters.from} />
           </label>
           <label>
             至
@@ -195,6 +216,7 @@ export function Details({
               value={filters.to || ""}
               onChange={(e) => filter({ to: e.target.value })}
             />
+            <ZhDateHint value={filters.to} />
           </label>
           <select
             aria-label="筛选商品"
@@ -305,6 +327,12 @@ export function Details({
                           : "未填写客户"}
                       </span>
                       {r.note && <small>{r.note}</small>}
+                      {dir.on && (
+                        <small className="m-meta">
+                          谁删的
+                          {deleter(r) ? <MemberTag uid={deleter(r)} size={16} /> : <span>不详</span>}
+                        </small>
+                      )}
                     </div>
                   ) : (
                     <button
@@ -323,6 +351,12 @@ export function Details({
                           : "未填写客户"}
                       </span>
                       {r.note && <small>{r.note}</small>}
+                      {/* ⑧b 录入人：只读现有的 sales.createdBy，没有 = Jason */}
+                      {dir.on && (
+                        <small className="m-meta">
+                          录入人 <MemberTag uid={r.createdBy || dir.ownerUid} size={16} />
+                        </small>
+                      )}
                     </button>
                   )}
                   <div className="detail-numbers">
@@ -343,7 +377,7 @@ export function Details({
                       </strong>
                     </span>
                   </div>
-                  <div className="detail-actions">
+                  <div className={trashOwn ? "detail-actions trash-actions" : "detail-actions"}>
                     {filters.deleted ? (
                       <>
                         <button
@@ -413,13 +447,18 @@ export function Details({
                     {filters.deleted && customerFor(r.customer) && (
                       <button
                         className="text-button"
-                        aria-label={`${displayCustomerName(r.customer)}日程管理`}
+                        aria-label={
+                          trashOwn
+                            ? `查看客户${displayCustomerName(r.customer)}的成交和日程`
+                            : `${displayCustomerName(r.customer)}日程管理`
+                        }
+                        {...(trashOwn ? { title: "打开这位客户的详情页（成交记录和日程）" } : {})}
                         onClick={() =>
                           onCustomer(customerFor(r.customer)!.id, "all")
                         }
                       >
                         <CalendarDays size={15} />
-                        日程管理
+                        {trashOwn ? "查看客户" : "日程管理"}
                       </button>
                     )}
                   </div>

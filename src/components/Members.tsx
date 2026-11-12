@@ -3,12 +3,15 @@ import { UserPlus, Copy } from "lucide-react";
 import type { Api } from "../domain/model";
 import { ErrorNote, Loading, message, useQuery } from "./ui";
 import "../team.css";
+import { MemberAvatar, useDirectory, zhDateText } from "../lib/members-ui";
+import { AvatarEditor } from "./MemberProfile";
 
 interface Member {
   uid: string;
   name: string;
   status: "pending" | "active" | "disabled";
   createdAt: string;
+  color?: string;
 }
 interface Invite {
   id: string;
@@ -32,12 +35,15 @@ export function Members({ api }: { api: Api }) {
   const [created, setCreated] = useState<{ code: string; name: string; expiresAt: string }>();
   const [busy, setBusy] = useState(false);
   const [note, setNote] = useState("");
+  const dir = useDirectory();
+  const [avatarFor, setAvatarFor] = useState("");
   async function run(action: string, payload: unknown) {
     setBusy(true);
     setNote("");
     try {
       const r = await api.call<any>(action, payload);
       setVersion((v) => v + 1);
+      dir.refresh();
       return r;
     } catch (e) {
       setNote(message(e));
@@ -105,10 +111,19 @@ export function Members({ api }: { api: Api }) {
         {loading && <Loading />}
         {error && <ErrorNote>{error}</ErrorNote>}
         {data && !data.members.length && <p className="subtle">还没有成员。</p>}
+        {dir.on && data && data.members.some((m) => m.status !== "pending" && !m.color) && (
+          <p className="team-row">
+            <span className="subtle">有成员还没分到固定颜色（开关打开前入队的）。</span>
+            <button className="button secondary small" disabled={busy} onClick={() => void run("members.color.fill", {})}>
+              给已有成员补色
+            </button>
+          </p>
+        )}
         {data && data.members.length > 0 && (
-          <table className="team-table">
+          <table className={dir.on ? "team-table m-members-table" : "team-table"}>
             <thead>
               <tr>
+                {dir.on && <th>头像 · 颜色</th>}
                 <th>备注名</th>
                 <th>状态</th>
                 <th>加入时间（北京）</th>
@@ -116,13 +131,56 @@ export function Members({ api }: { api: Api }) {
               </tr>
             </thead>
             <tbody>
+              {dir.on && (
+                <tr>
+                  <td>
+                    <span className="m-member-cell">
+                      <MemberAvatar uid={dir.ownerUid} size={30} />
+                      <small className="m-color-name">{dir.color(dir.ownerUid).name}（固定）</small>
+                    </span>
+                  </td>
+                  <td>
+                    {dir.name(dir.ownerUid)} <span className="m-admin-pill">管理员</span>
+                  </td>
+                  <td>
+                    <span className="team-status active">使用中</span>
+                  </td>
+                  <td>—</td>
+                  <td>
+                    {dir.avatars && (
+                      <button className="text-button" onClick={() => setAvatarFor(dir.ownerUid)}>
+                        换头像
+                      </button>
+                    )}
+                  </td>
+                </tr>
+              )}
               {data.members.map((m) => (
                 <tr key={m.uid}>
+                  {dir.on && (
+                    <td>
+                      {m.status === "pending" ? (
+                        <small className="subtle">批准后分色</small>
+                      ) : (
+                        <>
+                          <span className="m-member-cell">
+                            <MemberAvatar uid={m.uid} size={30} name={m.name} />
+                            <small className="m-color-name">{dir.color(m.uid).name}</small>
+                          </span>
+                          {m.color && data.members.some((o) => o.uid !== m.uid && o.color === m.color) && (
+                            <small className="m-same-color">
+                              {" "}· 和{data.members.filter((o) => o.uid !== m.uid && o.color === m.color).map((o) => o.name).join("、")}同色，靠头像和名字区分
+                            </small>
+                          )}
+                        </>
+                      )}
+                    </td>
+                  )}
                   <td>{m.name}</td>
                   <td>
                     <span className={`team-status ${m.status}`}>{STATUS[m.status]}</span>
                   </td>
-                  <td>{bj(m.createdAt)}</td>
+                  <td>{dir.on ? zhDateText(bj(m.createdAt).replace(" ", "T"), "datetime") : bj(m.createdAt)}</td>
                   <td>
                     {m.status === "pending" && (
                       <button className="button primary small" disabled={busy} onClick={() => void run("members.approve", { uid: m.uid })}>
@@ -137,6 +195,11 @@ export function Members({ api }: { api: Api }) {
                     {m.status === "disabled" && (
                       <button className="text-button" disabled={busy} onClick={() => void run("members.enable", { uid: m.uid })}>
                         恢复
+                      </button>
+                    )}
+                    {dir.avatars && m.status !== "pending" && (
+                      <button className="text-button" disabled={busy} onClick={() => setAvatarFor(m.uid)}>
+                        换/清除头像
                       </button>
                     )}
                   </td>
@@ -161,6 +224,7 @@ export function Members({ api }: { api: Api }) {
           </>
         )}
       </section>
+      {avatarFor && <AvatarEditor api={api} uid={avatarFor} onClose={() => setAvatarFor("")} />}
     </>
   );
 }

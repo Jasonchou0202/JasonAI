@@ -47,6 +47,16 @@ export const AUDITED_ACTIONS = new Set([
   "tasks.sync.complete", "tasks.sync.uncomplete", "tasks.sync.create",
 ]);
 
+/** 日程归属开关开后才记日志的新 action（开关关时它们不存在，也就不记） */
+export const OWNER_AUDITED_ACTIONS = new Set([
+  "tasks.claim", "tasks.assign", "members.color.fill", "members.avatar.set", "members.avatar.clear",
+]);
+/** 日志「按类型」筛选里的组合（单个 action 前缀之外的） */
+export const AUDIT_ACTION_GROUPS: Record<string, (action: string) => boolean> = {
+  "group:owner": (a) => a === "tasks.claim" || a === "tasks.assign",
+  "group:delete": (a) => /\.(delete|purge)$/.test(a),
+};
+
 /** 北京时间（UTC+8，无夏令时） */
 export function beijing(iso: string) {
   const t = new Date(Date.parse(iso) + 8 * 3600_000).toISOString();
@@ -69,9 +79,9 @@ export function summarize(kind: string | undefined, value: unknown): Record<stri
   const row = value as Record<string, unknown>;
   switch (kind) {
     case "sales":
-      return pick(row, ["date", "customer", "productName", "revenue", "cost", "revision", "deletedAt", "createdBy"], ["note"]);
+      return pick(row, ["date", "customer", "productName", "revenue", "cost", "revision", "deletedAt", "createdBy", "updatedBy", "deletedBy"], ["note"]);
     case "tasks":
-      return pick(row, ["at", "customerId", "completedAt", "deletedAt", "reminder", "revision", "createdBy"], ["title", "feedback", "nextAction"]);
+      return pick(row, ["at", "customerId", "completedAt", "deletedAt", "reminder", "revision", "createdBy", "ownerUid", "updatedBy"], ["title", "feedback", "nextAction"]);
     case "customers": {
       const out = pick(row, ["name", "mergedInto", "archivedAt", "revision"]);
       const profile = row.profile as Record<string, unknown> | undefined;
@@ -83,8 +93,14 @@ export function summarize(kind: string | undefined, value: unknown): Record<stri
     }
     case "products":
       return pick(row, ["name", "price", "cost", "hasDefaultPrice", "hasDefaultCost", "active", "archivedAt"]);
-    case "members":
-      return pick(row, ["uid", "name", "status"]);
+    case "members": {
+      const out = pick(row, ["uid", "name", "status", "color", "count", "colors", "oldFileKept"]);
+      // 头像本身不进日志：只记文件编号（内容哈希）的前 8 位
+      const avatar = row.avatar as { hash?: unknown } | undefined;
+      if (avatar && typeof avatar === "object" && typeof avatar.hash === "string") out.avatar = avatar.hash.slice(0, 8);
+      else if ("avatar" in row && !row.avatar) out.avatar = null;
+      return out;
+    }
     case "invites":
       return pick(row, ["id", "name", "expiresAt", "usedBy", "revokedAt"]);
     default: {
@@ -175,7 +191,8 @@ export interface AuditQuery {
 }
 const DAY = /^\d{4}-\d{2}-\d{2}$/;
 /** 查询：按北京日期区间、操作类型、操作人、结果筛选，按时间倒序，用 id 游标分页 */
-export async function listAudit(store: Store, q: AuditQuery, forceActor?: string) {
+/** groups：只有 SCHEDULE_OWNER_ENABLED 开时才认 group:owner / group:delete / group:system；关时按原来的精确/前缀匹配（等于什么都不匹配），与线上一致 */
+export async function listAudit(store: Store, q: AuditQuery, forceActor?: string, opts: { groups?: boolean } = {}) {
   for (const k of ["from", "to", "action", "actor", "result", "cursor"] as const)
     if (q[k] !== undefined && typeof q[k] !== "string") throw new Error("筛选条件无效");
   if ((q.from && !DAY.test(q.from)) || (q.to && !DAY.test(q.to))) throw new Error("筛选日期无效");
@@ -183,10 +200,13 @@ export async function listAudit(store: Store, q: AuditQuery, forceActor?: string
   const actor = forceActor ?? q.actor;
   const rows = (await store.list<AuditEntry>(AUDIT_COLLECTION))
     .filter((r) =>
-      (!actor || r.actorUid === actor) &&
+      (!actor || r.actorUid === actor || (opts.groups && actor === "group:system" && !forceActor && r.actorUid.startsWith("system:"))) &&
       (!q.from || r.day >= q.from) &&
       (!q.to || r.day <= q.to) &&
-      (!q.action || r.action === q.action || r.action.startsWith(q.action + ".")) &&
+      (!q.action ||
+        (opts.groups && Object.hasOwn(AUDIT_ACTION_GROUPS, q.action)
+          ? AUDIT_ACTION_GROUPS[q.action](r.action)
+          : r.action === q.action || r.action.startsWith(q.action + "."))) &&
       (!q.result || r.result === q.result) &&
       (!q.cursor || r.id < q.cursor),
     )

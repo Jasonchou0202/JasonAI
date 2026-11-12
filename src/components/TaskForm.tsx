@@ -22,6 +22,7 @@ import { QUADRANT_INFO } from "../domain/insights";
 import { useInsights } from "../lib/insights-ui";
 import { customerRoot } from "../lib/customer-ui";
 import "../customer.css";
+import { MemberTag, useDirectory, ZhDateHint } from "../lib/members-ui";
 
 export type TaskDraft = Partial<TaskInput>;
 interface StoredDraft {
@@ -86,6 +87,7 @@ function TaskEditor({
   const [done, setDone] = useState(false);
   const [refresh, setRefresh] = useState(0);
   const prefix = useId();
+  const dir = useDirectory();
   const mutation = useCustomerMutation(api, mode, `form-${scope}`);
   const customers = useCustomerQuery<Customer[]>(
     api,
@@ -272,7 +274,8 @@ function TaskEditor({
           ))}
         </select>
         <label htmlFor={`${prefix}-at`}>
-          跟进时间 <small>北京时间 UTC+8</small>
+          跟进时间 <small>{dir.on ? "北京时间" : "北京时间 UTC+8"}</small>
+          <ZhDateHint value={at} kind="datetime" />
         </label>
         <input
           id={`${prefix}-at`}
@@ -328,6 +331,16 @@ function TaskEditor({
           placeholder="下一次准备跟进什么"
           onChange={(e) => change("nextAction", e.target.value)}
         />
+        {/* ②c 归属人：只显示，不在表单里改（改错字不转归属；要接手请点「认领」） */}
+        {dir.on && (
+          <>
+            <span className="m-form-label">归属人</span>
+            <div className="m-form-owner">
+              <MemberTag uid={edit ? dir.ownerOf(edit) : dir.meUid} />
+              <small className="subtle">{edit ? "修改不会改变归属；要接手请点「认领」" : "谁新建就归谁"}</small>
+            </div>
+          </>
+        )}
         <label htmlFor={`${prefix}-reminder`}>提醒</label>
         <select
           id={`${prefix}-reminder`}

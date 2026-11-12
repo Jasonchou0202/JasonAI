@@ -6,19 +6,40 @@
  */
 import { UnsupportedActionError, type Context, type Store } from "./service";
 import { AUDIT_HEALTH_COLLECTION, AUDIT_HEALTH_ID, listAudit, type AuditLog, type AuditQuery } from "./audit";
+import { colorKeyAt, isColorKey, type ColorKey } from "../src/domain/members";
+import { decodeAvatar, type AvatarRef, type AvatarStorage } from "./avatar";
 
 export interface TeamConfig {
   membersEnabled: boolean;
   auditEnabled: boolean;
   /** 被拒日志节流（测试可传入独立实例；缺省每个云函数实例一份） */
   throttle?: import("./audit").DenyThrottle;
+  /** 日程归属 + 成员固定颜色（SCHEDULE_OWNER_ENABLED=1；要 MEMBERS_ENABLED=1 才生效）；缺省关，行为与现在完全一致 */
+  scheduleOwnerEnabled?: boolean;
+  /** 成员头像（AVATARS_ENABLED=1；要日程归属也开着、并且有云存储）；可以晚一步上 */
+  avatarsEnabled?: boolean;
+  /** sales 加删除人、修改人（SALES_ACTOR_FIELDS_ENABLED=1；改冻结集合 sales，单独解冻） */
+  salesActorFieldsEnabled?: boolean;
+  /** 头像用的云存储（云函数入口传 CloudBase 云存储，测试/演示传内存版） */
+  avatarStorage?: AvatarStorage;
+  /** 云函数告警日志（不写库） */
+  warn?: (code: string) => void;
 }
 export function teamConfigFromEnv(env: Record<string, string | undefined>): TeamConfig {
   return {
     membersEnabled: env.MEMBERS_ENABLED === "1",
     auditEnabled: env.AUDIT_ENABLED === "1",
+    ...(env.SCHEDULE_OWNER_ENABLED === "1" ? { scheduleOwnerEnabled: true } : {}),
+    ...(env.AVATARS_ENABLED === "1" ? { avatarsEnabled: true } : {}),
+    ...(env.SALES_ACTOR_FIELDS_ENABLED === "1" ? { salesActorFieldsEnabled: true } : {}),
   };
 }
+/** 日程归属真正生效：两个开关都开 */
+export const ownerOn = (t: TeamConfig) => !!(t.membersEnabled && t.scheduleOwnerEnabled);
+/** 头像真正生效：日程归属开 + 头像开 + 有云存储 */
+export const avatarsOn = (t: TeamConfig) => ownerOn(t) && !!t.avatarsEnabled && !!t.avatarStorage;
+/** sales 新字段真正生效 */
+export const salesActorOn = (t: TeamConfig) => !!(t.membersEnabled && t.salesActorFieldsEnabled);
 export type Role = "admin" | "member";
 export type MemberStatus = "pending" | "active" | "disabled";
 export interface Member {
@@ -29,6 +50,10 @@ export interface Member {
   createdAt: string;
   updatedAt: string;
   revision: number;
+  /** 固定颜色 c1～c7：批准入队时写入，之后不再改（日程归属开关开后才有） */
+  color?: ColorKey;
+  /** 上传的头像（头像开关开后才有） */
+  avatar?: AvatarRef;
 }
 export interface Invite {
   id: string;
@@ -69,6 +94,19 @@ export const MEMBER_ACTIONS = new Set([
   "export",
   "members.me", "members.redeem", "audit.list",
 ]);
+/** 日程归属开关开后，成员额外可用的 action */
+export const OWNER_MEMBER_ACTIONS = new Set(["tasks.claim", "members.directory"]);
+/** 头像开关开后，成员额外可用的 action（云端强制只能改自己的） */
+export const AVATAR_MEMBER_ACTIONS = new Set(["members.avatar.set", "members.avatar.clear"]);
+/** Jason 的头像等资料：members 里的系统文档（_ 开头，不算成员） */
+export const OWNER_PROFILE_ID = "_owner_profile";
+/** 分色计数器（系统文档，_ 开头不算成员）：下一个入队的人用第 next 个颜色 */
+export const COLOR_COUNTER_ID = "_color_counter";
+interface ColorCounter {
+  uid: string;
+  next: number;
+  updatedAt: string;
+}
 /** 成员只能对自己录入的记录做的操作 → 对应集合 */
 export const OWN_ONLY: Record<string, "sales" | "tasks"> = {
   "sales.update": "sales",
@@ -112,7 +150,11 @@ export async function authorize(
   if (member.status === "pending") throw new DeniedError("MEMBER_PENDING", "等待管理员批准后才能使用", who);
   if (member.status !== "active") throw new DeniedError("MEMBER_DISABLED", "账号已被管理员停用", who);
   const actor: Actor = { ...who, role: "member" };
-  if (!MEMBER_ACTIONS.has(action))
+  const allowed =
+    MEMBER_ACTIONS.has(action) ||
+    (ownerOn(team) && OWNER_MEMBER_ACTIONS.has(action)) ||
+    (avatarsOn(team) && AVATAR_MEMBER_ACTIONS.has(action));
+  if (!allowed)
     throw new DeniedError("ADMIN_ONLY", "这个操作只有管理员可以进行", actor);
   // 回收站只给管理员：成员任何 action 只要带了 deleted（sales.list / tasks.list / export 等）一律拒绝
   if (payload.deleted !== undefined && payload.deleted !== false && payload.deleted !== null)
@@ -122,7 +164,8 @@ export async function authorize(
     const row = await store.get<{ deletedAt?: string | null }>(action === "sales.get" ? "sales" : "tasks", payload.id);
     if (row?.deletedAt) throw new Error(action === "sales.get" ? "记录不存在" : "日程不存在");
   }
-  const own = OWN_ONLY[action];
+  // 日程归属开后：成员可以删别人的日程（进回收站，只有管理员能恢复）；销售那两项仍只能动自己的
+  const own = ownerOn(team) && action === "tasks.delete" ? undefined : OWN_ONLY[action];
   if (own && typeof payload.id === "string" && ID.test(payload.id)) {
     const row = await store.get<{ createdBy?: string }>(own, payload.id);
     if (row && recordOwner(row, ctx.ownerUid) !== ctx.uid)
@@ -215,12 +258,21 @@ export async function executeTeam(
     };
     if (admin && team.auditEnabled)
       out.auditHealth = await store.get(AUDIT_HEALTH_COLLECTION, AUDIT_HEALTH_ID);
+    // 新开关只在打开时才出现在返回里（关着时返回与现在逐字一致）
+    if (ownerOn(team)) {
+      out.scheduleOwnerEnabled = true;
+      out.ownerUid = ctx.ownerUid;
+      if (avatarsOn(team)) out.avatarsEnabled = true;
+    }
     return { data: out };
   }
   if (action === "audit.list") {
     if (!team.auditEnabled) throw new Error("操作日志尚未开启");
     // 成员：无论前端传什么 actor，都只查自己的
-    return { data: await listAudit(store, p as AuditQuery, admin ? undefined : actor.uid) };
+    // 日程归属开后更严：成员点名要看别人的，直接拒绝并记一条「被拒」
+    if (!admin && ownerOn(team) && typeof p.actor === "string" && p.actor && p.actor !== actor.uid)
+      throw new DeniedError("SELF_ONLY", "只能查看自己的操作记录", actor);
+    return { data: await listAudit(store, p as AuditQuery, admin ? undefined : actor.uid, ownerOn(team) ? { groups: true } : {}) };
   }
   if (!team.membersEnabled) throw new Error("团队成员功能尚未开启");
   if (action === "members.redeem") {
@@ -270,7 +322,11 @@ export async function executeTeam(
       return { data: { status: member.status }, target: { type: "members", id: actor.uid, after: member } };
     });
   }
+  if (action === "members.directory" && ownerOn(team)) return { data: await directory(store, ctx, team) };
+  if ((action === "members.avatar.set" || action === "members.avatar.clear") && avatarsOn(team))
+    return setAvatar(store, ctx, team, actor, action, p, now);
   if (!admin) throw new DeniedError("ADMIN_ONLY", "这个操作只有管理员可以进行");
+  if (action === "members.color.fill" && ownerOn(team)) return fillColors(store, now);
   if (action === "members.list") {
     const [members, invites] = await Promise.all([
       store.list<Member>("members"),
@@ -320,17 +376,166 @@ export async function executeTeam(
     if (!uid || uid.startsWith("_")) throw new Error("成员编号无效");
     if (uid === ctx.ownerUid) throw new Error("不能修改管理员本人");
     const status: MemberStatus = action === "members.disable" ? "disabled" : "active";
+    // 入队时自动分色：按分色计数器往下排，7 色用完从头循环；写入后不再改。
+    // 计数器文档 members/_color_counter 在同一个事务里读、写，两个人同时被批准也不会撞色；
+    // 计数器还不存在时（上线第一次）用已有颜色的人数做起点（只是起点，真正的序号以事务里的计数器为准）
+    const colorOn = action === "members.approve" && ownerOn(team);
+    const seed = colorOn
+      ? (await store.list<Member>("members")).filter((m) => isMember(m) && isColorKey(m.color)).length
+      : 0;
     return store.transaction(async (tx) => {
       const old = await tx.get<Member>("members", uid);
       if (!old) throw new Error("成员不存在");
       if (action === "members.approve" && old.status !== "pending") throw new Error("这位成员不在待批准状态");
       if (action === "members.enable" && old.status !== "disabled") throw new Error("这位成员没有被停用");
-      const row: Member = { ...old, status, updatedAt: now(), revision: old.revision + 1 };
+      let color: ColorKey | undefined;
+      if (colorOn && !isColorKey(old.color)) {
+        const counter = await tx.get<ColorCounter>("members", COLOR_COUNTER_ID);
+        const n = Math.max(counter?.next ?? 0, seed);
+        color = colorKeyAt(n);
+        await tx.put("members", COLOR_COUNTER_ID, { uid: COLOR_COUNTER_ID, next: n + 1, updatedAt: now() });
+      }
+      const row: Member = {
+        ...old,
+        status,
+        updatedAt: now(),
+        revision: old.revision + 1,
+        ...(color ? { color } : {}),
+      };
       await tx.put("members", uid, row);
       return { data: row, target: { type: "members", id: uid, before: old, after: row } };
     });
   }
   throw new UnsupportedActionError();
+}
+
+/** 所有已入队的人（含停用，保留原色）：只给 uid、名字、颜色、头像临时链接 */
+async function directory(store: Store, ctx: Context, team: TeamConfig) {
+  const [rows, profile] = await Promise.all([
+    store.list<Member>("members"),
+    store.get<{ name?: string; avatar?: AvatarRef }>("members", OWNER_PROFILE_ID),
+  ]);
+  const people = rows
+    .filter((m) => isMember(m) && m.status !== "pending")
+    .sort((a, b) => a.createdAt.localeCompare(b.createdAt) || a.uid.localeCompare(b.uid));
+  let urls = new Map<string, string>();
+  if (avatarsOn(team)) {
+    const ids = [profile?.avatar?.fileID, ...people.map((m) => m.avatar?.fileID)].filter((x): x is string => !!x);
+    if (ids.length)
+      try {
+        urls = await team.avatarStorage!.tempUrls(ids);
+      } catch {
+        team.warn?.("avatar.url_failed"); // 拿不到链接就退回默认头像
+      }
+  }
+  const pic = (a?: AvatarRef) => {
+    const url = a && urls.get(a.fileID);
+    return url ? { avatar: { url, hash: a.hash } } : {};
+  };
+  return {
+    ownerUid: ctx.ownerUid,
+    avatarsEnabled: avatarsOn(team),
+    people: [
+      { uid: ctx.ownerUid, name: profile?.name || "Jason", role: "admin", status: "active", color: "owner", ...pic(profile?.avatar) },
+      ...people.map((m) => ({ uid: m.uid, name: m.name, role: "member", status: m.status, color: m.color ?? null, ...pic(m.avatar) })),
+    ],
+  };
+}
+
+/** 一次性补色：给还没有颜色的成员按入队先后分色；重复运行不会再改 */
+async function fillColors(store: Store, now: () => string) {
+  const rows = (await store.list<Member>("members"))
+    .filter((m) => isMember(m) && m.status !== "pending")
+    .sort((a, b) => a.createdAt.localeCompare(b.createdAt) || a.uid.localeCompare(b.uid));
+  const seed = rows.filter((m) => isColorKey(m.color)).length;
+  const todo = rows.filter((m) => !isColorKey(m.color));
+  const filled: { uid: string; color: ColorKey }[] = [];
+  await store.transaction(async (tx) => {
+    // 和入队分色共用同一个计数器，在同一个事务里读写
+    const counter = await tx.get<ColorCounter>("members", COLOR_COUNTER_ID);
+    let n = Math.max(counter?.next ?? 0, seed);
+    for (const m of todo) {
+      const fresh = await tx.get<Member>("members", m.uid);
+      if (!fresh || isColorKey(fresh.color)) continue;
+      const color = colorKeyAt(n++);
+      await tx.put("members", m.uid, { ...fresh, color, updatedAt: now(), revision: fresh.revision + 1 });
+      filled.push({ uid: m.uid, color });
+    }
+    if (filled.length) await tx.put("members", COLOR_COUNTER_ID, { uid: COLOR_COUNTER_ID, next: n, updatedAt: now() });
+  });
+  return {
+    data: { filled },
+    target: { type: "members", id: "_color_fill", after: { count: filled.length, colors: filled } },
+  };
+}
+
+/** 换头像 / 清除头像：本人或管理员；管理员的头像存 members/_owner_profile */
+async function setAvatar(
+  store: Store,
+  ctx: Context,
+  team: TeamConfig,
+  actor: Actor,
+  action: string,
+  p: Record<string, any>,
+  now: () => string,
+): Promise<{ data: unknown; target: { type: string; id: string; before?: unknown; after?: unknown } }> {
+  const admin = actor.role === "admin";
+  const uid = p.uid === undefined || p.uid === null || p.uid === "" ? actor.uid : p.uid;
+  if (typeof uid !== "string" || !ID.test(uid) || uid.startsWith("_")) throw new Error("成员编号无效");
+  if (!admin && uid !== actor.uid) throw new DeniedError("NOT_OWNER_OF_RECORD", "只能修改自己的头像", actor);
+  const isOwner = uid === ctx.ownerUid;
+  const docId = isOwner ? OWNER_PROFILE_ID : uid;
+  if (!isOwner) {
+    const m = await store.get<Member>("members", uid);
+    if (!m || m.status === "pending") throw new Error("成员不存在");
+  }
+  const storage = team.avatarStorage!;
+  const time = now();
+  let ref: AvatarRef | undefined;
+  if (action === "members.avatar.set") {
+    const { bytes, type } = decodeAvatar(p.image);
+    const hash = (await ctx.hash("avatar:" + String(p.image))).slice(0, 16);
+    const fileID = await storage.upload(`avatars/${isOwner ? "_owner" : uid}/${hash}.${type === "webp" ? "webp" : "jpg"}`, bytes);
+    ref = { fileID, hash, bytes: bytes.length, type, updatedAt: time, updatedBy: actor.uid };
+  }
+  let old: (Partial<Member> & { avatar?: AvatarRef }) | null = null;
+  let row: Record<string, unknown>;
+  try {
+    ({ old, row } = await store.transaction(async (tx) => {
+      const prev = await tx.get<Partial<Member> & { avatar?: AvatarRef }>("members", docId);
+      if (!isOwner && !prev) throw new Error("成员不存在");
+      const { avatar: _old, ...rest } = prev ?? { uid: OWNER_PROFILE_ID };
+      const next: Record<string, unknown> = {
+        ...rest,
+        ...(ref ? { avatar: ref } : {}),
+        ...(isOwner ? { updatedAt: time } : { updatedAt: time, revision: (prev!.revision ?? 0) + 1 }),
+      };
+      await tx.put("members", docId, next);
+      return { old: prev, row: next };
+    }));
+  } catch (error) {
+    if (ref) await storage.remove(ref.fileID).catch(() => team.warn?.("avatar.orphan_delete_failed"));
+    throw error;
+  }
+  // 先写新头像，再删旧文件；旧文件删失败只告警，不影响新头像
+  let oldFileKept = false;
+  const oldId = old?.avatar?.fileID;
+  if (oldId && oldId !== ref?.fileID)
+    try {
+      await storage.remove(oldId);
+    } catch {
+      oldFileKept = true;
+      team.warn?.("avatar.old_delete_failed");
+    }
+  return {
+    data: { uid, avatar: ref ? { hash: ref.hash } : null },
+    target: {
+      type: "members",
+      id: docId,
+      before: old ? { uid, name: old.name, avatar: old.avatar } : { uid },
+      after: { uid, name: old?.name, avatar: ref, ...(oldFileKept ? { oldFileKept: true } : {}) },
+    },
+  };
 }
 
 /** 方便日志：某个审计日志对象（来自 audit.ts） */
