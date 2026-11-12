@@ -1,5 +1,46 @@
-import { execute, identity, type Context, type Store } from "./service";
+import { execute, identity, type Collection, type Context, type Store } from "./service";
+import {
+  AUDITED_ACTIONS,
+  appendOnly,
+  guardAudit,
+  summarize,
+  type AuditInput,
+} from "./audit";
+import { authorize, DeniedError, executeTeam, type Actor, type TeamConfig } from "./team";
+
+function failure(error: unknown, diagnose?: (code: string) => void) {
+  const code =
+    error && typeof error === "object" && "code" in error
+      ? String(error.code)
+      : "";
+  const safeCode = /^[A-Za-z0-9_.-]{1,100}$/.test(code) ? code : undefined;
+  if (safeCode) diagnose?.(safeCode);
+  const text = error instanceof Error ? error.message : "";
+  return {
+    ok: false as const,
+    ...(safeCode ? { code: safeCode } : {}),
+    error:
+      /[\u4e00-\u9fa5]/.test(text) && text.length <= 200
+        ? text
+        : "云端操作未完成，请稍后重试",
+  };
+}
+
 export async function handle(
+  store: () => Store,
+  ctx: Context,
+  event: unknown,
+  diagnose?: (code: string) => void,
+  extra?: (store: Store, action: string, payload: unknown) => Promise<unknown>,
+  team?: TeamConfig,
+) {
+  // 两个开关都关（或没传）：走原来的路径，一行不差
+  if (!team || (!team.membersEnabled && !team.auditEnabled))
+    return legacy(store, ctx, event, diagnose, extra);
+  return teamHandle(store, ctx, event, team, diagnose, extra);
+}
+
+async function legacy(
   store: () => Store,
   ctx: Context,
   event: unknown,
@@ -19,20 +60,149 @@ export async function handle(
         : await execute(store(), ctx, e.action, e.payload ?? {}),
     };
   } catch (error) {
-    const code =
-      error && typeof error === "object" && "code" in error
-        ? String(error.code)
-        : "";
-    const safeCode = /^[A-Za-z0-9_.-]{1,100}$/.test(code) ? code : undefined;
-    if (safeCode) diagnose?.(safeCode);
-    const text = error instanceof Error ? error.message : "";
-    return {
-      ok: false,
-      ...(safeCode ? { code: safeCode } : {}),
-      error:
-        /[\u4e00-\u9fa5]/.test(text) && text.length <= 200
-          ? text
-          : "云端操作未完成，请稍后重试",
+    return failure(error, diagnose);
+  }
+}
+
+const ID = /^[\w-]{1,128}$/;
+function targetOf(action: string, p: Record<string, any>): { type?: string; id?: string } {
+  const prefix = action.split(".")[0];
+  const type =
+    prefix === "sales" || prefix === "tasks" || prefix === "products" || prefix === "customers"
+      ? prefix
+      : prefix === "catalog"
+        ? p.kind === "product" ? "products" : p.kind === "customer" ? "customers" : undefined
+        : prefix === "members"
+          ? action.startsWith("members.invite") ? "invites" : "members"
+          : undefined;
+  const raw =
+    action === "sales.create" || action === "tasks.create"
+      ? p.requestId
+      : action === "customers.merge" || action === "customers.unmerge"
+        ? (p.sourceId ?? p.id)
+        : action === "customers.mergeMany"
+          ? p.targetId
+          : action === "products.create"
+            ? p.product?.id
+            : prefix === "members" && !action.startsWith("members.invite")
+              ? p.uid
+              : p.id;
+  return { type, id: typeof raw === "string" && ID.test(raw) ? raw : undefined };
+}
+
+async function teamHandle(
+  store: () => Store,
+  ctx: Context,
+  event: unknown,
+  team: TeamConfig,
+  diagnose?: (code: string) => void,
+  extra?: (store: Store, action: string, payload: unknown) => Promise<unknown>,
+) {
+  const now = () => ctx.now?.() || new Date().toISOString();
+  let raw: Store | undefined;
+  const base = () => (raw ??= store());
+  const log = () => appendOnly(base(), now, diagnose);
+  let actor: Actor | undefined;
+  let action = "";
+  let p: Record<string, any> = {};
+  let target: { type?: string; id?: string } = {};
+  let before: unknown;
+  const record = async (input: Omit<AuditInput, "actorUid" | "actorName" | "role" | "action">) => {
+    if (!team.auditEnabled || !action) return;
+    const requestHash =
+      typeof p.requestId === "string" && ID.test(p.requestId)
+        ? (await ctx.hash(p.requestId)).slice(0, 16)
+        : undefined;
+    await log().append({
+      actorUid: actor?.uid ?? ctx.uid ?? "anonymous",
+      actorName: actor?.name ?? "",
+      role: actor?.role ?? "none",
+      action,
+      ...(requestHash ? { requestHash } : {}),
+      ...input,
+    });
+  };
+  try {
+    if (!event || typeof event !== "object" || Array.isArray(event))
+      throw new Error("请求格式无效");
+    const e = event as { action?: unknown; payload?: unknown };
+    if (typeof e.action !== "string") throw new Error("请求格式无效");
+    action = e.action;
+    const payload = e.payload ?? {};
+    if (payload && typeof payload === "object" && !Array.isArray(payload))
+      p = payload as Record<string, any>;
+    actor = await authorize(base(), ctx, team, action, p);
+    const audited = team.auditEnabled && AUDITED_ACTIONS.has(action);
+    let data: unknown;
+    if (action.startsWith("members.") || action === "audit.list") {
+      const r = await executeTeam(base(), ctx, team, actor, action, p, now);
+      data = r.data;
+      if (audited && r.target)
+        await record({
+          targetType: r.target.type,
+          targetId: r.target.id,
+          before: summarize(r.target.type, r.target.before),
+          after: summarize(r.target.type, r.target.after),
+          result: "ok",
+        });
+      return { ok: true, data };
+    }
+    if (action === "session" && team.membersEnabled)
+      return { ok: true, data: { uid: actor.uid, role: actor.role, name: actor.name } };
+    target = audited ? targetOf(action, p) : {};
+    if (audited && target.type && target.id && !action.endsWith(".create"))
+      before = await base().get(target.type as Collection, target.id).catch(() => undefined);
+    // 成员通过了 authorize：以所有者身份进入原有业务代码（原有 identity 校验不变），
+    // 同时带上真实操作人，用于写 createdBy。
+    const autoCreated: string[] = [];
+    const execCtx: Context = {
+      ...ctx,
+      uid: ctx.ownerUid,
+      ...(team.membersEnabled ? { actorUid: actor.uid } : {}),
+      ...(team.auditEnabled ? { onAutoCreate: (ids: string[]) => void autoCreated.push(...ids) } : {}),
     };
+    const business = guardAudit(base());
+    data =
+      action.startsWith("push.") && extra
+        ? await extra(business, action, payload)
+        : await execute(business, execCtx, action, payload);
+    if (autoCreated.length)
+      await log().append({
+        actorUid: "system:auto",
+        actorName: "系统·自动补建客户",
+        role: "system",
+        action: "customers.autoCreate",
+        targetType: "customers",
+        targetId: autoCreated[0],
+        after: { count: autoCreated.length, ids: autoCreated.slice(0, 20) },
+        result: "ok",
+      });
+    if (audited)
+      await record({
+        ...(target.type ? { targetType: target.type } : {}),
+        ...(target.id ? { targetId: target.id } : {}),
+        before: action.startsWith("push.") ? null : summarize(target.type, before),
+        after: action.startsWith("push.") ? null : summarize(target.type ?? action, data),
+        result: "ok",
+      });
+    return { ok: true, data };
+  } catch (error) {
+    if (error instanceof DeniedError) {
+      actor ??= error.actor;
+      await record({
+        ...(target.type ? { targetType: target.type } : {}),
+        ...(targetOf(action, p).id ? { targetId: targetOf(action, p).id } : {}),
+        result: "denied",
+        reason: error.code,
+      }).catch(() => undefined);
+    } else if (team.auditEnabled && AUDITED_ACTIONS.has(action)) {
+      await record({
+        ...(target.type ? { targetType: target.type } : {}),
+        ...(target.id ? { targetId: target.id } : {}),
+        result: "failed",
+        reason: "BUSINESS_ERROR",
+      }).catch(() => undefined);
+    }
+    return failure(error, diagnose);
   }
 }

@@ -40,6 +40,24 @@ npm run build:server
 6. **定期清理（待办，本次未实现）**：每次 `complete` 会在 `batches` 集合留一条 `mutation_*` 幂等回执，并在 `taskSyncLog` 追加一条日志，两者都只增不减，以后需要定期清理（例如只保留最近 90 天）。
 7. **去金额**：返回给 iPhone 的客户名、title、feedback、nextAction 中，凡命中金额写法（费用、报价、收款、转账、¥/￥/$/€/RMB/CNY/USD、万/千/k/w、元/块、/月 /年、中文/大写/全角数字、不带单位的“两千八”、千分位空格、/人 /次、大小写不敏感等）的整段片段都会替换为「（含金额，已隐藏）」。
 
+### 团队账号与操作日志（可选，默认关闭）
+
+两个开关都在 `sales` 云函数的环境变量里，**缺省 = 关**，关闭时行为与单人版完全一致（有测试锁定）：
+
+| 变量 | 作用 |
+|---|---|
+| `MEMBERS_ENABLED=1` | 开启团队成员：邀请码 + 管理员批准；成员只能读写业务数据（白名单），系统操作只给 `OWNER_UID` |
+| `AUDIT_ENABLED=1` | 开启操作日志：每个写操作、被拒的越权尝试、iPhone 同步写入都追加一条到 `audit_logs` |
+
+- `OWNER_UID` 永远是管理员：先判、不查库；`members` 集合空了或坏了都不影响本人。
+- 想立即回到单人版：删掉 `MEMBERS_ENABLED`（或设为 0）即可，不用重新部署。
+- **建集合**（上线时由本人在控制台建，代码不会自动建）：`members`、`invites`、`audit_logs`，权限均为“所有用户不可读写”，规则 `{"read":false,"write":false}`（已写入 `database.rules.json`）。
+- **建议索引**（`audit_logs`，日志多了再建也可以）：`actorUid 升序 + at 降序`、`day 升序 + at 降序`、`action 升序 + at 降序`。一期查询按 `_id` 翻页读出后在函数内筛选。
+- 日志**只追加**：代码里没有任何修改/删除日志的接口（管理员也没有）；一期不自动清理。
+- 日志自己写失败时不挡记账：云函数日志打 `audit.write_failed`，并在 `batches/_audit_health` 记失败次数，管理员打开系统时顶部提示。
+- 绝不入日志：`TASK_SYNC_KEY`、Authorization 头、邀请码明文与哈希、推送 endpoint/密钥、备份正文、原始 payload。
+- 邀请链接形如 `…/JasonAI/#/join?code=…`，72 小时有效、只能用一次；成员兑换后为「待批准」，管理员在「成员管理」点批准才生效；停用即时生效。
+
 若使用 CloudBase CLI，在官方来源安装 CLI、由本人登录，复制 `cloudbase.example.json` 为被 Git 忽略的 `cloudbaserc.json`，填环境 ID 和本人 UID，再按当前 CLI 的函数部署说明部署。模板不会自动创建权限或执行部署。
 
 ## 4. GitHub Pages

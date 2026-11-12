@@ -9,5 +9,8 @@
   "content_daily": { "read": false, "write": false },
   "content_audit": { "read": false, "write": false },
   "content_receipts": { "read": false, "write": false },
-  "taskSyncLog": { "read": false, "write": false }
+  "taskSyncLog": { "read": false, "write": false },
+  "members": { "read": false, "write": false },
+  "invites": { "read": false, "write": false },
+  "audit_logs": { "read": false, "write": false }
 }

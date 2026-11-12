@@ -16,6 +16,8 @@ export interface Sale extends SaleInput {
   importBatch?: string;
   sourceRow?: number;
   lastMutation?: string;
+  /** 录入人 uid（团队模式起才有；旧数据没有 = 管理员录入） */
+  createdBy?: string;
 }
 export interface Product {
   category?: string;
@@ -155,6 +157,8 @@ export interface CustomerTask extends CustomerTaskInput {
   lastMutation?: string;
   reminderGeneration: string;
   reminderStartAt: string;
+  /** 建日程的人 uid（团队模式起才有） */
+  createdBy?: string;
 }
 export interface BackupV1 {
   format: "zhangyuge-sales";

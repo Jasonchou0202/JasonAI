@@ -55,7 +55,10 @@ export type Collection =
   | "tasks"
   | "subscriptions"
   | "deliveries"
-  | "taskSyncLog";
+  | "taskSyncLog"
+  | "members"
+  | "invites"
+  | "audit_logs";
 export interface Transaction {
   get<T>(collection: Collection, id: string): Promise<T | null>;
   put<T>(collection: Collection, id: string, value: T): Promise<void>;
@@ -70,6 +73,10 @@ export interface Context {
   ownerUid: string;
   now?: () => string;
   hash: (text: string) => Promise<string>;
+  /** 团队模式下的真实操作人（只由云函数入口写入，用于新记录的 createdBy） */
+  actorUid?: string;
+  /** 操作日志：读的时候自动补建了客户，回报新建的客户 id */
+  onAutoCreate?: (ids: string[]) => void;
 }
 interface Ledger {
   hasSales: boolean;
@@ -232,6 +239,7 @@ async function initializeCustomers(
     const failure = results.find((result) => result.status === "rejected");
     if (failure?.status === "rejected") throw failure.reason;
   }
+  ctx.onAutoCreate?.([...idsByName.values()]);
   return store.list<Customer>("customers");
 }
 async function customerRoot(
@@ -569,6 +577,7 @@ export async function execute(
             reminderGeneration: await ctx.hash(
               JSON.stringify([id, time, "create"]),
             ),
+            ...(ctx.actorUid ? { createdBy: ctx.actorUid } : {}),
           };
           await tx.put("tasks", id, task);
           await tx.put("batches", "_ledger", { ...ledger, hasData: true });
@@ -876,6 +885,7 @@ export async function execute(
             updatedAt: time,
             deletedAt: null,
             revision: 1,
+            ...(ctx.actorUid ? { createdBy: ctx.actorUid } : {}),
           };
         await tx.put("batches", "_ledger", { ...ledger, hasSales: true });
         await tx.put("sales", id, sale);
