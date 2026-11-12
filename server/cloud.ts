@@ -36,6 +36,9 @@ export async function main(event: unknown, context: any) {
         appendOnly(new CloudStore(app.database()), () => new Date().toISOString(), (code) => console.warn("sales audit", code)),
         sync,
         result as { ok: boolean; code?: string; data?: unknown },
+        undefined,
+        undefined,
+        (code) => console.warn("sales audit", code),
       ).catch(() => console.warn("sales audit", "audit.sync_failed"));
     return result;
   }

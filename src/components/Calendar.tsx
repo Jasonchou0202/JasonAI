@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef, useState } from "react";
+import { useTeam } from "../lib/team-ui";
 import {
   CalendarDays,
   ChevronLeft,
@@ -57,6 +58,7 @@ export interface CalendarProps {
   month?: string;
 }
 type Editor = { edit?: CustomerTask; draft?: TaskDraft; draftId?: string };
+const NO_DELETED = { call: async <T,>() => [] as unknown as T };
 export function Calendar(props: CalendarProps) {
   return (
     <CustomerCalendar
@@ -97,6 +99,7 @@ function CustomerCalendar({
   const [group, setGroup] = useState<number | null>(null);
   const [openLogs, setOpenLogs] = useState<Set<string>>(() => new Set());
   const { insights } = useInsights();
+  const team = useTeam();
   const effectiveCustomerId = customerId || filterCustomerId;
   const base = effectiveCustomerId ? { customerId: effectiveCustomerId } : {};
   const tasks = useCustomerQuery<CustomerTask[]>(
@@ -106,8 +109,9 @@ function CustomerCalendar({
     version,
     refresh,
   );
+  // 日程回收站只给管理员：成员不发这个请求（云端同样会拒）
   const deleted = useCustomerQuery<CustomerTask[]>(
-    api,
+    team.isAdmin ? api : NO_DELETED,
     "tasks.list",
     { ...base, deleted: true },
     version,
@@ -299,7 +303,7 @@ function CustomerCalendar({
           {customerId ? "历史日程" : "日程记录"}
         </h2>
         <div className="segmented apple-seg">
-          {(["all", "completed", "deleted"] as const).map((value, i) => (
+          {(team.isAdmin ? (["all", "completed", "deleted"] as const) : (["all", "completed"] as const)).map((value, i) => (
             <button
               key={value}
               aria-pressed={history === value}

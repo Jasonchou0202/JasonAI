@@ -2,6 +2,7 @@ import { execute, identity, type Collection, type Context, type Store } from "./
 import {
   AUDITED_ACTIONS,
   appendOnly,
+  defaultThrottle,
   guardAudit,
   summarize,
   type AuditInput,
@@ -122,12 +123,15 @@ async function teamHandle(
       ...input,
     });
   };
+  const throttle = team.throttle ?? defaultThrottle;
   try {
+    if (team.auditEnabled)
+      for (const summary of throttle.flush(now())) await log().append(summary);
     if (!event || typeof event !== "object" || Array.isArray(event))
       throw new Error("请求格式无效");
     const e = event as { action?: unknown; payload?: unknown };
     if (typeof e.action !== "string") throw new Error("请求格式无效");
-    action = e.action;
+    action = /^[\w.]{1,60}$/.test(e.action) ? e.action : e.action.slice(0, 60);
     const payload = e.payload ?? {};
     if (payload && typeof payload === "object" && !Array.isArray(payload))
       p = payload as Record<string, any>;
@@ -189,12 +193,28 @@ async function teamHandle(
   } catch (error) {
     if (error instanceof DeniedError) {
       actor ??= error.actor;
-      await record({
-        ...(target.type ? { targetType: target.type } : {}),
-        ...(targetOf(action, p).id ? { targetId: targetOf(action, p).id } : {}),
-        result: "denied",
-        reason: error.code,
-      }).catch(() => undefined);
+      // 被拒不逐条写库：非成员按 uid+代码、成员按 uid+action+代码，每小时首条 + 过小时汇总
+      if (team.auditEnabled && action) {
+        const uid = actor?.uid ?? ctx.uid ?? "anonymous";
+        const member = actor?.role === "member";
+        const key = member ? `m:${uid}:${action}:${error.code}` : `n:${uid}:${error.code}`;
+        const tid = targetOf(action, p).id;
+        const entries = throttle.note(key, {
+          actorUid: uid,
+          actorName: actor?.name ?? "",
+          role: actor?.role ?? "none",
+          action,
+          ...(target.type ? { targetType: target.type } : {}),
+          ...(tid ? { targetId: tid } : {}),
+          result: "denied",
+          reason: error.code,
+        }, now());
+        try {
+          for (const entry of entries) await log().append(entry);
+        } catch {
+          /* appendOnly 自己已兜底告警 */
+        }
+      }
     } else if (team.auditEnabled && AUDITED_ACTIONS.has(action)) {
       await record({
         ...(target.type ? { targetType: target.type } : {}),

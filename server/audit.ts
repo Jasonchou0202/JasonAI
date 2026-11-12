@@ -196,6 +196,50 @@ export async function listAudit(store: Store, q: AuditQuery, forceActor?: string
   };
 }
 
+/**
+ * 被拒请求的日志节流（只在内存里，按北京时间小时）：
+ * - 同一个 key 本小时第一次被拒 → 追加一条完整日志；
+ * - 之后同 key 只在内存里计数，不写库；
+ * - 过了这个小时、下一次有请求进来时，对计数 > 1 的 key 追加一条汇总（count = 本小时总次数）。
+ * 这样公开接口被刷时，每个 key 每小时最多写 2 条，不会把只追加的日志刷爆，也不需要任何改/删日志的路径。
+ * key 数有上限，超出后只打云函数日志不写库。实例回收时未汇总的计数会丢（首条仍在库里）。
+ */
+export class DenyThrottle {
+  private buckets = new Map<string, { hour: string; count: number; sample: AuditInput }>();
+  constructor(private maxKeys = 2000) {}
+  /** 取出已过小时的汇总（计数 > 1 的才需要写） */
+  flush(at: string): AuditInput[] {
+    const hour = hourOf(at);
+    const out: AuditInput[] = [];
+    for (const [key, b] of this.buckets)
+      if (b.hour !== hour) {
+        if (b.count > 1)
+          out.push({ ...b.sample, after: { hour: b.hour, count: b.count, summary: true } });
+        this.buckets.delete(key);
+      }
+    return out;
+  }
+  /** 记一次被拒；返回需要追加的日志（本小时首次才有一条） */
+  note(key: string, input: AuditInput, at: string): AuditInput[] {
+    const out = this.flush(at);
+    const hour = hourOf(at);
+    const b = this.buckets.get(key);
+    if (b) {
+      b.count++;
+      return out;
+    }
+    if (this.buckets.size >= this.maxKeys) return out;
+    this.buckets.set(key, { hour, count: 1, sample: input });
+    out.push({ ...input, after: { hour, count: 1, note: "本小时首次；同类重复只计数，过小时汇总" } });
+    return out;
+  }
+}
+function hourOf(at: string) {
+  return beijing(at).atBj.slice(0, 13);
+}
+/** 每个云函数实例一份 */
+export const defaultThrottle = new DenyThrottle();
+
 const SYNC_DENIED = new Set(["SYNC_UNAUTHORIZED", "SYNC_FORBIDDEN", "SYNC_RATE_LIMITED", "SYNC_DISABLED"]);
 /**
  * iPhone 同步接口（TASK_SYNC_KEY）的日志：只记写操作和被拒的调用，操作人记为「系统·iPhone 同步」。
@@ -205,10 +249,31 @@ export async function auditSync(
   log: AuditLog,
   parsed: { action: unknown; payload: Record<string, unknown> },
   result: { ok: boolean; code?: string; data?: unknown },
+  throttle: DenyThrottle = defaultThrottle,
+  now: () => string = () => new Date().toISOString(),
+  warn?: (code: string) => void,
 ) {
-  const action = typeof parsed.action === "string" ? parsed.action.slice(0, 60) : "tasks.sync.unknown";
+  const action = typeof parsed.action === "string" && /^[\w.]{1,60}$/.test(parsed.action) ? parsed.action : "tasks.sync.unknown";
   const denied = !result.ok && SYNC_DENIED.has(result.code ?? "");
-  if (!AUDITED_ACTIONS.has(action) && !denied) return;
+  const at = now();
+  for (const summary of throttle.flush(at)) await log.append(summary);
+  if (denied) {
+    // 密钥错误/限流等：公开 HTTP 接口可被刷，不逐条写库；同一小时同一代码只记首条 + 过小时汇总
+    warn?.("sync.denied." + result.code);
+    const code = (result.code ?? "SYNC_DENIED").slice(0, 40);
+    for (const entry of throttle.note("sync:" + code, {
+      actorUid: "system:sync",
+      actorName: "系统·iPhone 同步",
+      role: "system",
+      action: "tasks.sync.denied",
+      targetType: "tasks",
+      result: "denied",
+      reason: code,
+    }, at))
+      await log.append(entry);
+    return;
+  }
+  if (!AUDITED_ACTIONS.has(action)) return;
   const p = parsed.payload;
   const id = typeof p.id === "string" && /^[\w-]{1,128}$/.test(p.id) ? p.id : undefined;
   const data = result.data as Record<string, unknown> | undefined;
@@ -221,7 +286,7 @@ export async function auditSync(
     targetType: "tasks",
     ...(id ? { targetId: id } : {}),
     after: result.ok ? summarize("tasks", task) : null,
-    result: result.ok ? "ok" : denied ? "denied" : "failed",
+    result: result.ok ? "ok" : "failed",
     ...(result.ok ? {} : { reason: (result.code ?? "SYNC_FAILED").slice(0, 40) }),
   });
 }

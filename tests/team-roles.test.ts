@@ -11,6 +11,7 @@ import {
   auditSync,
   guardAudit,
   AUDIT_COLLECTION,
+  DenyThrottle,
   type AuditEntry,
 } from "../server/audit";
 import { MEMBER_ACTIONS, type TeamConfig } from "../server/team";
@@ -37,9 +38,11 @@ const sale = (customer = "示例客户·甲") => ({
 function ctx(uid: string | null): Context {
   return { uid, ownerUid: OWNER, now: () => NOW, hash };
 }
-function caller(store: MemoryStore, team: TeamConfig | undefined, warn?: (c: string) => void) {
+function caller(store: MemoryStore, team: TeamConfig | undefined, warn?: (c: string) => void, at?: () => string) {
+  // 每个用例独立的节流器，互不影响
+  const t = team && { ...team, throttle: new DenyThrottle() };
   return (uid: string | null, action: string, payload: unknown = {}) =>
-    handle(() => store, ctx(uid), { action, payload }, warn, undefined, team) as Promise<any>;
+    handle(() => store, { ...ctx(uid), ...(at ? { now: at } : {}) }, { action, payload }, warn, undefined, t) as Promise<any>;
 }
 const logs = (s: MemoryStore) =>
   Object.values(s.data.audit_logs) as AuditEntry[];
@@ -361,7 +364,7 @@ describe("操作日志", () => {
     const KEY = "k".repeat(32) + "-team-test-key";
     const sync = { action: "tasks.sync.list", payload: {}, key: "wrong-" + KEY };
     const res = await handleSync(() => s, { key: KEY, now: () => NOW, hash }, sync);
-    await auditSync(appendOnly(s, () => NOW), sync, res as any);
+    await auditSync(appendOnly(s, () => NOW), sync, res as any, new DenyThrottle(), () => NOW);
     const text = JSON.stringify(s.data.audit_logs);
     for (const secret of [inv.data.code, KEY, "secret-endpoint", "SECRETP256", "SECRETAUTH", "codeHash", "Authorization"])
       expect(text).not.toContain(secret);
@@ -378,11 +381,11 @@ describe("操作日志", () => {
     await auditSync(appendOnly(s, () => NOW), ok, r as any);
     const bad = { ...ok, key: "nope" };
     const r2 = await handleSync(() => s, { key: KEY, now: () => NOW, hash }, bad);
-    await auditSync(appendOnly(s, () => NOW), bad, r2 as any);
-    expect(logs(s).map((l) => [l.actorUid, l.action, l.result])).toEqual(
+    await auditSync(appendOnly(s, () => NOW), bad, r2 as any, new DenyThrottle(), () => NOW);
+    expect(logs(s).map((l) => [l.actorUid, l.action, l.result, l.reason])).toEqual(
       expect.arrayContaining([
-        ["system:sync", "tasks.sync.complete", "ok"],
-        ["system:sync", "tasks.sync.complete", "denied"],
+        ["system:sync", "tasks.sync.complete", "ok", undefined],
+        ["system:sync", "tasks.sync.denied", "denied", "SYNC_UNAUTHORIZED"],
       ]),
     );
   });
@@ -400,4 +403,97 @@ describe("函数包", () => {
     ])
       expect(createHash("sha256").update(readFileSync(f)).digest("hex"), f).toBe(fixture[f]);
   }, 60000);
+});
+
+describe("复审修复（防刷、并发、已删日程）", () => {
+  const KEY = "k".repeat(32) + "-team-test-key";
+  it("① 同步接口错密钥/限流被刷：不逐条写日志，同小时只记首条，过小时追加一条汇总，日志从不被改", async () => {
+    const s = new MemoryStore();
+    const throttle = new DenyThrottle();
+    let at = NOW;
+    const warns: string[] = [];
+    const log = appendOnly(s, () => at);
+    for (let i = 0; i < 100; i++) {
+      const bad = { action: "tasks.sync.complete", payload: { id: "t" + i }, key: "bad" + i };
+      const r = await handleSync(() => s, { key: KEY, now: () => at, hash }, bad);
+      expect(r).toMatchObject({ ok: false, code: "SYNC_UNAUTHORIZED" });
+      await auditSync(log, bad, r as any, throttle, () => at, (c) => warns.push(c));
+    }
+    const limited = { ok: false, code: "SYNC_RATE_LIMITED" };
+    for (let i = 0; i < 30; i++)
+      await auditSync(log, { action: "tasks.sync.list", payload: {} }, limited, throttle, () => at);
+    expect(logs(s)).toHaveLength(2);
+    expect(warns).toHaveLength(100);
+    const firstHour = structuredClone(s.data.audit_logs);
+    at = "2026-11-12T05:00:01.000Z";
+    await auditSync(log, { action: "tasks.sync.list", payload: {} }, { ok: true, data: {} }, throttle, () => at);
+    const all = logs(s);
+    expect(all).toHaveLength(4);
+    const sums = all.filter((l) => (l.after as any)?.summary);
+    expect(sums.map((l) => [l.reason, (l.after as any).count]).sort()).toEqual([
+      ["SYNC_RATE_LIMITED", 30],
+      ["SYNC_UNAUTHORIZED", 100],
+    ]);
+    for (const [k, v] of Object.entries(firstHour)) expect(s.data.audit_logs[k]).toEqual(v);
+  });
+  it("② 非成员被拒按 uid+小时合并；成员同类越权按 uid+action+小时去重", async () => {
+    const s = new MemoryStore();
+    activeMember(s, ALICE, "小甲");
+    const call = caller(s, ON);
+    for (let i = 0; i < 20; i++) await call(STRANGER, i % 2 ? "dashboard" : "sales.list");
+    for (let i = 0; i < 10; i++) await call(ALICE, "products.save", { id: "p" + i });
+    await call(ALICE, "backup");
+    const rows = logs(s).filter((l) => l.result === "denied");
+    expect(rows.map((l) => [l.actorUid, l.action, l.reason]).sort()).toEqual([
+      [STRANGER, "sales.list", "NOT_MEMBER"],
+      [ALICE, "backup", "ADMIN_ONLY"],
+      [ALICE, "products.save", "ADMIN_ONLY"],
+    ].sort());
+  });
+  it("② members.redeem 乱填码：24 小时内失败 5 次即锁定（正确码也拒），日志不逐条写", async () => {
+    const s = new MemoryStore();
+    let at = NOW;
+    const call = caller(s, ON, undefined, () => at);
+    const good = await call(OWNER, "members.invite.create", { name: "小戊" });
+    for (let i = 0; i < 5; i++)
+      expect(await call(STRANGER, "members.redeem", { code: String(i).repeat(32) })).toMatchObject({ code: "INVITE_INVALID" });
+    expect(await call(STRANGER, "members.redeem", { code: "乱填" })).toMatchObject({ code: "REDEEM_LOCKED" });
+    expect(await call(STRANGER, "members.redeem", { code: good.data.code })).toMatchObject({ code: "REDEEM_LOCKED" });
+    expect(s.data.members).toEqual({});
+    const attempts = Object.entries(s.data.batches).filter(([k]) => k.startsWith("_redeem_"));
+    expect(attempts).toHaveLength(1);
+    expect((attempts[0][1] as any).count).toBe(5);
+    const denied = logs(s).filter((l) => l.action === "members.redeem");
+    expect(denied.map((l) => l.reason).sort()).toEqual(["INVITE_INVALID", "REDEEM_LOCKED"]);
+    // 别人不受影响；24 小时后解锁
+    expect((await call(BOB, "members.redeem", { code: good.data.code })).ok).toBe(true);
+    const other = await call(OWNER, "members.invite.create", { name: "小己" });
+    at = "2026-11-13T04:00:01.000Z";
+    expect((await call(STRANGER, "members.redeem", { code: other.data.code })).ok).toBe(true);
+  });
+  it("③ 同一个邀请码并发兑换：事务内重读，只有一个人成功", async () => {
+    const s = new MemoryStore();
+    const call = caller(s, ON);
+    const inv = await call(OWNER, "members.invite.create", { name: "小庚" });
+    const results = await Promise.all([ALICE, BOB, STRANGER].map((uid) => call(uid, "members.redeem", { code: inv.data.code })));
+    expect(results.filter((r) => r.ok)).toHaveLength(1);
+    expect(results.filter((r) => !r.ok).every((r) => r.code === "INVITE_USED")).toBe(true);
+    expect(Object.keys(s.data.members)).toHaveLength(1);
+  });
+  it("④ 成员看不到已删日程/已删销售（列表回收站、单条读取都拒）；管理员不变", async () => {
+    const s = new MemoryStore();
+    activeMember(s, ALICE, "小甲");
+    const call = caller(s, ON);
+    await call(OWNER, "sales.create", { requestId: "o1", sale: sale() });
+    await call(OWNER, "tasks.create", { requestId: "t1", task: await taskInput("示例客户·甲") });
+    await call(OWNER, "tasks.delete", { id: "t1", requestId: "d1", revision: 1 });
+    await call(OWNER, "sales.delete", { id: "o1", requestId: "d2", revision: 1 });
+    expect(await call(ALICE, "tasks.list", { deleted: true })).toMatchObject({ ok: false, code: "ADMIN_ONLY" });
+    expect(await call(ALICE, "tasks.get", { id: "t1" })).toEqual({ ok: false, error: "日程不存在" });
+    expect(await call(ALICE, "sales.get", { id: "o1" })).toEqual({ ok: false, error: "记录不存在" });
+    expect((await call(ALICE, "tasks.list", {})).data).toEqual([]);
+    expect((await call(OWNER, "tasks.list", { deleted: true })).data.map((t: any) => t.id)).toEqual(["t1"]);
+    expect((await call(OWNER, "tasks.get", { id: "t1" })).data.deletedAt).toBeTruthy();
+    expect((await call(OWNER, "sales.get", { id: "o1" })).data.deletedAt).toBeTruthy();
+  });
 });

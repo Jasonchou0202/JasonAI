@@ -10,6 +10,8 @@ import { listAudit, type AuditLog, type AuditQuery } from "./audit";
 export interface TeamConfig {
   membersEnabled: boolean;
   auditEnabled: boolean;
+  /** 被拒日志节流（测试可传入独立实例；缺省每个云函数实例一份） */
+  throttle?: import("./audit").DenyThrottle;
 }
 export function teamConfigFromEnv(env: Record<string, string | undefined>): TeamConfig {
   return {
@@ -51,6 +53,9 @@ export class DeniedError extends Error {
 }
 export const LEGACY_DENIED = "无权访问这个私人账本";
 export const INVITE_TTL_MS = 72 * 3600_000;
+/** 兑换邀请码：同一 uid 24 小时内最多失败 5 次（防暴力猜码；锁住后不再写库） */
+export const REDEEM_MAX_FAILS = 5;
+export const REDEEM_WINDOW_MS = 24 * 3600_000;
 
 /** 成员可用的 action（其余全部只给管理员） */
 export const MEMBER_ACTIONS = new Set([
@@ -105,8 +110,13 @@ export async function authorize(
   const actor: Actor = { ...who, role: "member" };
   if (!MEMBER_ACTIONS.has(action))
     throw new DeniedError("ADMIN_ONLY", "这个操作只有管理员可以进行", actor);
-  if (action === "sales.list" && payload.deleted)
+  if ((action === "sales.list" || action === "tasks.list") && payload.deleted)
     throw new DeniedError("ADMIN_ONLY", "回收站只有管理员可以查看", actor);
+  // 已删除（在回收站里）的记录成员看不到，与列表一致
+  if ((action === "sales.get" || action === "tasks.get") && typeof payload.id === "string" && ID.test(payload.id)) {
+    const row = await store.get<{ deletedAt?: string | null }>(action === "sales.get" ? "sales" : "tasks", payload.id);
+    if (row?.deletedAt) throw new Error(action === "sales.get" ? "记录不存在" : "日程不存在");
+  }
   const own = OWN_ONLY[action];
   if (own && typeof payload.id === "string" && ID.test(payload.id)) {
     const row = await store.get<{ createdBy?: string }>(own, payload.id);
@@ -159,18 +169,36 @@ export async function executeTeam(
   if (!team.membersEnabled) throw new Error("团队成员功能尚未开启");
   if (action === "members.redeem") {
     if (admin) throw new Error("管理员不需要兑换邀请");
-    const code = text(p.code, 64, "邀请码").toLowerCase();
+    const time = now();
+    const attemptsId = "_redeem_" + (await ctx.hash("redeem:" + actor.uid)).slice(0, 40);
+    const attempts = await store.get<{ count: number; since: string }>("batches", attemptsId);
+    const inWindow = !!attempts && Date.parse(time) - Date.parse(attempts.since) < REDEEM_WINDOW_MS;
+    if (inWindow && attempts!.count >= REDEEM_MAX_FAILS)
+      throw new DeniedError("REDEEM_LOCKED", "邀请码尝试次数过多，请 24 小时后再试或联系管理员");
+    const fail = async (error: DeniedError): Promise<never> => {
+      await store.put("batches", attemptsId, {
+        count: inWindow ? attempts!.count + 1 : 1,
+        since: inWindow ? attempts!.since : time,
+      });
+      throw error;
+    };
+    const code = typeof p.code === "string" ? p.code.trim().toLowerCase() : "";
+    if (!/^[0-9a-f]{32}$/.test(code)) return fail(new DeniedError("INVITE_INVALID", "邀请码无效或已过期"));
     const hash = await ctx.hash("invite:" + code);
     const invites = await store.list<Invite>("invites");
     const invite = invites.find((i) => i.codeHash === hash);
-    const time = now();
-    if (!invite || invite.revokedAt || Date.parse(invite.expiresAt) < Date.parse(time))
-      throw new DeniedError("INVITE_INVALID", "邀请码无效或已过期");
+    const usable = (i: Invite | null | undefined): i is Invite =>
+      !!i && !i.revokedAt && Date.parse(i.expiresAt) >= Date.parse(time);
+    if (!usable(invite)) return fail(new DeniedError("INVITE_INVALID", "邀请码无效或已过期"));
     if (invite.usedBy && invite.usedBy !== actor.uid)
-      throw new DeniedError("INVITE_USED", "邀请码已被使用");
+      return fail(new DeniedError("INVITE_USED", "邀请码已被使用"));
     return store.transaction(async (tx) => {
       const old = await tx.get<Member>("members", actor.uid);
       if (old) return { data: { status: old.status }, target: { type: "members", id: actor.uid, after: old } };
+      // 事务内重读邀请：并发兑换同一个码时只有一个人成功
+      const fresh = await tx.get<Invite>("invites", invite.id);
+      if (!usable(fresh)) throw new DeniedError("INVITE_INVALID", "邀请码无效或已过期");
+      if (fresh.usedBy && fresh.usedBy !== actor.uid) throw new DeniedError("INVITE_USED", "邀请码已被使用");
       const member: Member = {
         uid: actor.uid,
         name: invite.name,
@@ -181,7 +209,7 @@ export async function executeTeam(
         revision: 1,
       };
       await tx.put("members", actor.uid, member);
-      await tx.put("invites", invite.id, { ...invite, usedBy: actor.uid, usedAt: time });
+      await tx.put("invites", invite.id, { ...fresh, usedBy: actor.uid, usedAt: time });
       return { data: { status: member.status }, target: { type: "members", id: actor.uid, after: member } };
     });
   }
