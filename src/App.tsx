@@ -17,6 +17,8 @@ import {
   ArrowUpRight,
   ChevronDown,
   UserPlus,
+  Users,
+  ScrollText,
 } from "lucide-react";
 import { Dashboard } from "./components/Dashboard";
 import { SaleForm } from "./components/SaleForm";
@@ -32,7 +34,8 @@ import { Brand, ErrorNote, Loading, message } from "./components/ui";
 import { EdgeFade } from "./components/EdgeFade";
 import type { Filters, Sale } from "./domain/model";
 import { cloudApi, configured, session, login, logout } from "./lib/cloud";
-import { createDemo } from "./lib/demo";
+import { createDemo, demoRole, DEMO_ROLE_KEY } from "./lib/demo";
+import { LEGACY_ME, TeamProvider, whoAmI, type Me } from "./lib/team-ui";
 import { contentCloudApi } from "./lib/content-api";
 import { createContentDemo } from "./lib/content-demo";
 import { routeParams, readFilters, filterQuery } from "./lib/routes";
@@ -41,6 +44,11 @@ const loadSettings = () => import("./components/Settings");
 const loadCalendar = () => import("./components/Calendar");
 const loadCustomer = () => import("./components/CustomerDetails");
 const loadContentEntry = () => import("./components/ContentEntry");
+const loadTeam = () => import("./components/Members");
+const loadAudit = () => import("./components/AuditLog");
+const Members = lazy(() => loadTeam().then((m) => ({ default: m.Members })));
+const MemberGate = lazy(() => loadTeam().then((m) => ({ default: m.MemberGate })));
+const AuditLog = lazy(() => loadAudit().then((m) => ({ default: m.AuditLog })));
 const Settings = lazy(() =>
   loadSettings().then((m) => ({ default: m.Settings })),
 );
@@ -60,7 +68,12 @@ type Page =
   | "settings"
   | "calendar"
   | "customer"
-  | "content-entry";
+  | "content-entry"
+  | "members"
+  | "audit"
+  | "my-log";
+/** 成员不能进的页面（云端同样拒绝，这里只是不显示） */
+const ADMIN_PAGES: Page[] = ["settings", "content-entry", "members", "audit"];
 const BOARD = import.meta.env.BASE_URL + "board-e160b241a233/";
 const CONTENT_LINKS = [
   [BOARD, "内容闭环看板"],
@@ -75,16 +88,22 @@ function salesCurrent(page: Page, id: Page) {
 function SalesLinks({
   page,
   onOpen,
+  me = LEGACY_ME,
 }: {
   page: Page;
   onOpen: (id: Page) => void;
+  me?: Me;
 }) {
+  const admin = me.role === "admin";
   const items: { id: Page; label: string; icon: typeof Plus }[] = [
     { id: "dashboard", label: "生意看板", icon: LayoutDashboard },
     { id: "entry", label: "记一笔", icon: Plus },
     { id: "details", label: "销售明细", icon: ReceiptText },
     { id: "calendar", label: "客户日程", icon: CalendarDays },
-    { id: "settings", label: "账本设置", icon: SettingsIcon },
+    ...(admin ? [{ id: "settings" as Page, label: "账本设置", icon: SettingsIcon }] : []),
+    ...(admin && me.membersEnabled ? [{ id: "members" as Page, label: "成员管理", icon: Users }] : []),
+    ...(admin && me.auditEnabled ? [{ id: "audit" as Page, label: "操作日志", icon: ScrollText }] : []),
+    ...(!admin && me.auditEnabled ? [{ id: "my-log" as Page, label: "我的操作记录", icon: ScrollText }] : []),
   ];
   return (
     <div className="nav-sub">
@@ -141,12 +160,14 @@ function NavGroups({
   salesOpen,
   contentOpen,
   onToggle,
+  me = LEGACY_ME,
 }: {
   page: Page;
   onOpen: (id: Page) => void;
   salesOpen: boolean;
   contentOpen: boolean;
   onToggle: (group: "sales" | "content") => void;
+  me?: Me;
 }) {
   return (
     <>
@@ -160,8 +181,9 @@ function NavGroups({
           销售板块
           <ChevronDown className="nav-chevron" size={16} aria-hidden="true" />
         </button>
-        {salesOpen && <SalesLinks page={page} onOpen={onOpen} />}
+        {salesOpen && <SalesLinks page={page} onOpen={onOpen} me={me} />}
       </div>
+      {me.role === "admin" && (
       <div className="nav-group">
         <button
           type="button"
@@ -174,6 +196,7 @@ function NavGroups({
         </button>
         {contentOpen && <ContentLinks page={page} onOpen={onOpen} />}
       </div>
+      )}
     </>
   );
 }
@@ -186,14 +209,18 @@ function readRoute(): Page {
     "calendar",
     "customer",
     "content-entry",
+    "members",
+    "audit",
+    "my-log",
   ].includes(p)
     ? (p as Page)
     : "dashboard";
 }
 export default function App() {
-  const [mode, setMode] = useState<"loading" | "login" | "cloud" | "demo">(
+  const [mode, setMode] = useState<"loading" | "login" | "cloud" | "demo" | "gate">(
     "loading",
   );
+  const [me, setMe] = useState<Me>(LEGACY_ME);
   const [page, setPage] = useState<Page>(readRoute);
   const [edit, setEdit] = useState<Sale>();
   const [version, setVersion] = useState(0);
@@ -215,7 +242,20 @@ export default function App() {
     session()
       .then(async (ok) => {
         if (ok) {
-          await cloudApi.call("session");
+          try {
+            await cloudApi.call("session");
+          } catch (e) {
+            // 团队模式下：未入队/待批准/已停用 → 显示加入/等待页；否则照原来报错
+            const who = await whoAmI(cloudApi);
+            if (who.membersEnabled && who.role === "none") {
+              if (alive) {
+                setMe(who);
+                setMode("gate");
+              }
+              return;
+            }
+            throw e;
+          }
           if (alive) {
             setMode("cloud");
             const pending = sessionStorage.getItem("zhangyuge-return-route");
@@ -289,9 +329,24 @@ export default function App() {
     else setTimeout(run, 1500);
   }, [mode]);
   const api = useMemo(
-    () => (mode === "demo" ? createDemo() : cloudApi),
+    () => (mode === "demo" ? createDemo(demoRole()) : cloudApi),
     [mode],
   );
+  // 当前角色：没有团队功能时 = 原来的单人管理员（界面不变）
+  useEffect(() => {
+    if (mode !== "cloud" && mode !== "demo") return;
+    let alive = true;
+    void whoAmI(api).then((m) => alive && setMe(m));
+    return () => {
+      alive = false;
+    };
+  }, [api, mode]);
+  // 路由守卫：成员进不了系统页面（云端同样会拒）
+  useEffect(() => {
+    if (me.role === "member" && ADMIN_PAGES.includes(page))
+      go(page === "audit" ? "my-log" : "dashboard");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [me.role, page]);
   const contentApi = useMemo(
     () => (mode === "demo" ? createContentDemo() : contentCloudApi),
     [mode],
@@ -373,6 +428,8 @@ export default function App() {
         await logout();
       }
       sessionStorage.removeItem("zhangyuge-demo");
+      sessionStorage.removeItem(DEMO_ROLE_KEY);
+      setMe(LEGACY_ME);
       setMode("login");
       setEdit(undefined);
       setError(reminderWarning);
@@ -387,6 +444,17 @@ export default function App() {
         <Brand />
         <Loading />
       </div>
+    );
+  if (mode === "gate")
+    return (
+      <Suspense fallback={<Loading />}>
+        <MemberGate
+          api={cloudApi}
+          status={me.status === "active" ? "none" : me.status}
+          onDone={() => location.reload()}
+          onLogout={() => void signOut()}
+        />
+      </Suspense>
     );
   if (mode === "login")
     return (
@@ -507,6 +575,7 @@ export default function App() {
             salesOpen={salesOpen}
             contentOpen={contentOpen}
             onToggle={toggleGroup}
+            me={me}
           />
         </nav>
         <div className="sidebar-bottom">
@@ -520,10 +589,10 @@ export default function App() {
             </p>
           </div>
           <div className="account">
-            <div className="avatar">章</div>
+            <div className="avatar">{me.role === "member" ? (me.name || "成").slice(0, 1) : "章"}</div>
             <div>
-              <strong>章鱼哥</strong>
-              <span>{mode === "demo" ? "演示工作台" : "个人工作室"}</span>
+              <strong>{me.role === "member" ? me.name || "团队成员" : "章鱼哥"}</strong>
+              <span>{me.role === "member" ? "团队成员" : mode === "demo" ? "演示工作台" : "个人工作室"}</span>
             </div>
             <button
               className="icon-button"
@@ -553,6 +622,9 @@ export default function App() {
                   calendar: "客户日程",
                   customer: "客户详情",
                   "content-entry": "今日获客录入",
+                  members: "成员管理",
+                  audit: "操作日志",
+                  "my-log": "我的操作记录",
                 }[page]
               }
             </strong>
@@ -578,14 +650,16 @@ export default function App() {
             >
               <RefreshCw size={16} />
             </button>
-            <button
-              className="mobile-settings icon-button"
-              aria-label="打开设置"
-              onClick={() => go("settings")}
-            >
-              <SettingsIcon size={18} />
-            </button>
-            <span className="mini-avatar">章</span>
+            {me.role === "admin" && (
+              <button
+                className="mobile-settings icon-button"
+                aria-label="打开设置"
+                onClick={() => go("settings")}
+              >
+                <SettingsIcon size={18} />
+              </button>
+            )}
+            <span className="mini-avatar">{me.role === "member" ? (me.name || "成").slice(0, 1) : "章"}</span>
           </div>
         </header>
         {mode === "demo" && (
@@ -594,6 +668,21 @@ export default function App() {
             <span className="demo-text">
               演示数据，只存本机，请勿录入真实客户
             </span>
+            {demoRole() !== null && (
+            <span className="demo-exit">
+              <span aria-hidden="true">·</span>
+              <button
+                aria-label="切换团队预览身份"
+                onClick={() => {
+                  if (demoRole() === "admin") sessionStorage.setItem(DEMO_ROLE_KEY, "member");
+                  else sessionStorage.removeItem(DEMO_ROLE_KEY);
+                  location.replace(location.pathname + location.hash);
+                }}
+              >
+                {demoRole() === "admin" ? "看成员视角" : "退出团队预览"}
+              </button>
+            </span>
+            )}
             <span className="demo-exit">
               <span aria-hidden="true">·</span>
               <button aria-label="退出演示" onClick={() => void signOut()}>
@@ -609,6 +698,12 @@ export default function App() {
           </div>
         )}
         <main className="main-content" id="main-content" tabIndex={-1}>
+          {me.role === "admin" && !!me.auditHealth?.failed && (
+            <div className="team-banner" role="alert">
+              有 {me.auditHealth.failed} 次操作日志未能写入（最近一次 {me.auditHealth.lastFailedAt ? new Date(Date.parse(me.auditHealth.lastFailedAt) + 8 * 3600_000).toISOString().slice(0, 16).replace("T", " ") : ""} 北京时间），记账不受影响，请查看云函数日志。
+            </div>
+          )}
+          <TeamProvider me={me}>
           <InsightsProvider api={api} version={version}>
           <UpdateBoundary key={page}>
             <Suspense fallback={<Loading />}>
@@ -701,9 +796,13 @@ export default function App() {
                   onEditSale={editSale}
                 />
               )}
+              {page === "members" && me.role === "admin" && <Members api={api} />}
+              {page === "audit" && me.role === "admin" && <AuditLog api={api} mode="admin" />}
+              {page === "my-log" && <AuditLog api={api} mode="self" />}
             </Suspense>
           </UpdateBoundary>
           </InsightsProvider>
+          </TeamProvider>
           <footer className="app-footer">
             <span>章鱼哥 AI 工作室</span>
             <span>认真记账，轻松经营。</span>
@@ -714,6 +813,7 @@ export default function App() {
                 salesOpen={salesOpen}
                 contentOpen={contentOpen}
                 onToggle={toggleGroup}
+                me={me}
               />
             </div>
           </footer>
@@ -723,7 +823,7 @@ export default function App() {
         <EdgeFade band="bottom" />
         <div className="mobile-sheet" hidden={mobileSheet === null}>
           {mobileSheet === "sales" && (
-            <SalesLinks page={page} onOpen={openSalesItem} />
+            <SalesLinks page={page} onOpen={openSalesItem} me={me} />
           )}
           {mobileSheet === "content" && (
             <ContentLinks page={page} onOpen={openSalesItem} />
@@ -751,17 +851,19 @@ export default function App() {
             </span>
             <small>记一笔</small>
           </button>
-          <button
-            type="button"
-            className={mobileSheet === "content" ? "active" : ""}
-            aria-expanded={mobileSheet === "content"}
-            onClick={() =>
-              setMobileSheet((s) => (s === "content" ? null : "content"))
-            }
-          >
-            <ArrowUpRight size={18} />
-            <span>内容生产</span>
-          </button>
+          {me.role === "admin" && (
+            <button
+              type="button"
+              className={mobileSheet === "content" ? "active" : ""}
+              aria-expanded={mobileSheet === "content"}
+              onClick={() =>
+                setMobileSheet((s) => (s === "content" ? null : "content"))
+              }
+            >
+              <ArrowUpRight size={18} />
+              <span>内容生产</span>
+            </button>
+          )}
         </nav>
       </div>
       {toast && (

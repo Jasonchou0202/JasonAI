@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useTeam } from "../lib/team-ui";
 import {
   Download,
   Plus,
@@ -57,6 +58,7 @@ export function Details({
   onChange: (s: string) => void;
   onCustomer: (id: string, month?: string) => void;
 }) {
+  const team = useTeam();
   const { data, error, loading } = useQuery<SalesPage>(
     api,
     "sales.list",
@@ -164,14 +166,16 @@ export function Details({
               onChange={(e) => filter({ search: e.target.value })}
             />
           </div>
-          <button
-            className="button secondary"
-            disabled={busy}
-            onClick={() => void exportRows()}
-          >
-            <Download size={16} />
-            导出明细
-          </button>
+          {team.isAdmin && (
+            <button
+              className="button secondary"
+              disabled={busy}
+              onClick={() => void exportRows()}
+            >
+              <Download size={16} />
+              导出明细
+            </button>
+          )}
         </div>
         <div className="filters">
           <label>
@@ -222,13 +226,15 @@ export function Details({
               全部
             </button>
           </div>
-          <button
-            className={`recycle-toggle ${filters.deleted ? "selected" : ""}`}
-            onClick={() => filter({ deleted: !filters.deleted })}
-          >
-            <Trash2 size={14} />
-            {filters.deleted ? "回到明细" : "回收站"}
-          </button>
+          {team.isAdmin && (
+            <button
+              className={`recycle-toggle ${filters.deleted ? "selected" : ""}`}
+              onClick={() => filter({ deleted: !filters.deleted })}
+            >
+              <Trash2 size={14} />
+              {filters.deleted ? "回到明细" : "回收站"}
+            </button>
+          )}
         </div>
         {matchingCustomers.length > 0 && (
           <div className="directory-results" aria-label="查询客户的日程管理">
@@ -304,8 +310,8 @@ export function Details({
                     <button
                       type="button"
                       className="detail-main detail-open"
-                      title="点按编辑这笔销售"
-                      onClick={() => onEdit(r)}
+                      title={team.canChange(r) ? "点按编辑这笔销售" : "别人录入的记录，只能查看"}
+                      onClick={() => team.canChange(r) && onEdit(r)}
                     >
                       <strong>
                         <QuadrantDot q={insights?.quadrantOf.get(r.id)} />
@@ -384,19 +390,23 @@ export function Details({
                                 },
                               ]
                             : []),
-                          {
-                            label: "编辑",
-                            aria: `编辑${r.productName} ${displayCustomerName(r.customer)}`,
-                            icon: <Pencil size={15} />,
-                            onSelect: () => onEdit(r),
-                          },
-                          {
-                            label: "删除",
-                            aria: `删除${r.productName} ${displayCustomerName(r.customer)}`,
-                            icon: <Trash2 size={15} />,
-                            danger: true,
-                            onSelect: () => setConfirm(r),
-                          },
+                          ...(team.canChange(r)
+                            ? [
+                                {
+                                  label: "编辑",
+                                  aria: `编辑${r.productName} ${displayCustomerName(r.customer)}`,
+                                  icon: <Pencil size={15} />,
+                                  onSelect: () => onEdit(r),
+                                },
+                                {
+                                  label: "删除",
+                                  aria: `删除${r.productName} ${displayCustomerName(r.customer)}`,
+                                  icon: <Trash2 size={15} />,
+                                  danger: true,
+                                  onSelect: () => setConfirm(r),
+                                },
+                              ]
+                            : []),
                         ]}
                       />
                     )}

@@ -1,5 +1,6 @@
 import { MemoryStore } from "../../server/memory-store";
 import { execute } from "../../server/service";
+import { handle } from "../../server/handler";
 import { addDays, today } from "../domain/dates";
 import { NEW_CUTOFF } from "../domain/insights";
 import type { Api, AppState, Product, Sale } from "../domain/model";
@@ -11,7 +12,16 @@ export async function sha256(value: string | ArrayBuffer): Promise<string> {
     .join("");
 }
 const key = "zhangyuge-demo-v1";
-export function createDemo(): Api {
+/** 演示「团队预览」：sessionStorage 里 zhangyuge-demo-role 为 admin/member 时，演示账本走团队权限和操作日志 */
+export const DEMO_ROLE_KEY = "zhangyuge-demo-role";
+export function demoRole(): "admin" | "member" | null {
+  // 打开 …/JasonAI/?team-preview=admin（或 member）进入演示团队预览；默认演示不变
+  const fromUrl = new URLSearchParams(location.search).get("team-preview");
+  if (fromUrl === "admin" || fromUrl === "member") sessionStorage.setItem(DEMO_ROLE_KEY, fromUrl);
+  const r = sessionStorage.getItem(DEMO_ROLE_KEY);
+  return r === "admin" || r === "member" ? r : null;
+}
+export function createDemo(role: "admin" | "member" | null = null): Api {
   const store = new MemoryStore();
   const saved = localStorage.getItem(key);
   if (saved) {
@@ -92,6 +102,24 @@ export function createDemo(): Api {
         throw new Error("网络已断开，草稿已保留，请联网后重试");
       if (action.startsWith("import.") || action === "backup.restore")
         throw new Error("演示账本不接收真实数据，请连接云端后导入");
+      if (role) {
+        if (!store.data.members["demo-member"])
+          store.data.members["demo-member"] = {
+            uid: "demo-member", name: "演示成员", status: "active", inviteId: "demo",
+            createdAt: "2026-11-12T00:00:00.000Z", updatedAt: "2026-11-12T00:00:00.000Z", revision: 1,
+          };
+        const r = (await handle(
+          () => store,
+          { uid: role === "member" ? "demo-member" : "demo", ownerUid: "demo", hash: sha256 },
+          { action, payload },
+          undefined,
+          undefined,
+          { membersEnabled: true, auditEnabled: true },
+        )) as { ok: boolean; data?: unknown; error?: string };
+        localStorage.setItem(key, JSON.stringify(store.data));
+        if (!r.ok) throw new Error(r.error || "操作未完成");
+        return r.data as T;
+      }
       const result = await execute(
         store,
         { uid: "demo", ownerUid: "demo", hash: sha256 },

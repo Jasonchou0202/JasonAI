@@ -1,0 +1,27 @@
+/* 团队账号 / 操作日志：沿用奶油底 + 白卡片 + 珊瑚主色 */
+.team-panel { display: grid; gap: 14px; margin-bottom: 18px; padding: 22px 24px; }
+@media (max-width: 720px) { .team-panel { padding: 16px; } }
+.team-panel h2 { font-size: 17px; margin: 0; }
+.team-panel h3 { font-size: 15px; margin: 8px 0 0; }
+.team-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.team-row input { flex: 1 1 200px; min-width: 0; }
+.team-invite { display: grid; gap: 8px; padding: 14px; border-radius: 14px; background: #FBF3E4; border: 1px solid #F0DCC8; }
+.team-invite code { word-break: break-all; font-size: 13px; }
+.team-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.team-table th { text-align: left; font-weight: 600; color: #6e6e73; padding: 8px 6px; border-bottom: 1px solid #F0DCC8; white-space: nowrap; }
+.team-table td { padding: 10px 6px; border-bottom: 1px solid #f4ece0; vertical-align: top; }
+.team-table td small { color: #86868b; }
+.team-table td .button, .team-table td .text-button { margin-right: 8px; }
+.team-scroll { overflow-x: auto; }
+.team-diff { max-width: 360px; color: #424245; font-size: 13px; word-break: break-all; }
+.team-status { display: inline-block; padding: 2px 10px; border-radius: 999px; font-size: 12px; background: #F4E6D4; color: #B4532F; }
+.team-status.active, .team-status.ok { background: #e8f3ea; color: #1E7B34; }
+.team-status.disabled, .team-status.denied, .team-status.failed { background: #fbe9e9; color: #D70015; }
+.team-list { margin: 0; padding-left: 18px; display: grid; gap: 6px; }
+.team-gate { min-height: 100vh; display: grid; place-items: center; padding: 20px; }
+.team-gate .team-panel { max-width: 460px; width: 100%; }
+.team-banner { margin: 0 0 12px; padding: 10px 14px; border-radius: 12px; background: #fbe9e9; color: #D70015; font-size: 14px; }
+@media (max-width: 720px) {
+  .team-table th:nth-child(4), .team-table td:nth-child(4) { display: none; }
+}
+.team-time { white-space: nowrap; font-variant-numeric: tabular-nums; }
