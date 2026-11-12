@@ -28,9 +28,9 @@ describe("errorCode / isFeatureOffError / isAuthError", () => {
     expect(errorCode({ code: 401 })).toBeUndefined();
   });
 
-  it("无错误码且文案为「不支持的操作」视为功能未开；有别的码则不认", () => {
-    expect(isFeatureOffError(new Error("不支持的操作"))).toBe(true);
-    expect(isFeatureOffError(new ApiError("不支持的操作"))).toBe(true);
+  it("只看错误码：无码的「不支持的操作」不再算功能未开；有别的码也不认", () => {
+    expect(isFeatureOffError(new Error("不支持的操作"))).toBe(false);
+    expect(isFeatureOffError(new ApiError("不支持的操作"))).toBe(false);
     expect(isFeatureOffError(new ApiError("不支持的操作", "NOT_SIGNED_IN"))).toBe(false);
     expect(isFeatureOffError(new Error("网络已断开，草稿已保留，请联网后重试"))).toBe(false);
     expect(isFeatureOffError(new ApiError("x", "NOT_SIGNED_IN"))).toBe(false);
@@ -114,13 +114,13 @@ describe("whoAmI", () => {
     expect(result).toEqual({ status: "ok", me: LEGACY_ME });
   });
 
-  it("没有错误码的「不支持的操作」视为功能明确未开（线上开关全关）", async () => {
+  it("没有错误码的「不支持的操作」不再兜底：按暂时连不上处理", async () => {
     const result = await whoAmI(
       api(() => {
         throw new Error("不支持的操作");
       }),
     );
-    expect(result).toEqual({ status: "ok", me: LEGACY_ME });
+    expect(result).toEqual({ status: "unavailable" });
   });
 
   it("NOT_SIGNED_IN 视为登录已过期，不是暂时连不上，也不是功能未开", async () => {
