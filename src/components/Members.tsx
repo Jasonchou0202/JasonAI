@@ -3,7 +3,7 @@ import { UserPlus, Copy } from "lucide-react";
 import type { Api } from "../domain/model";
 import { ErrorNote, Loading, message, useQuery } from "./ui";
 import "../team.css";
-import { MemberAvatar, useDirectory } from "../lib/members-ui";
+import { MemberAvatar, useDirectory, zhDateText } from "../lib/members-ui";
 import { AvatarEditor } from "./MemberProfile";
 
 interface Member {
@@ -180,7 +180,7 @@ export function Members({ api }: { api: Api }) {
                   <td>
                     <span className={`team-status ${m.status}`}>{STATUS[m.status]}</span>
                   </td>
-                  <td>{bj(m.createdAt)}</td>
+                  <td>{dir.on ? zhDateText(bj(m.createdAt).replace(" ", "T"), "datetime") : bj(m.createdAt)}</td>
                   <td>
                     {m.status === "pending" && (
                       <button className="button primary small" disabled={busy} onClick={() => void run("members.approve", { uid: m.uid })}>

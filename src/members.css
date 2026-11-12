@@ -1,6 +1,7 @@
 /* 日程归属 + 成员颜色 + 头像（只在 SCHEDULE_OWNER_ENABLED 开时出现） */
 .so-on .m-avatar {
   display: inline-flex !important;
+  vertical-align: middle;
   align-items: center;
   justify-content: center;
   flex: 0 0 auto !important;
@@ -427,12 +428,14 @@
 .so-on .team-table.m-members-table td {
   vertical-align: middle;
   line-height: 1.4;
+  border-bottom-color: #f0dcc8;
 }
 .so-on .team-table.m-members-table td .m-admin-pill {
   vertical-align: middle;
 }
 .so-on .m-member-cell {
   display: inline-flex;
+  vertical-align: middle;
   align-items: center;
   gap: 10px;
   white-space: nowrap;

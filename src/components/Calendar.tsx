@@ -1,6 +1,6 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { useTeam } from "../lib/team-ui";
-import { AssignPicker, MemberAvatar, MemberDot, MemberFilter, MemberTag, useDirectory, ZhDateHint } from "../lib/members-ui";
+import { AssignPicker, MemberAvatar, MemberDot, MemberFilter, MemberTag, useDirectory, ZhDateHint, ZhDay, zhDateText } from "../lib/members-ui";
 import {
   CalendarDays,
   ChevronLeft,
@@ -541,7 +541,7 @@ function CustomerCalendar({
         >
           <div className="apple-sechead">
             <h2 id="apple-today-title" className="apple-sec">
-              {railTitle} <small>{today}</small>
+              {railTitle} <small><ZhDay value={today} /></small>
             </h2>
             {railRows.length > 0 && (
               <button
@@ -796,7 +796,7 @@ function CustomerCalendar({
       {group !== null && (
         <Modal
           title={
-            group === 3 ? `${railTitle} · ${today}` : upcoming[group].label
+            group === 3 ? `${railTitle} · ${dir.on ? zhDateText(today, "date") : today}` : upcoming[group].label
           }
           onClose={() => setGroup(null)}
         >

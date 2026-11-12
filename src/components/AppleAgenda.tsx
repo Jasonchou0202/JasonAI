@@ -1,7 +1,7 @@
 // 客户日程页「苹果官网风」卡片（2026-11 优化，照 Jason 22:43 确认的样稿）：
 // 三张待办数字卡、今日日程横向卡片排、日程记录卡、客户搜索卡。功能全部接现有接口，不新增写入动作。
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { MemberAvatar, MemberDot, MemberTag, useDirectory } from "../lib/members-ui";
+import { MemberAvatar, MemberDot, MemberTag, useDirectory, ZhDay } from "../lib/members-ui";
 import { ArrowUpRight, ChevronRight, Search } from "lucide-react";
 import type { Api } from "../domain/model";
 import { displayCustomerName } from "../domain/customers";
@@ -346,7 +346,7 @@ export function AppleLogRow({
         title={`${name} · ${task.title}`}
       >
         <span className="apple-log-d">
-          {dir.on && <MemberDot uid={dir.ownerOf(task)} />} {day.slice(5)}
+          {dir.on && <MemberDot uid={dir.ownerOf(task)} />} <ZhDay value={day} short />
         </span>
         <span className="apple-log-t">
           <b>{name}</b> · {task.title}

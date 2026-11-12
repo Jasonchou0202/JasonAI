@@ -236,6 +236,15 @@ export function zhDateText(value: string | undefined | null, kind: "date" | "mon
   if (!d) return base;
   return kind === "datetime" && h ? `${base}${Number(d)}日 ${h}:${mi}` : `${base}${Number(d)}日`;
 }
+/** 开关开时把 YYYY-MM-DD 显示成「2026年11月12日」（short 时只显示「11月12日」）；开关关时原样显示 */
+export function ZhDay({ value, short = false }: { value: string; short?: boolean }) {
+  const dir = useDirectory();
+  if (!dir.on) return <>{short ? value.slice(5) : value}</>;
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(value);
+  if (!m) return <>{short ? value.slice(5) : value}</>;
+  const md = `${Number(m[2])}月${Number(m[3])}日`;
+  return <>{short ? md : `${m[1]}年${md}`}</>;
+}
 export function ZhDateHint({ value, kind = "date" }: { value: string | undefined | null; kind?: "date" | "month" | "datetime" }) {
   const dir = useDirectory();
   const text = zhDateText(value, kind);

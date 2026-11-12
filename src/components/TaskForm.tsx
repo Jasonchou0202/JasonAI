@@ -1,5 +1,4 @@
 import { useEffect, useId, useRef, useState } from "react";
-import { MemberTag, useDirectory } from "../lib/members-ui";
 import { Save } from "lucide-react";
 import type { Api } from "../domain/model";
 import { displayCustomerName } from "../domain/customers";
@@ -23,7 +22,7 @@ import { QUADRANT_INFO } from "../domain/insights";
 import { useInsights } from "../lib/insights-ui";
 import { customerRoot } from "../lib/customer-ui";
 import "../customer.css";
-import { ZhDateHint } from "../lib/members-ui";
+import { MemberTag, useDirectory, ZhDateHint } from "../lib/members-ui";
 
 export type TaskDraft = Partial<TaskInput>;
 interface StoredDraft {
@@ -275,7 +274,7 @@ function TaskEditor({
           ))}
         </select>
         <label htmlFor={`${prefix}-at`}>
-          跟进时间 <small>北京时间 UTC+8</small>
+          跟进时间 <small>{dir.on ? "北京时间" : "北京时间 UTC+8"}</small>
           <ZhDateHint value={at} kind="datetime" />
         </label>
         <input
