@@ -100,6 +100,14 @@ export function createDemo(role: "admin" | "member" | null = null): Api {
     async call<T>(action: string, payload: unknown = {}) {
       if (!navigator.onLine)
         throw new Error("网络已断开，草稿已保留，请联网后重试");
+      // e2e：sessionStorage 里的次数表示 members.me 还要再失败几次（模拟临时断网）
+      if (action === "members.me") {
+        const left = Number(sessionStorage.getItem("zhangyuge-demo-me-fail") || "0");
+        if (left > 0) {
+          sessionStorage.setItem("zhangyuge-demo-me-fail", String(left - 1));
+          throw new Error("网络已断开，草稿已保留，请联网后重试");
+        }
+      }
       if (action.startsWith("import.") || action === "backup.restore")
         throw new Error("演示账本不接收真实数据，请连接云端后导入");
       if (role) {

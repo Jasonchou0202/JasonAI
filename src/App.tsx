@@ -1,5 +1,5 @@
 import { InsightsProvider } from "./lib/insights-ui";
-import { lazy, Suspense, useEffect, useMemo, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import {
   LayoutDashboard,
   Plus,
@@ -221,8 +221,9 @@ export default function App() {
     "loading",
   );
   const [me, setMe] = useState<Me>(LEGACY_ME);
-  // 「我是谁」已从后台拿到（之前用默认值，不能据此跳转）
-  const [meReady, setMeReady] = useState(false);
+  // pending：还在问「我是谁」；ready：已拿到明确结果（含功能未开）；unavailable：临时失败，不按未开跳转
+  const [meLoad, setMeLoad] = useState<"pending" | "ready" | "unavailable">("pending");
+  const meReq = useRef(0);
   const [page, setPage] = useState<Page>(readRoute);
   const [edit, setEdit] = useState<Sale>();
   const [version, setVersion] = useState(0);
@@ -249,9 +250,9 @@ export default function App() {
           } catch (e) {
             // 团队模式下：未入队/待批准/已停用 → 显示加入/等待页；否则照原来报错
             const who = await whoAmI(cloudApi);
-            if (who.membersEnabled && who.role === "none") {
+            if (who.status === "ok" && who.me.membersEnabled && who.me.role === "none") {
               if (alive) {
-                setMe(who);
+                setMe(who.me);
                 setMode("gate");
               }
               return;
@@ -335,18 +336,25 @@ export default function App() {
     [mode],
   );
   // 当前角色：没有团队功能时 = 原来的单人管理员（界面不变）
+  // 临时失败不写成「未开」，避免把管理员从团队页踢回看板
+  function requestMe() {
+    const id = ++meReq.current;
+    setMeLoad("pending");
+    void whoAmI(api).then((result) => {
+      if (id !== meReq.current) return;
+      if (result.status === "ok") {
+        setMe(result.me);
+        setMeLoad("ready");
+      } else setMeLoad("unavailable");
+    });
+  }
   useEffect(() => {
     if (mode !== "cloud" && mode !== "demo") return;
-    let alive = true;
-    setMeReady(false);
-    void whoAmI(api).then((m) => {
-      if (!alive) return;
-      setMe(m);
-      setMeReady(true);
-    });
+    requestMe();
     return () => {
-      alive = false;
+      meReq.current += 1;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [api, mode]);
   // 路由守卫：成员进不了系统页面（云端同样会拒）
   useEffect(() => {
@@ -354,13 +362,13 @@ export default function App() {
       go(page === "audit" ? "my-log" : "dashboard");
     // 功能没开（单人版、普通演示账本）时直接输团队页面地址：回到看板，不出现报错空页
     else if (
-      meReady &&
+      meLoad === "ready" &&
       (((page === "audit" || page === "my-log") && !me.auditEnabled) ||
         (page === "members" && !me.membersEnabled))
     )
       go("dashboard");
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [me.role, me.auditEnabled, me.membersEnabled, meReady, page]);
+  }, [me.role, me.auditEnabled, me.membersEnabled, meLoad, page]);
   const contentApi = useMemo(
     () => (mode === "demo" ? createContentDemo() : contentCloudApi),
     [mode],
@@ -810,9 +818,18 @@ export default function App() {
                   onEditSale={editSale}
                 />
               )}
-              {page === "members" && me.role === "admin" && me.membersEnabled && <Members api={api} />}
-              {page === "audit" && me.role === "admin" && me.auditEnabled && <AuditLog api={api} mode="admin" />}
-              {page === "my-log" && me.auditEnabled && <AuditLog api={api} mode="self" />}
+              {(page === "members" || page === "audit" || page === "my-log") && meLoad === "pending" && <Loading />}
+              {(page === "members" || page === "audit" || page === "my-log") && meLoad === "unavailable" && (
+                <ErrorNote>
+                  暂时连不上，点
+                  <button type="button" className="text-button" onClick={() => requestMe()}>
+                    重试
+                  </button>
+                </ErrorNote>
+              )}
+              {page === "members" && meLoad === "ready" && me.role === "admin" && me.membersEnabled && <Members api={api} />}
+              {page === "audit" && meLoad === "ready" && me.role === "admin" && me.auditEnabled && <AuditLog api={api} mode="admin" />}
+              {page === "my-log" && meLoad === "ready" && me.auditEnabled && <AuditLog api={api} mode="self" />}
             </Suspense>
           </UpdateBoundary>
           </InsightsProvider>

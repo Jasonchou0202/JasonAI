@@ -1368,6 +1368,14 @@ html.edge-particles-on .mobile-dock::before {
 .error-note svg {
   margin-top: 2px;
 }
+.error-note .text-button {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  padding: 0;
+  font-size: inherit;
+  font-weight: 600;
+}
 .back-link {
   display: flex;
   align-items: center;
