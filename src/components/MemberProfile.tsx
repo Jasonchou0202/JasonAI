@@ -1,3 +1,4 @@
+import type { CSSProperties } from "react";
 import { useEffect, useRef, useState } from "react";
 import type { Api } from "../domain/model";
 import { MemberAvatar, useDirectory } from "../lib/members-ui";
@@ -71,7 +72,7 @@ export function AvatarEditor({ api, uid, onClose }: { api: Api; uid: string; onC
           <p className="subtle">
             {has ? "现在用的是上传的头像。" : "现在用的是默认头像（成员色底 + 姓氏）。"}
             <br />
-            外面那圈颜色是你的固定成员色，换头像也不变。
+            外面那圈颜色是{self ? "你" : dir.name(uid)}的固定成员色，换头像也不变。
           </p>
         </div>
         <label className="button secondary">
@@ -118,14 +119,15 @@ export function AvatarEditor({ api, uid, onClose }: { api: Api; uid: string; onC
               }}
               onPointerUp={() => (drag.current = null)}
             />
-            <label className="subtle">
-              缩放
+            <label className="m-zoom">
+              <span>缩放</span>
               <input
                 type="range"
                 min={1}
                 max={3}
                 step={0.05}
                 value={crop.zoom}
+                style={{ "--fill": `${((crop.zoom - 1) / 2) * 100}%` } as CSSProperties}
                 aria-label="头像缩放"
                 onChange={(e) => setCrop((c) => ({ ...c, zoom: Number(e.target.value) }))}
               />

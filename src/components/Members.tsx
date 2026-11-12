@@ -120,7 +120,7 @@ export function Members({ api }: { api: Api }) {
           </p>
         )}
         {data && data.members.length > 0 && (
-          <table className="team-table">
+          <table className={`team-table ${dir.on ? "m-members-table" : ""}`}>
             <thead>
               <tr>
                 {dir.on && <th>头像 · 颜色</th>}
@@ -134,7 +134,10 @@ export function Members({ api }: { api: Api }) {
               {dir.on && (
                 <tr>
                   <td>
-                    <MemberAvatar uid={dir.ownerUid} size={30} /> <small>{dir.color(dir.ownerUid).name}（固定）</small>
+                    <span className="m-member-cell">
+                      <MemberAvatar uid={dir.ownerUid} size={30} />
+                      <small className="m-color-name">{dir.color(dir.ownerUid).name}（固定）</small>
+                    </span>
                   </td>
                   <td>
                     {dir.name(dir.ownerUid)} <span className="m-admin-pill">管理员</span>
@@ -160,7 +163,10 @@ export function Members({ api }: { api: Api }) {
                         <small className="subtle">批准后分色</small>
                       ) : (
                         <>
-                          <MemberAvatar uid={m.uid} size={30} name={m.name} /> <small>{dir.color(m.uid).name}</small>
+                          <span className="m-member-cell">
+                            <MemberAvatar uid={m.uid} size={30} name={m.name} />
+                            <small className="m-color-name">{dir.color(m.uid).name}</small>
+                          </span>
                           {m.color && data.members.some((o) => o.uid !== m.uid && o.color === m.color) && (
                             <small className="m-same-color">
                               {" "}· 和{data.members.filter((o) => o.uid !== m.uid && o.color === m.color).map((o) => o.name).join("、")}同色，靠头像和名字区分

@@ -99,7 +99,16 @@ export function MemberAvatar({ uid, size = 24, name: forced }: { uid: string | n
   const url = dir.avatars && p?.avatar?.url && broken !== p.avatar.url ? p.avatar.url : "";
   // 外圈 = 成员色（上传的照片也套），Jason 再加 1px 深珊瑚描边
   const ring = `0 0 0 1.5px #fff, 0 0 0 3px ${c.dot}${c === OWNER_COLOR ? `, 0 0 0 4px ${c.stroke}` : ""}`;
-  const style: CSSProperties = { width: size, height: size, fontSize: Math.round(size * 0.48) };
+  // 固定正方形盒子 + 圆形裁切：任何父级 flex/grid 都不能把它拉成椭圆
+  const style: CSSProperties = {
+    width: size,
+    height: size,
+    minWidth: size,
+    maxWidth: size,
+    minHeight: size,
+    maxHeight: size,
+    fontSize: Math.round(size * 0.48),
+  };
   if (c === SYSTEM_COLOR)
     return <span className="m-avatar system" style={{ ...style, borderColor: SYSTEM_COLOR.stroke }} aria-hidden="true" />;
   return (
@@ -198,7 +207,7 @@ export function AssignPicker({ current, onPick, busy }: { current: string; onPic
           <li key={p.uid}>
             <button type="button" disabled={busy || p.uid === current} onClick={() => onPick(p.uid)}>
               <MemberAvatar uid={p.uid} size={30} />
-              <span>
+              <span className="m-picker-text">
                 <b>{p.name}</b>
                 <small>{p.uid === dir.ownerUid ? "同步到 Jason 的 iPhone 和 Notion" : "不同步到 iPhone"}</small>
               </span>

@@ -508,3 +508,23 @@ describe("只读预演脚本", () => {
     expect(JSON.stringify(tasks)).toBe(frozen);
   });
 });
+
+describe("操作日志大白话（开关开时前端用）", () => {
+  it("action、目标、改前改后都翻成中文；人名、时间、删除状态可读；改前没有的字段不写「空 →」", async () => {
+    const { actionText, targetText, diffText } = await import("../src/lib/audit-text");
+    const names = { person: (u: string) => ({ [ALICE]: "林小雅", [BOB]: "宋阿木" } as Record<string, string>)[u] ?? "Jason", customer: (id: string) => (id === "c1" ? "示例客户 · 小林" : undefined) };
+    const del = {
+      action: "tasks.delete", targetType: "tasks", targetId: "t1",
+      before: { at: "2026-11-12T02:00:00.000Z", customerId: "c1", title: "续费回访", deletedAt: null, revision: 1 },
+      after: { at: "2026-11-12T02:00:00.000Z", customerId: "c1", title: "续费回访", deletedAt: "2026-11-12T04:00:00.000Z", revision: 2, updatedBy: ALICE, owner: BOB, othersRecord: true },
+    };
+    expect(actionText(del)).toBe("删除日程（别人的）");
+    expect(actionText({ action: "members.avatar.set" })).toBe("换头像");
+    expect(actionText({ action: "customers.autoCreate" })).toBe("自动补建客户");
+    expect(targetText(del, names)).toBe("示例客户 · 小林 · 续费回访");
+    expect(diffText(del, names)).toEqual(["删除：未删除 → 已删除", "修改人：林小雅", "归属人：宋阿木"]);
+    expect(targetText({ action: "customers.autoCreate", targetType: "customers", targetId: "c1", after: { count: 1, ids: ["c1"] } }, names)).toBe("示例客户 · 小林");
+    expect(diffText({ action: "tasks.update", before: { at: "2026-11-12T02:00:00.000Z" }, after: { at: "2026-11-13T03:30:00.000Z" } }, names)).toEqual(["时间：11-12 10:00 → 11-13 11:30"]);
+    expect(targetText({ action: "members.avatar.set", targetType: "members", targetId: "_owner_profile" }, names)).toBe("Jason");
+  });
+});

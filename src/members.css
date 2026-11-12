@@ -1,9 +1,12 @@
 /* 日程归属 + 成员颜色 + 头像（只在 SCHEDULE_OWNER_ENABLED 开时出现） */
 .m-avatar {
-  display: inline-flex;
+  display: inline-flex !important;
   align-items: center;
   justify-content: center;
-  flex: none;
+  flex: 0 0 auto !important;
+  aspect-ratio: 1 / 1;
+  box-sizing: border-box;
+  padding: 0 !important;
   border-radius: 50%;
   color: #fff;
   font-weight: 700;
@@ -15,6 +18,8 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
+  object-position: center;
+  border-radius: 50%;
   display: block;
 }
 .m-avatar.system {
@@ -166,9 +171,10 @@
   cursor: default;
   background: var(--surface-soft);
 }
-.m-picker span {
+.m-picker .m-picker-text {
   display: grid;
   flex: 1;
+  min-width: 0;
 }
 .m-picker small {
   color: var(--text-3);
@@ -227,8 +233,76 @@
   touch-action: none;
   cursor: grab;
 }
+/* 缩放滑块：标签在左，滑块和拇指都是深珊瑚 #B4532F（不用浏览器默认蓝） */
+.m-zoom {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: var(--fs-2);
+  color: #6b5a50;
+  font-weight: 600;
+}
 .m-avatar-editor input[type="range"] {
-  width: 160px;
+  width: 180px;
+  accent-color: #b4532f;
+  -webkit-appearance: none;
+  appearance: none;
+  height: 18px;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  background: transparent;
+  outline: none;
+}
+.m-avatar-editor input[type="range"]::-webkit-slider-runnable-track {
+  height: 6px;
+  border-radius: 999px;
+  background: linear-gradient(to right, #b4532f var(--fill, 0%), #f0dcc8 var(--fill, 0%));
+}
+.m-avatar-editor input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  margin-top: -6px;
+  border-radius: 50%;
+  background: #b4532f;
+  border: 2px solid #fff;
+  box-shadow: 0 0 0 1px #b4532f;
+  cursor: pointer;
+}
+.m-avatar-editor input[type="range"]::-moz-range-track {
+  height: 6px;
+  border-radius: 999px;
+  background: #f0dcc8;
+}
+.m-avatar-editor input[type="range"]::-moz-range-progress {
+  height: 6px;
+  border-radius: 999px;
+  background: #b4532f;
+}
+.m-avatar-editor input[type="range"]::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #b4532f;
+  border: 2px solid #fff;
+  box-shadow: 0 0 0 1px #b4532f;
+}
+.m-avatar-editor input[type="range"]:focus-visible {
+  outline: 2px solid #b4532f;
+  outline-offset: 4px;
+}
+/* 禁用的主按钮：浅奶油底 + 深棕字（不用发白的珊瑚） */
+.m-avatar-editor .button.primary:disabled,
+.m-confirm .button.primary:disabled {
+  background: #f0dcc8;
+  border-color: #f0dcc8;
+  color: #6b5a50;
+  opacity: 1;
 }
 .m-avatar-editor .subtle {
   margin: 0;
@@ -259,6 +333,15 @@
   .m-chip:not(:first-child) {
     padding: 3px;
   }
+  /* 没选中的只剩头像：44×44 正圆底 */
+  .m-chip:not(:first-child):not(.on) {
+    width: 44px;
+    height: 44px;
+    min-height: 44px;
+    padding: 0;
+    justify-content: center;
+    border-radius: 50%;
+  }
   .m-chip:not(:first-child):not(.on) .m-chip-name {
     display: none;
   }
@@ -286,4 +369,104 @@
 }
 .team-table .m-meta {
   margin: 0;
+}
+
+/* 操作日志（开关开）：目标、改前改后都是大白话，不在词中间断行 */
+.m-audit-target {
+  max-width: 220px;
+  word-break: keep-all;
+  overflow-wrap: break-word;
+}
+.team-diff.m-audit-diff {
+  word-break: keep-all;
+  overflow-wrap: break-word;
+}
+.m-audit-diff .m-lines {
+  display: grid;
+  gap: 2px;
+}
+.m-audit-filters .m-filter-chips {
+  flex-wrap: wrap;
+}
+.team-table td .m-admin-pill {
+  margin-left: 6px;
+  color: #6b5a50;
+  border-color: #b4532f;
+}
+
+/* 11-12 品牌复审 */
+/* 日程记录行的日期（含色点）不换行 */
+.apple-log-d {
+  flex: 0 0 auto;
+  min-width: 46px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+}
+/* 日期和时间之间留出空隙（文字本身仍是「2026-11-12 10:00」） */
+.customer-task-top time {
+  word-spacing: 0.4em;
+  white-space: nowrap;
+}
+/* 「今日待办」胶囊改用「进行中」款 */
+.task-urgent .customer-task-status {
+  background: #fbe3d4;
+  color: #9c4526;
+  box-shadow: inset 0 0 0 1px #e9a178;
+}
+/* 确认弹窗：「取消」和确认按钮间距 12px */
+.m-avatar-editor .team-row,
+.m-confirm .team-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+/* 成员表：头像和颜色名并排，和名字一起垂直居中 */
+.m-members-table td {
+  vertical-align: middle;
+}
+.m-member-cell {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  white-space: nowrap;
+}
+.team-table td small.m-color-name {
+  color: #6b5a50;
+  font-size: var(--fs-1);
+}
+/* 手机：顶部演示提示一行放下（「退出」不掉到第二行） */
+@media (max-width: 640px) {
+  aside.demo-banner {
+    flex-wrap: nowrap;
+    white-space: nowrap;
+    justify-content: center;
+    align-items: center;
+    gap: 4px;
+    padding: 5px 8px;
+    font-size: 11.5px;
+  }
+  aside.demo-banner .demo-text {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
+  }
+  aside.demo-banner .demo-exit {
+    gap: 3px;
+    flex: none;
+  }
+  aside.demo-banner button {
+    padding: 2px;
+    font-size: 11.5px;
+  }
+}
+/* 表单里的「归属人」：和上一项留出和其他字段一样的间距 */
+.m-form-label {
+  display: block;
+  margin-top: 14px;
+}
+.m-form-owner {
+  margin: 6px 0 4px;
 }

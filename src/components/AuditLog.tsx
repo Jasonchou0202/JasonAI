@@ -1,9 +1,12 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { Api } from "../domain/model";
 import { ErrorNote, Loading, useQuery } from "./ui";
 import "../team.css";
 import { MemberAvatar, MemberTag, useDirectory } from "../lib/members-ui";
 import { addDays, today as bjToday } from "../domain/dates";
+import type { Customer } from "../domain/model";
+import { displayCustomerName } from "../domain/customers";
+import { actionText, diffText, targetText } from "../lib/audit-text";
 
 interface Row {
   id: string;
@@ -82,6 +85,21 @@ export function AuditLog({ api, mode }: { api: Api; mode: "admin" | "self" }) {
     limit: 50,
   };
   const { data, error, loading } = useQuery<{ rows: Row[]; next: string | null }>(api, "audit.list", query);
+  // 开关开：日志里的客户编号翻成客户名（只读客户列表，成员也能读）
+  const [customers, setCustomers] = useState<Customer[]>([]);
+  useEffect(() => {
+    if (!dir.on) return;
+    let live = true;
+    api
+      .call<Customer[]>("customers.list", {})
+      .then((r) => live && Array.isArray(r) && setCustomers(r))
+      .catch(() => undefined);
+    return () => {
+      live = false;
+    };
+  }, [api, dir.on]);
+  const customerName = new Map(customers.map((c) => [c.id, displayCustomerName(c.name)]));
+  const names = { person: (uid: string) => dir.name(uid), customer: (id: string) => customerName.get(id) };
   const reset = (f: () => void) => {
     f();
     setCursors([]);
@@ -237,19 +255,34 @@ export function AuditLog({ api, mode }: { api: Api; mode: "admin" | "self" }) {
                         ) : (
                           r.actorName || r.actorUid
                         )}
-                        <small> {ROLE[r.role] || r.role}</small>
+                        {dir.on && r.role === "admin" ? <span className="m-admin-pill">管理员</span> : <small> {ROLE[r.role] || r.role}</small>}
                       </td>
                     )}
-                    <td>{r.action}</td>
-                    <td title={r.targetId}>
-                      {[r.targetType, r.targetId && r.targetId.length > 16 ? r.targetId.slice(0, 14) + "…" : r.targetId]
-                        .filter(Boolean)
-                        .join(" / ")}
-                    </td>
-                    <td className="team-diff">
-                      {transfer(r) ?? diff(r.before, r.after)}
-                      {dir.on && r.after?.othersRecord === true && <small className="m-same-color"> · 删的是别人的</small>}
-                    </td>
+                    {dir.on ? (
+                      <>
+                        <td title={r.action}>{actionText(r)}</td>
+                        <td className="m-audit-target">{targetText(r, names)}</td>
+                        <td className="team-diff m-audit-diff">
+                          {transfer(r) ?? (
+                            <div className="m-lines">
+                              {diffText(r, names).map((line, i) => (
+                                <span key={i}>{line}</span>
+                              ))}
+                            </div>
+                          )}
+                        </td>
+                      </>
+                    ) : (
+                      <>
+                        <td>{r.action}</td>
+                        <td title={r.targetId}>
+                          {[r.targetType, r.targetId && r.targetId.length > 16 ? r.targetId.slice(0, 14) + "…" : r.targetId]
+                            .filter(Boolean)
+                            .join(" / ")}
+                        </td>
+                        <td className="team-diff">{diff(r.before, r.after)}</td>
+                      </>
+                    )}
                     <td>
                       <span className={`team-status ${r.result}`}>{RESULT[r.result]}</span>
                       {r.reason && <small> {r.reason}</small>}

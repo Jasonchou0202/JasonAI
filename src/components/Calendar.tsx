@@ -1005,10 +1005,8 @@ function TaskCard({
               <>
                 <dt>最后修改</dt>
                 <dd>
-                  <span className="m-small">
-                    <MemberAvatar uid={task.updatedBy} size={16} />
-                    {dir.name(task.updatedBy)} · {beijingInput(task.updatedAt).slice(5).replace("T", " ")}
-                  </span>
+                  <MemberTag uid={task.updatedBy} size={18} />
+                  <small className="subtle">{beijingInput(task.updatedAt).slice(5).replace("T", " ")}</small>
                 </dd>
               </>
             )

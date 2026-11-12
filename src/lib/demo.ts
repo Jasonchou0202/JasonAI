@@ -69,6 +69,10 @@ const DEMO_PEOPLE = [
   { uid: "demo-member", name: "林小雅", color: "c1", at: "2026-11-01T00:00:00.000Z" },
   { uid: "demo-song", name: "宋阿木", color: "c2", at: "2026-11-02T00:00:00.000Z" },
   { uid: "demo-chen", name: "陈一一", color: "c3", at: "2026-11-03T00:00:00.000Z" },
+  { uid: "demo-he", name: "何小乐", color: "c4", at: "2026-11-04T00:00:00.000Z" },
+  { uid: "demo-su", name: "苏北北", color: "c5", at: "2026-11-05T00:00:00.000Z" },
+  { uid: "demo-tang", name: "唐果果", color: "c6", at: "2026-11-06T00:00:00.000Z" },
+  { uid: "demo-bai", name: "白小舟", color: "c7", at: "2026-11-07T00:00:00.000Z" },
 ] as const;
 export function createDemo(role: "admin" | "member" | null = null): Api {
   const ownerPreview = role !== null && demoOwnerPreview();
@@ -147,7 +151,7 @@ export function createDemo(role: "admin" | "member" | null = null): Api {
       store.data.sales[id] = { id, productId, productName, customer, date: day, revenue, cost, note: "虚构演示记录", createdAt: time, updatedAt: time, deletedAt: null, revision: 1 };
     });
   }
-  /** 日程归属预览的假数据：3 位成员（固定颜色）+ 本月各人名下的日程 */
+  /** 日程归属预览的假数据：7 位成员（固定颜色）+ 本月各人名下的日程 */
   async function seedOwnerPreview() {
     for (const p of DEMO_PEOPLE)
       store.data.members[p.uid] = {
@@ -169,6 +173,10 @@ export function createDemo(role: "admin" | "member" | null = null): Api {
       [-2, "06:00", "示例客户 · 阿远", "补发发票", "demo-chen", undefined],
       [5, "03:00", "示例客户 · 木木", "新品体验邀约", "demo-member", undefined],
       [6, "08:00", "示例客户 · 陈同学", "节前问候", undefined, undefined],
+      [1, "09:00", "示例客户 · 小林", "试用反馈收集", "demo-he", undefined],
+      [2, "08:30", "示例客户 · 阿远", "续费提醒", "demo-su", undefined],
+      [4, "06:00", "示例客户 · 木木", "上门演示", "demo-tang", undefined],
+      [4, "09:30", "示例客户 · 陈同学", "合同确认", "demo-bai", undefined],
     ];
     for (const [i, [d, hm, name, title, owner, editor]] of plan.entries()) {
       const id = "demo-owner-task-" + i;
@@ -192,6 +200,9 @@ export function createDemo(role: "admin" | "member" | null = null): Api {
       if (i % 3 === 1) store.data.sales[r.id] = { ...r, createdBy: "demo-member" };
       if (i % 3 === 2) store.data.sales[r.id] = { ...r, createdBy: "demo-song" };
     });
+    // 一笔在销售回收站里、被成员删掉的（演示「谁删的」）
+    const bin = sales[12];
+    if (bin) store.data.sales[bin.id] = { ...bin, createdBy: "demo-member", deletedAt: `${day}T03:00:00.000Z`, deletedBy: "demo-member", updatedBy: "demo-member" };
     localStorage.setItem(key, JSON.stringify(store.data));
   }
   return {

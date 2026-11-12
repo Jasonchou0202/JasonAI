@@ -57,7 +57,7 @@ test("管理员：按成员筛选、月历色点、指派给成员，日志里�
   await expect(ops.getByRole("button", { name: "系统" })).toBeVisible();
   await page.getByRole("group", { name: "按类型" }).getByRole("button", { name: "认领·指派" }).click();
   const row = page.getByRole("table", { name: "操作日志" }).locator("tbody tr").first();
-  await expect(row).toContainText("tasks.assign");
+  await expect(row).toContainText("指派日程");
   await expect(row.locator(".team-diff")).toContainText("林小雅");
   await expect(row.locator(".team-diff")).toContainText("宋阿木");
   await ops.getByRole("button", { name: "林小雅" }).click();
@@ -83,8 +83,8 @@ test("成员：认领 Jason 的日程要先确认「会从 Jason 的 iPhone 删�
   await expect(page.getByText("只能看自己的记录")).toBeVisible();
   const rows = page.getByRole("table", { name: "操作日志" }).locator("tbody tr");
   await expect(rows.first()).toBeVisible();
-  await expect(page.getByRole("table", { name: "操作日志" })).toContainText("tasks.claim");
-  await expect(page.getByRole("table", { name: "操作日志" })).toContainText("tasks.delete");
+  await expect(page.getByRole("table", { name: "操作日志" })).toContainText("认领日程");
+  await expect(page.getByRole("table", { name: "操作日志" })).toContainText("删除日程（别人的）");
 });
 
 test("同一个成员各处颜色一致：筛选标签、卡片色条、色点、成员列表", async ({ page }) => {
