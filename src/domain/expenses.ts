@@ -34,6 +34,34 @@ export const PARTNER_SHARE = 0.4;
 export const OWNER_LABEL = "章鱼哥";
 export const PARTNER_LABEL = "周诗懿";
 
+/** 报销起算日：早于此日的报销不入合账，也不能新建或改到此日之前 */
+export const EXPENSE_START_DATE = "2026-11-14";
+/** 与周诗懿分利润起算日：从此日所在十天段起显示应得、计入分成 */
+export const PROFIT_SHARE_START_DATE = "2026-11-21";
+
+export function formatCnDate(date: string, withYear = false): string {
+  const y = Number(date.slice(0, 4));
+  const m = Number(date.slice(5, 7));
+  const d = Number(date.slice(8, 10));
+  return withYear ? `${y} 年 ${m} 月 ${d} 日` : `${m} 月 ${d} 日`;
+}
+
+export const PROFIT_SHARE_HINT = `${formatCnDate(PROFIT_SHARE_START_DATE)}起开始分成`;
+export const EXPENSE_START_TOO_EARLY = `报销从 ${formatCnDate(EXPENSE_START_DATE, true)}起记，不能录入更早的日期`;
+
+export function countsAsExpense(date: string): boolean {
+  return date >= EXPENSE_START_DATE;
+}
+
+export function countsInProfitShare(date: string): boolean {
+  return date >= PROFIT_SHARE_START_DATE;
+}
+
+/** 该十天段是否已进入分成（段结束日达到起算日即开放，方便以后改起算日） */
+export function decadeSharesOpen(decade: Pick<Decade, "to">): boolean {
+  return decade.to >= PROFIT_SHARE_START_DATE;
+}
+
 export interface ExpenseCategory {
   id: string;
   name: string;
@@ -96,6 +124,8 @@ export interface PayerShare {
 export interface DecadeSettlement {
   decade: Decade;
   phase: DecadePhase;
+  /** 是否已到分成起算日；未到时不显示应得，利润分成按起算日之后的账计算 */
+  sharesOpen: boolean;
   revenue: number;
   cost: number;
   expense: number;
@@ -268,6 +298,7 @@ const emptyPosted = (month: string, people: People): DecadeSettlement => {
   return {
     decade,
     phase: "closed",
+    sharesOpen: false,
     revenue: 0,
     cost: 0,
     expense: 0,
@@ -289,6 +320,7 @@ export function settleDecade(
   payerEnabled: boolean,
 ): DecadeSettlement {
   const phase = decadePhase(decade, today);
+  const sharesOpen = decadeSharesOpen(decade);
   const ownerName = people.ownerName || OWNER_LABEL;
   const partnerName = people.partnerName || PARTNER_LABEL;
   if (phase === "upcoming") {
@@ -296,6 +328,7 @@ export function settleDecade(
     return {
       decade,
       phase,
+      sharesOpen,
       revenue: 0,
       cost: 0,
       expense: 0,
@@ -310,35 +343,44 @@ export function settleDecade(
   const inRange = (date: string) => date >= decade.from && date <= decade.to;
   const activeSales = sales.filter((s) => !s.deletedAt && inRange(s.date));
   const booked = expenses.filter(
-    (e) => !e.deletedAt && inRange(e.date) && isBookedStatus(e.status),
+    (e) => !e.deletedAt && inRange(e.date) && isBookedStatus(e.status) && countsAsExpense(e.date),
   );
-  const revenue = activeSales.reduce((n, s) => n + s.revenue, 0);
-  const cost = activeSales.reduce((n, s) => n + s.cost, 0);
+  // 合账展示本段销售收入、进货和已起算的报销；分成与应得只纳入起算日及之后的账
+  const ledgerRevenue = activeSales.reduce((n, s) => n + s.revenue, 0);
+  const ledgerCost = activeSales.reduce((n, s) => n + s.cost, 0);
   const expense = booked.reduce((n, e) => n + e.amount, 0);
-  const totalCost = cost + expense;
-  const salesProfit = revenue - cost;
-  const profit = revenue - totalCost;
+  const shareSales = sharesOpen ? activeSales.filter((s) => countsInProfitShare(s.date)) : [];
+  const shareExpenses = sharesOpen ? booked.filter((e) => countsInProfitShare(e.date)) : [];
+  const revenue = sharesOpen ? shareSales.reduce((n, s) => n + s.revenue, 0) : ledgerRevenue;
+  const cost = sharesOpen ? shareSales.reduce((n, s) => n + s.cost, 0) : ledgerCost;
+  const shareExpense = shareExpenses.reduce((n, e) => n + e.amount, 0);
+  const totalCost = sharesOpen ? cost + shareExpense : ledgerCost + expense;
+  const salesProfit = sharesOpen ? revenue - cost : 0;
+  const profit = sharesOpen ? revenue - (cost + shareExpense) : 0;
   const parts = splitProfit(profit);
   const advances: Record<string, number> = {};
   const add = (uid: string, n: number) => {
     advances[uid] = (advances[uid] || 0) + n;
   };
-  for (const s of activeSales) add(salePayer(s, people.ownerUid, payerEnabled), s.cost);
-  for (const e of booked) add(e.paidBy || people.ownerUid, e.amount);
+  if (sharesOpen) {
+    for (const s of shareSales) add(salePayer(s, people.ownerUid, payerEnabled), s.cost);
+    for (const e of shareExpenses) add(e.paidBy || people.ownerUid, e.amount);
+  }
   const ownerAdvance = advances[people.ownerUid] || 0;
   const partnerAdvance = advances[people.partnerUid] || 0;
   return {
     decade,
     phase,
-    revenue,
-    cost,
+    sharesOpen,
+    revenue: sharesOpen ? revenue : ledgerRevenue,
+    cost: sharesOpen ? cost : ledgerCost,
     expense,
-    totalCost,
+    totalCost: sharesOpen ? cost + shareExpense : ledgerCost + expense,
     salesProfit,
     profit,
     owner: payerShare(people.ownerUid, ownerName, OWNER_SHARE, parts.owner, ownerAdvance),
     partner: payerShare(people.partnerUid, partnerName, PARTNER_SHARE, parts.partner, partnerAdvance),
-    partnerReceive: partnerAdvance + parts.partner,
+    partnerReceive: sharesOpen ? partnerAdvance + parts.partner : 0,
   };
 }
 
@@ -355,7 +397,8 @@ export function settleMonth(
   );
   const posted = emptyPosted(month, people);
   for (const row of decades) {
-    if (row.phase === "upcoming") continue;
+    if (row.phase === "upcoming" || !row.sharesOpen) continue;
+    posted.sharesOpen = true;
     posted.revenue += row.revenue;
     posted.cost += row.cost;
     posted.expense += row.expense;
@@ -372,7 +415,8 @@ export function settleMonth(
     (e) =>
       !e.deletedAt &&
       e.date.startsWith(month) &&
-      e.status === "pending_confirm",
+      e.status === "pending_confirm" &&
+      countsAsExpense(e.date),
   ).length;
   return { month, decades, posted, pendingCount };
 }
@@ -405,6 +449,7 @@ const NOTE_MAX = 2000;
 export function validateExpense(raw: ExpenseInput, categories: ExpenseCategory[]): ExpenseInput {
   if (!raw || typeof raw !== "object") throw new Error("记录格式无效");
   if (!validDate(raw.date)) throw new Error("请选择有效日期");
+  if (raw.date < EXPENSE_START_DATE) throw new Error(EXPENSE_START_TOO_EARLY);
   if (!Number.isSafeInteger(raw.amount) || raw.amount <= 0 || raw.amount > 999_999_999_99)
     throw new Error("请填写有效金额");
   if (typeof raw.categoryId !== "string" || raw.categoryId.length > 200)

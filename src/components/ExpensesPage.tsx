@@ -1,7 +1,7 @@
 import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
 import type { Api } from "../domain/model";
 import type { DecadeSettlement, MonthCompare, Expense, MonthSettlement } from "../domain/expenses";
-import { EXPENSE_STATUS_LABEL, shiftMonth } from "../domain/expenses";
+import { EXPENSE_STATUS_LABEL, PROFIT_SHARE_HINT, shiftMonth } from "../domain/expenses";
 import { money } from "../domain/finance";
 import { today } from "../domain/dates";
 import { useTeam } from "../lib/team-ui";
@@ -29,8 +29,10 @@ function yenOrDash(value: number, upcoming: boolean) {
 
 function DecadeCard({ row, admin }: { row: DecadeSettlement; admin: boolean }) {
   const upcoming = row.phase === "upcoming";
+  const hideShares = upcoming || !row.sharesOpen;
   const phaseLabel = row.phase === "closed" ? "已出账" : row.phase === "current" ? "进行中" : "待出账 · 示意";
   const n = (v: number) => (upcoming ? "—" : `¥${money(v)}`);
+  const share = (v: number) => (hideShares ? "—" : `¥${money(v)}`);
   return (
     <article className={`exp-card ${row.phase === "current" ? "current" : ""}`}>
       <div className="exp-card-head">
@@ -40,8 +42,8 @@ function DecadeCard({ row, admin }: { row: DecadeSettlement; admin: boolean }) {
         </div>
         <span className={`exp-phase ${row.phase}`}>{phaseLabel}</span>
       </div>
-      <div className={`exp-profit ${upcoming ? "muted" : ""}`}>
-        {upcoming ? "尚未有数" : `¥${money(row.profit)}`}
+      <div className={`exp-profit ${hideShares ? "muted" : ""}`}>
+        {upcoming ? "尚未有数" : row.sharesOpen ? `¥${money(row.profit)}` : "尚未分成"}
       </div>
       <div className="exp-grid">
         <div>
@@ -65,17 +67,19 @@ function DecadeCard({ row, admin }: { row: DecadeSettlement; admin: boolean }) {
       <hr className="exp-hr" />
       <div className="exp-kv">
         <div className="exp-row"><span>六四分账</span><span /></div>
-        <div className="exp-row"><span>{row.owner.name} 60%</span><b>{n(row.owner.amount)}</b></div>
-        <div className="exp-row"><span>{row.partner.name} 40%</span><b>{n(row.partner.amount)}</b></div>
+        <div className="exp-row"><span>{row.owner.name} 60%</span><b>{share(row.owner.amount)}</b></div>
+        <div className="exp-row"><span>{row.partner.name} 40%</span><b>{share(row.partner.amount)}</b></div>
       </div>
       <hr className="exp-hr" />
       <div className="exp-kv">
         <div className="exp-row"><span>本段垫付</span><span /></div>
-        <div className="exp-row"><span>{row.owner.name}垫付</span><b>{n(row.owner.advance)}</b></div>
-        <div className="exp-row"><span>{row.partner.name}垫付</span><b>{n(row.partner.advance)}</b></div>
+        <div className="exp-row"><span>{row.owner.name}垫付</span><b>{share(row.owner.advance)}</b></div>
+        <div className="exp-row"><span>{row.partner.name}垫付</span><b>{share(row.partner.advance)}</b></div>
       </div>
       {upcoming ? (
         <div className="exp-hint upcoming">本段未出账，不做结算</div>
+      ) : !row.sharesOpen ? (
+        <div className="exp-hint upcoming">{PROFIT_SHARE_HINT}</div>
       ) : admin ? (
         <div className="exp-hint">
           <em>结算提示</em>
@@ -168,26 +172,37 @@ export function ExpensesPage({
       <section className="exp-overview" aria-label="本月三段全貌">
         {data.decades.map((row) => {
           const upcoming = row.phase === "upcoming";
+          const hideShares = upcoming || !row.sharesOpen;
           return (
             <article className={`exp-overview-row ${row.phase}`} key={row.decade.from}>
               <header>
                 <h3>{row.decade.label}</h3>
                 <span className={`exp-phase ${row.phase}`}>{phaseLabel(row.phase)}</span>
-                <b className={upcoming ? "muted" : ""}>{yenOrDash(row.profit, upcoming)}</b>
+                <b className={hideShares ? "muted" : ""}>{hideShares ? "—" : `¥${money(row.profit)}`}</b>
               </header>
-              <p>
-                <span>{row.owner.name} 60% {yenOrDash(row.owner.amount, upcoming)}</span>
-                <span>{row.partner.name} 40% {yenOrDash(row.partner.amount, upcoming)}</span>
-                {admin && <span>{row.partner.name}应收回 {yenOrDash(row.partnerReceive, upcoming)}</span>}
-              </p>
+              {row.sharesOpen ? (
+                <p>
+                  <span>{row.owner.name} 60% {yenOrDash(row.owner.amount, upcoming)}</span>
+                  <span>{row.partner.name} 40% {yenOrDash(row.partner.amount, upcoming)}</span>
+                  {admin && <span>{row.partner.name}应收回 {yenOrDash(row.partnerReceive, upcoming)}</span>}
+                </p>
+              ) : (
+                <p className="exp-share-wait">{PROFIT_SHARE_HINT}</p>
+              )}
             </article>
           );
         })}
         {admin && (
           <div className="exp-overview-total">
             <strong>已出账合计</strong>
-            <span>实际利润 ¥{money(data.posted.profit)}</span>
-            <span>{data.people.partner.name}应收回 ¥{money(data.posted.partnerReceive)}</span>
+            {data.posted.sharesOpen ? (
+              <>
+                <span>实际利润 ¥{money(data.posted.profit)}</span>
+                <span>{data.people.partner.name}应收回 ¥{money(data.posted.partnerReceive)}</span>
+              </>
+            ) : (
+              <span>{PROFIT_SHARE_HINT}</span>
+            )}
           </div>
         )}
       </section>
