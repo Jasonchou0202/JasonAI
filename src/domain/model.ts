@@ -22,6 +22,8 @@ export interface Sale extends SaleInput {
   updatedBy?: string;
   /** 删除人 uid（SALES_ACTOR_FIELDS_ENABLED 开后才写；恢复时去掉） */
   deletedBy?: string;
+  /** 进货付款人 uid（SALES_PAYER_ENABLED 开后才写；关着时合账按录入人计，不回填） */
+  paidBy?: string;
 }
 export interface Product {
   category?: string;

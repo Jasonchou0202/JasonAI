@@ -8,8 +8,9 @@ import {
   summarize,
   type AuditInput,
 } from "./audit";
-import { authorize, DeniedError, executeTeam, hideDeleted, memberResult, ownerOn, salesActorOn, type Actor, type TeamConfig } from "./team";
+import { authorize, DeniedError, executeTeam, hideDeleted, memberResult, ownerOn, salesActorOn, expensesOn, salesPayerOn, type Actor, type TeamConfig } from "./team";
 import { OWNER_ACTIONS, transferOwner } from "./schedule-owner";
+import { EXPENSE_ACTIONS, EXPENSE_AUDITED_ACTIONS, executeExpenses } from "./expenses";
 import { taskOwner } from "../src/domain/members";
 
 function failure(error: unknown, diagnose?: (code: string) => void) {
@@ -38,8 +39,14 @@ export async function handle(
   extra?: (store: Store, action: string, payload: unknown) => Promise<unknown>,
   team?: TeamConfig,
 ) {
-  // 两个开关都关（或没传）：走原来的路径，一行不差
-  if (!team || (!team.membersEnabled && !team.auditEnabled))
+  // 团队/审计/报销/进货付款人开关全关（或没传）：走原来的路径，一行不差
+  if (
+    !team ||
+    (!team.membersEnabled &&
+      !team.auditEnabled &&
+      !expensesOn(team) &&
+      !salesPayerOn(team))
+  )
     return legacy(store, ctx, event, diagnose, extra);
   return teamHandle(store, ctx, event, team, diagnose, extra);
 }
@@ -72,7 +79,7 @@ const ID = /^[\w-]{1,128}$/;
 function targetOf(action: string, p: Record<string, any>): { type?: string; id?: string } {
   const prefix = action.split(".")[0];
   const type =
-    prefix === "sales" || prefix === "tasks" || prefix === "products" || prefix === "customers"
+    prefix === "sales" || prefix === "tasks" || prefix === "products" || prefix === "customers" || prefix === "expenses"
       ? prefix
       : prefix === "catalog"
         ? p.kind === "product" ? "products" : p.kind === "customer" ? "customers" : undefined
@@ -80,7 +87,7 @@ function targetOf(action: string, p: Record<string, any>): { type?: string; id?:
           ? action.startsWith("members.invite") ? "invites" : "members"
           : undefined;
   const raw =
-    action === "sales.create" || action === "tasks.create"
+    action === "sales.create" || action === "tasks.create" || action === "expenses.create"
       ? p.requestId
       : action === "customers.merge" || action === "customers.unmerge"
         ? (p.sourceId ?? p.id)
@@ -140,7 +147,7 @@ async function teamHandle(
       p = payload as Record<string, any>;
     actor = await authorize(base(), ctx, team, action, p);
     const audited =
-      team.auditEnabled && (AUDITED_ACTIONS.has(action) || (ownerOn(team) && OWNER_AUDITED_ACTIONS.has(action)));
+      team.auditEnabled && (AUDITED_ACTIONS.has(action) || (ownerOn(team) && OWNER_AUDITED_ACTIONS.has(action)) || (expensesOn(team) && EXPENSE_AUDITED_ACTIONS.has(action)));
     let data: unknown;
     if (action.startsWith("members.") || action === "audit.list") {
       const r = await executeTeam(base(), ctx, team, actor, action, p, now);
@@ -154,6 +161,19 @@ async function teamHandle(
           result: "ok",
         });
       return { ok: true, data };
+    }
+    // 报销记账（开关关时不进这里：得到 UNSUPPORTED_ACTION）
+    if (expensesOn(team) && EXPENSE_ACTIONS.has(action)) {
+      const r = await executeExpenses(base(), { ...ctx, now }, team, actor, action, p, now);
+      if (audited && r.target)
+        await record({
+          targetType: r.target.type,
+          targetId: r.target.id,
+          before: summarize(r.target.type, r.target.before),
+          after: summarize(r.target.type, r.target.after),
+          result: "ok",
+        });
+      return { ok: true, data: r.data };
     }
     // 认领 / 指派（开关关时不进这里：管理员照旧得到 UNSUPPORTED_ACTION，成员照旧被白名单拒）
     if (ownerOn(team) && OWNER_ACTIONS.has(action)) {
@@ -183,8 +203,8 @@ async function teamHandle(
       ...(team.membersEnabled ? { actorUid: actor.uid } : {}),
       ...(team.auditEnabled ? { onAutoCreate: (ids: string[]) => void autoCreated.push(...ids) } : {}),
       // 冻结集合的新字段：各自开关开才写（关着时不带这个键，业务代码与现在一字不差）
-      ...(ownerOn(team) || salesActorOn(team)
-        ? { actorFields: { ...(ownerOn(team) ? { tasks: true } : {}), ...(salesActorOn(team) ? { sales: true } : {}) } }
+      ...(ownerOn(team) || salesActorOn(team) || salesPayerOn(team)
+        ? { actorFields: { ...(ownerOn(team) ? { tasks: true } : {}), ...(salesActorOn(team) ? { sales: true } : {}), ...(salesPayerOn(team) ? { salesPayer: true } : {}) } }
         : {}),
     };
     // 成员的读操作：看不到回收站里的销售/日程（含 dashboard、客户详情、导出等全部读路径）
@@ -247,7 +267,7 @@ async function teamHandle(
           /* appendOnly 自己已兜底告警 */
         }
       }
-    } else if (team.auditEnabled && (AUDITED_ACTIONS.has(action) || (ownerOn(team) && OWNER_AUDITED_ACTIONS.has(action)))) {
+    } else if (team.auditEnabled && (AUDITED_ACTIONS.has(action) || (ownerOn(team) && OWNER_AUDITED_ACTIONS.has(action)) || (expensesOn(team) && EXPENSE_AUDITED_ACTIONS.has(action)))) {
       await record({
         ...(target.type ? { targetType: target.type } : {}),
         ...(target.id ? { targetId: target.id } : {}),

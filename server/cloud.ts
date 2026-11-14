@@ -37,7 +37,7 @@ function cloudAvatarStorage(app: any): AvatarStorage {
 export async function main(event: unknown, context: any) {
   const app = cloudbase.init({ env: cloudbase.SYMBOL_CURRENT_ENV });
   // 团队开关：MEMBERS_ENABLED=1 / AUDIT_ENABLED=1 才开启，缺省全关（与原来一致）
-  // 日程归属 SCHEDULE_OWNER_ENABLED、头像 AVATARS_ENABLED、sales 新字段 SALES_ACTOR_FIELDS_ENABLED：缺省全关
+  // 日程归属 SCHEDULE_OWNER_ENABLED、头像 AVATARS_ENABLED、sales 新字段 SALES_ACTOR_FIELDS_ENABLED、报销 EXPENSES_ENABLED、进货付款人 SALES_PAYER_ENABLED：缺省全关
   const team = {
     ...teamConfigFromEnv(process.env),
     avatarStorage: cloudAvatarStorage(app),
