@@ -419,6 +419,16 @@
   .dash-page > .trend-panel .panel-heading {
     padding-top: 24px;
   }
+  /* 报销开时：三段应得插在首屏和走势图之间，不挤占原 grid-row: 2 */
+  .dash-page:has(.exp-shares) > .exp-shares {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    margin: 8px 0 12px;
+  }
+  .dash-page:has(.exp-shares) > .trend-panel,
+  .dash-page:has(.exp-shares) > .dash-stats {
+    grid-row: 3;
+  }
 }
 @media (min-width: 1025px) and (max-height: 860px) {
   .dash-page .dash-chart {

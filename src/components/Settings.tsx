@@ -27,6 +27,7 @@ import { CustomerAliases } from "./CustomerAliases";
 import { CatalogSettings } from "./CatalogSettings";
 import { groupProducts } from "../domain/catalog";
 import { ProductEditor } from "./ProductEditor";
+import { ExpenseCategorySettings } from "./ExpenseCategorySettings";
 type CommitResult = {
   count: number;
   repeated?: boolean;
@@ -191,6 +192,7 @@ export function Settings({
         onCustomer={onCustomer}
         onChange={onChange}
       />
+      <ExpenseCategorySettings api={api} version={version} onChange={onChange} />
       <CustomerAliases api={api} version={version} onChange={onChange} />
       {(error || opError) && <ErrorNote>{error || opError}</ErrorNote>}
       <section className="panel settings-panel">

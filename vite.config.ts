@@ -50,5 +50,10 @@ export default defineConfig({
     },
   },
   build: { sourcemap: false },
-  server: { port: 5173, strictPort: true },
+  server: {
+    port: 5173,
+    strictPort: true,
+    // 本 worktree 的 node_modules 是指向已有安装的符号链接，允许读字体
+    fs: { allow: [resolve("."), resolve("/workspace/JasonAI/node_modules")] },
+  },
 });
