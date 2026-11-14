@@ -1,6 +1,6 @@
 import type { Api } from "../domain/model";
 import type { DecadeSettlement } from "../domain/expenses";
-import { PROFIT_SHARE_START_DATE, formatCnDate, shareLabel } from "../domain/expenses";
+import { EXPENSE_START_DATE, PROFIT_SHARE_START_DATE, formatCnDate, shareLabel } from "../domain/expenses";
 import { money } from "../domain/finance";
 import { useQuery } from "./ui";
 import "../expenses.css";
@@ -33,8 +33,8 @@ export function DecadeShares({
       <div className="exp-shares-head">
         <div>
           <h2>十天应得利润</h2>
-          <p className="exp-shares-desc">只看当前这一段和后面两段。{formatCnDate(PROFIT_SHARE_START_DATE)}起按实际利润六四分成，之前的利润全归章鱼哥、周诗懿为 0。合账明细在报销记账。</p>
-          <p className="exp-shares-desc-short">当前段与后两段。{formatCnDate(PROFIT_SHARE_START_DATE)}起六四分，之前周诗懿为 0。</p>
+          <p className="exp-shares-desc">只看当前这一段和后面两段。{formatCnDate(PROFIT_SHARE_START_DATE)}起按实际利润六四分成，之前的利润全归章鱼哥、周诗懿为 0，但{formatCnDate(EXPENSE_START_DATE)}起周诗懿垫付的报销照退给她。合账明细在报销记账。</p>
+          <p className="exp-shares-desc-short">当前段与后两段。{formatCnDate(PROFIT_SHARE_START_DATE)}起六四分，之前周诗懿为 0，垫付的报销照退。</p>
         </div>
         <button type="button" className="exp-shares-link" onClick={onOpen}>
           查看报销记账 →
@@ -58,6 +58,12 @@ export function DecadeShares({
                 <span>{row.partner.name} {shareLabel(row.partner.share)}</span>
                 {upcoming ? <span className="dash">—</span> : <b>¥{money(row.partner.amount)}</b>}
               </div>
+              {!row.sharesOpen && !upcoming && row.partner.advance > 0 && (
+                <div className="exp-share-row">
+                  <span>另退{row.partner.name}垫付的报销</span>
+                  <b>¥{money(row.partner.advance)}</b>
+                </div>
+              )}
               {!row.sharesOpen && <p className="exp-share-wait">{formatCnDate(PROFIT_SHARE_START_DATE)}前不分成</p>}
             </article>
           );

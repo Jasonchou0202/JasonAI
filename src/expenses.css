@@ -215,6 +215,14 @@
   font-weight: 500;
   color: var(--text-2);
 }
+.exp-hint { flex-wrap: wrap; }
+.exp-hint small {
+  flex-basis: 100%;
+  font-size: var(--fs-1, 12px);
+  font-weight: 500;
+  color: var(--text-2);
+  line-height: 1.45;
+}
 .exp-hint.upcoming {
   background: var(--surface-soft);
   color: var(--text-3);

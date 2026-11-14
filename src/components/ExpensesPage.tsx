@@ -1,7 +1,7 @@
 import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
 import type { Api } from "../domain/model";
 import type { DecadeSettlement, MonthCompare, Expense, MonthSettlement } from "../domain/expenses";
-import { EXPENSE_STATUS_LABEL, PROFIT_SHARE_BEFORE_HINT, PROFIT_SHARE_START_DATE, formatCnDate, receiptSummary, shareLabel, shiftMonth } from "../domain/expenses";
+import { EXPENSE_STATUS_LABEL, PROFIT_SHARE_BEFORE_HINT, PROFIT_SHARE_BEFORE_REFUND_HINT, PROFIT_SHARE_START_DATE, formatCnDate, receiptSummary, shareLabel, shiftMonth } from "../domain/expenses";
 import { ReceiptLinks } from "./ReceiptLinks";
 import { money } from "../domain/finance";
 import { today } from "../domain/dates";
@@ -76,18 +76,19 @@ function DecadeCard({ row, admin }: { row: DecadeSettlement; admin: boolean }) {
       <hr className="exp-hr" />
       <div className="exp-kv">
         <div className="exp-row"><span>本段垫付</span><span /></div>
-        <div className="exp-row"><span>{row.owner.name}垫付</span><b>{row.sharesOpen ? share(row.owner.advance) : "不计"}</b></div>
-        <div className="exp-row"><span>{row.partner.name}垫付</span><b>{row.sharesOpen ? share(row.partner.advance) : "不计"}</b></div>
+        <div className="exp-row"><span>{row.owner.name}垫付</span><b>{row.sharesOpen ? share(row.owner.advance) : upcoming ? share(0) : "不用退"}</b></div>
+        <div className="exp-row"><span>{row.sharesOpen ? `${row.partner.name}垫付` : `${row.partner.name}垫付的报销`}</span><b>{share(row.partner.advance)}</b></div>
       </div>
       {upcoming ? (
         <div className="exp-hint upcoming">本段未出账，不做结算</div>
-      ) : !row.sharesOpen ? (
-        <div className="exp-hint upcoming">{PROFIT_SHARE_BEFORE_HINT}</div>
       ) : admin ? (
         <div className="exp-hint">
           <em>结算提示</em>
           <span>{row.partner.name}应收回 ¥{money(row.partnerReceive)}</span>
+          {!row.sharesOpen && <small>{PROFIT_SHARE_BEFORE_REFUND_HINT}</small>}
         </div>
+      ) : !row.sharesOpen ? (
+        <div className="exp-hint upcoming">{PROFIT_SHARE_BEFORE_HINT}</div>
       ) : (
         <div className="exp-hint upcoming">成员只看自己的报销，结算以管理员账本为准</div>
       )}
@@ -186,7 +187,7 @@ export function ExpensesPage({
               <p>
                 <span>{row.owner.name} {shareLabel(row.owner.share)} {yenOrDash(row.owner.amount, upcoming)}</span>
                 <span>{row.partner.name} {shareLabel(row.partner.share)} {yenOrDash(row.partner.amount, upcoming)}</span>
-                {admin && row.sharesOpen && <span>{row.partner.name}应收回 {yenOrDash(row.partnerReceive, upcoming)}</span>}
+                {admin && (row.sharesOpen || !upcoming) && <span>{row.partner.name}应收回 {yenOrDash(row.partnerReceive, upcoming)}</span>}
               </p>
             </article>
           );
@@ -234,8 +235,8 @@ export function ExpensesPage({
             <div>{data.people.partner.name}应收回 ¥{money(data.posted.partnerReceive)}</div>
             <small>
               {data.posted.partner.share === 0
-                ? PROFIT_SHARE_BEFORE_HINT
-                : `垫付 ¥${money(data.posted.partner.advance)} + 四成利润 ¥${money(data.posted.partner.amount)}${data.posted.partner.share < 0 ? `（${SPLIT_FROM}起）` : ""}`}
+                ? `垫付的报销 ¥${money(data.posted.partner.advance)} + 分成 ¥0 · ${PROFIT_SHARE_BEFORE_REFUND_HINT}`
+                : `垫付 ¥${money(data.posted.partner.advance)} + 四成利润 ¥${money(data.posted.partner.amount)}${data.posted.partner.share < 0 ? `（${SPLIT_FROM}起；此前只退垫付的报销）` : ""}`}
               {data.decades.some((d) => d.phase === "upcoming") ? " · 未出账段未计入" : ""}
             </small>
           </div>

@@ -291,6 +291,44 @@ describe("起算日", () => {
     const row = settleDecade(decadeOf("2026-11-14"), TODAY, [], rows, PEOPLE, false);
     expect(row.expense).toBe(yuan(300));
   });
+  it("11-14 至 11-20：周诗懿垫付且已确认的报销退给她（照常扣利润），分成仍为 0；11-13 的和章鱼哥垫付的不退", () => {
+    const sales: Sale[] = [sale("s", "2026-11-15", 5000, 1000, "demo")];
+    const expenses: Expense[] = [
+      exp("zhou-early", "2026-11-13", 700, "demo-zhou", "reimbursed"),
+      exp("zhou-15", "2026-11-15", 260, "demo-zhou", "pending_reimburse"),
+      exp("zhou-pending", "2026-11-16", 90, "demo-zhou", "pending_confirm"),
+      exp("owner-17", "2026-11-17", 150, "demo", "reimbursed"),
+    ];
+    const row = settleDecade(decadeOf("2026-11-15"), "2026-11-22", sales, expenses, PEOPLE, false);
+    expect(row.sharesOpen).toBe(false);
+    expect(row.expense).toBe(yuan(410));
+    expect(row.profit).toBe(yuan(3590));
+    expect(row.owner.amount).toBe(yuan(3590));
+    expect(row.partner.share).toBe(0);
+    expect(row.partner.amount).toBe(0);
+    expect(row.partner.advance).toBe(yuan(260));
+    expect(row.owner.advance).toBe(0);
+    expect(row.partnerReceive).toBe(yuan(260));
+
+    const month = settleMonth("2026-11", "2026-11-22", sales, expenses, PEOPLE, false);
+    expect(month.decades[0].partnerReceive).toBe(0);
+    expect(month.posted.partner.advance).toBe(yuan(260));
+    expect(month.posted.partner.amount).toBe(0);
+    expect(month.posted.partnerReceive).toBe(yuan(260));
+  });
+  it("只有 11-13 周诗懿垫付的报销：不计入合账、不退", () => {
+    const row = settleDecade(
+      decadeOf("2026-11-13"),
+      "2026-11-22",
+      [],
+      [exp("zhou-13", "2026-11-13", 500, "demo-zhou", "reimbursed")],
+      PEOPLE,
+      false,
+    );
+    expect(row.expense).toBe(0);
+    expect(row.partner.advance).toBe(0);
+    expect(row.partnerReceive).toBe(0);
+  });
   it("11-20 不分；11-21 起按实际利润六四分成，只纳入当日及之后的销售、进货和报销", () => {
     const sales: Sale[] = [
       sale("before", "2026-11-20", 5000, 1000, "demo"),
@@ -355,16 +393,18 @@ describe("示例账本种子", () => {
     const people = { ownerUid: EXPENSE_DEMO_OWNER, ownerName: "章鱼哥", partnerUid: EXPENSE_DEMO_PARTNER, partnerName: "周诗懿" };
     const month = settleMonth("2026-11", "2026-11-14", sales, expenses, people, false);
     expect(month.posted.sharesOpen).toBe(false);
-    expect(month.posted.profit).toBe(1_920_000);
-    expect(month.posted.owner.amount).toBe(1_920_000);
+    // 示例里 11-14 周诗懿垫付 ¥180 已确认：照常扣利润，并退给她
+    expect(month.posted.profit).toBe(1_902_000);
+    expect(month.posted.owner.amount).toBe(1_902_000);
     expect(month.posted.partner.amount).toBe(0);
-    expect(month.posted.partnerReceive).toBe(0);
+    expect(month.posted.partnerReceive).toBe(18_000);
     expect(month.decades[0].sharesOpen).toBe(false);
     expect(month.decades[0].profit).toBe(800_000);
     expect(month.decades[0].partner.amount).toBe(0);
     expect(month.decades[1].sharesOpen).toBe(false);
-    expect(month.decades[1].profit).toBe(1_120_000);
-    expect(month.decades[1].owner.amount).toBe(1_120_000);
+    expect(month.decades[1].profit).toBe(1_102_000);
+    expect(month.decades[1].owner.amount).toBe(1_102_000);
+    expect(month.decades[1].partnerReceive).toBe(18_000);
     expect(month.decades[1].partner.amount).toBe(0);
     expect(month.decades[2].sharesOpen).toBe(true);
     expect(month.pendingCount).toBe(1);
@@ -381,9 +421,11 @@ describe("示例账本种子", () => {
     expect(on22.decades[2].owner.amount).toBe(540_000);
     expect(on22.decades[2].partner.amount).toBe(360_000);
     expect(on22.posted.sharesOpen).toBe(true);
-    // 合计：1–20 日 19,200 全归章鱼哥；21 日起 9,000 六四分
-    expect(on22.posted.profit).toBe(2_820_000);
-    expect(on22.posted.owner.amount).toBe(1_920_000 + 540_000);
+    // 合计：1–20 日 19,020 全归章鱼哥（已扣 11-14 周诗懿垫付 180）；21 日起 9,000 六四分
+    expect(on22.posted.profit).toBe(2_802_000);
+    expect(on22.posted.owner.amount).toBe(1_902_000 + 540_000);
+    expect(on22.posted.partnerReceive).toBe(on22.decades[1].partnerReceive + on22.decades[2].partnerReceive);
+    expect(on22.decades[1].partnerReceive).toBe(18_000);
     expect(on22.posted.partner.amount).toBe(360_000);
     expect(on22.posted.owner.share).toBe(-1);
   });

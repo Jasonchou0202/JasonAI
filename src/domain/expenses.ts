@@ -157,6 +157,8 @@ export function formatCnDate(date: string, withYear = false): string {
 export const PROFIT_SHARE_HINT = `${formatCnDate(PROFIT_SHARE_START_DATE)}起开始分成`;
 /** 起算前的段落：利润全归章鱼哥、周诗懿为 0 */
 export const PROFIT_SHARE_BEFORE_HINT = `${formatCnDate(PROFIT_SHARE_START_DATE)}前不分成，利润全归${OWNER_LABEL}，${PARTNER_LABEL}为 0`;
+/** 分成起算前的结算口径：利润全归章鱼哥，但报销起算日起周诗懿垫付的报销照退 */
+export const PROFIT_SHARE_BEFORE_REFUND_HINT = `${formatCnDate(PROFIT_SHARE_START_DATE)}前不分成，${PARTNER_LABEL}分成为 0；${formatCnDate(EXPENSE_START_DATE)}起${PARTNER_LABEL}垫付的报销照退给她`;
 export const EXPENSE_START_TOO_EARLY = `报销从 ${formatCnDate(EXPENSE_START_DATE, true)}起记，不能录入更早的日期`;
 
 export function countsAsExpense(date: string): boolean {
@@ -461,7 +463,8 @@ export function settleDecade(
     (e) => !e.deletedAt && inRange(e.date) && isBookedStatus(e.status) && countsAsExpense(e.date),
   );
   // 合账展示本段全部销售收入、进货和已起算的报销，实际利润照常计算；
-  // 分成起算日之前的利润全归章鱼哥（周诗懿为 0），起算日及之后的按六四分，垫付也只从起算日算起
+  // 分成起算日之前的利润全归章鱼哥（周诗懿为 0），起算日及之后的按六四分；
+  // 垫付：进货从分成起算日算起，报销从报销起算日算起（起算前周诗懿垫付的报销也退给她）
   const revenue = activeSales.reduce((n, s) => n + s.revenue, 0);
   const cost = activeSales.reduce((n, s) => n + s.cost, 0);
   const expense = booked.reduce((n, e) => n + e.amount, 0);
@@ -479,6 +482,12 @@ export function settleDecade(
   };
   for (const s of shareSales) add(salePayer(s, people.ownerUid, payerEnabled), s.cost);
   for (const e of shareExpenses) add(e.paidBy || people.ownerUid, e.amount);
+  // 报销起算日到分成起算日之间：利润虽全归章鱼哥，但周诗懿垫付的已确认报销照样退给她（报销照常从利润里扣）；
+  // 章鱼哥自己垫付的不用退给自己
+  for (const e of booked) {
+    if (!countsInProfitShare(e.date) && e.paidBy && e.paidBy === people.partnerUid && e.paidBy !== people.ownerUid)
+      add(e.paidBy, e.amount);
+  }
   const ownerAdvance = advances[people.ownerUid] || 0;
   const partnerAdvance = advances[people.partnerUid] || 0;
   return {

@@ -149,6 +149,7 @@ export function seedExpenseDemo(store: MemoryStore) {
     expense("e-1103", "2026-11-03", 200, "cat-phone", "话费", EXPENSE_DEMO_PARTNER, "reimbursed", true, "十一月手机话费", EXPENSE_DEMO_PARTNER),
     expense("e-1106", "2026-11-06", 600, "cat-software", "软件订阅", EXPENSE_DEMO_OWNER, "pending_reimburse", false, "Claude、ChatGPT 十一月订阅"),
     expense("e-1112", "2026-11-12", 400, "cat-transport", "交通", EXPENSE_DEMO_PARTNER, "pending_reimburse", true, "客户拜访交通", EXPENSE_DEMO_PARTNER),
+    expense("e-1114", "2026-11-14", 180, "cat-transport", "交通", EXPENSE_DEMO_PARTNER, "pending_reimburse", true, "客户拜访打车", EXPENSE_DEMO_PARTNER),
     expense("e-1116", "2026-11-16", 500, "cat-office", "办公", EXPENSE_DEMO_OWNER, "reimbursed", true, "办公用品"),
     expense("e-1118", "2026-11-18", 300, "cat-phone", "话费", EXPENSE_DEMO_OWNER, "reimbursed", true, "十一月话费"),
     expense("p-1113", "2026-11-13", 200, "cat-phone", "话费", EXPENSE_DEMO_PARTNER, "pending_confirm", true, "十一月手机话费", EXPENSE_DEMO_PARTNER),
