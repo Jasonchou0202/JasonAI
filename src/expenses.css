@@ -1,0 +1,968 @@
+/* 报销记账（只在 EXPENSES_ENABLED 开时出现） */
+.exp-cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 40px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: var(--accent);
+  color: #fff;
+  font: inherit;
+  font-size: var(--fs-2);
+  font-weight: 650;
+}
+.exp-cta:hover { background: var(--green-dark); }
+.sample-badge {
+  display: inline-flex;
+  align-items: center;
+  height: 32px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: var(--accent);
+  color: #fff;
+  font-size: var(--fs-1);
+  font-weight: 650;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+.exp-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+.exp-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+}
+.exp-heading h1 {
+  margin: 0;
+  font-size: var(--fs-title);
+  letter-spacing: -0.03em;
+}
+.exp-heading p {
+  margin: 8px 0 0;
+  max-width: 40rem;
+  color: var(--text-2);
+  font-size: var(--fs-2);
+  line-height: 1.6;
+}
+.exp-heading-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+.exp-month-nav {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 4px;
+  border-radius: var(--radius-pill);
+  background: var(--surface);
+  border: 1px solid var(--line);
+}
+.exp-month-nav button {
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--text-1);
+}
+.exp-month-nav button:hover,
+.exp-month-nav button:focus-visible {
+  background: var(--surface-muted);
+}
+.exp-month-nav strong {
+  min-width: 7.5rem;
+  text-align: center;
+  font-size: var(--fs-2);
+  font-weight: 650;
+}
+.exp-decades {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-4);
+}
+.exp-card {
+  background: var(--surface);
+  border-radius: 22px;
+  padding: 22px 22px 18px;
+  box-shadow: var(--shadow-card);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-height: 100%;
+}
+.exp-card.current {
+  box-shadow: 0 0 0 2px var(--coral), var(--shadow-card);
+}
+.exp-card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+.exp-card-head h2 {
+  margin: 0;
+  font-size: var(--fs-4);
+  letter-spacing: -0.03em;
+}
+.exp-card-head .exp-sub {
+  margin: 6px 0 0;
+  color: var(--text-3);
+  font-size: var(--fs-1);
+}
+.exp-phase {
+  display: inline-flex;
+  align-items: center;
+  height: 24px;
+  padding: 0 10px;
+  border-radius: var(--radius-pill);
+  font-size: 11px;
+  font-weight: 650;
+  background: var(--surface-muted);
+  color: var(--text-2);
+  white-space: nowrap;
+}
+.exp-phase.current {
+  background: var(--accent);
+  color: #fff;
+}
+.exp-phase.upcoming {
+  background: #f3ece3;
+  color: var(--text-3);
+}
+.exp-profit {
+  font-size: 2rem;
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  line-height: 1.1;
+  color: var(--text-1);
+}
+.exp-profit.muted {
+  color: var(--text-3);
+  font-size: var(--fs-4);
+  font-weight: 650;
+}
+.exp-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px 16px;
+}
+.exp-grid span,
+.exp-kv span {
+  display: block;
+  color: var(--text-3);
+  font-size: var(--fs-1);
+}
+.exp-grid b,
+.exp-kv b {
+  display: block;
+  margin-top: 2px;
+  font-size: var(--fs-3);
+  font-weight: 650;
+  letter-spacing: -0.02em;
+}
+.exp-grid small {
+  display: block;
+  margin-top: 1px;
+  color: var(--text-3);
+  font-size: 11px;
+}
+.exp-hr {
+  height: 1px;
+  background: var(--line-soft);
+  border: 0;
+  margin: 2px 0;
+}
+.exp-kv {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.exp-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  font-size: var(--fs-2);
+}
+.exp-row span { color: var(--text-2); }
+.exp-row b { font-weight: 650; }
+.exp-hint {
+  margin-top: auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: #faece7;
+  color: var(--coral-ink);
+  font-size: var(--fs-2);
+  font-weight: 650;
+}
+.exp-hint em {
+  font-style: normal;
+  font-weight: 500;
+  color: var(--text-2);
+}
+.exp-hint.upcoming {
+  background: var(--surface-soft);
+  color: var(--text-3);
+  font-weight: 500;
+}
+.exp-posted {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 28px;
+  padding: 18px 22px;
+  background: var(--surface);
+  border-radius: 22px;
+  box-shadow: var(--shadow-card);
+}
+.exp-posted-title {
+  min-width: 8rem;
+}
+.exp-posted-title b {
+  display: block;
+  font-size: var(--fs-3);
+}
+.exp-posted-title small {
+  color: var(--text-3);
+  font-size: var(--fs-1);
+}
+.exp-posted-metrics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 28px;
+  flex: 1;
+}
+.exp-posted-metrics span {
+  display: block;
+  color: var(--text-3);
+  font-size: var(--fs-1);
+}
+.exp-posted-metrics b {
+  display: block;
+  margin-top: 2px;
+  font-size: var(--fs-3);
+  letter-spacing: -0.02em;
+}
+.exp-posted-hint {
+  margin-left: auto;
+  padding: 10px 14px;
+  border-radius: 14px;
+  background: #faece7;
+  color: var(--coral-ink);
+  font-size: var(--fs-2);
+  font-weight: 650;
+  text-align: right;
+}
+.exp-posted-hint small {
+  display: block;
+  margin-top: 2px;
+  font-weight: 500;
+  color: var(--text-3);
+  font-size: 11px;
+}
+.exp-lower {
+  display: grid;
+  grid-template-columns: 1.15fr 0.85fr;
+  gap: var(--space-4);
+  align-items: start;
+}
+.exp-panel {
+  background: var(--surface);
+  border-radius: 22px;
+  padding: 22px;
+  box-shadow: var(--shadow-card);
+}
+.exp-panel h2 {
+  margin: 0;
+  font-size: var(--fs-4);
+  letter-spacing: -0.03em;
+}
+.exp-panel .exp-lead {
+  margin: 6px 0 0;
+  color: var(--text-3);
+  font-size: var(--fs-2);
+}
+.exp-legend {
+  display: flex;
+  gap: 16px;
+  margin: 16px 0 8px;
+  font-size: var(--fs-1);
+  color: var(--text-2);
+}
+.exp-legend i {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 99px;
+  margin-right: 6px;
+}
+.exp-legend .sales { background: #e9a178; }
+.exp-legend .actual { background: #d97757; }
+.exp-compare {
+  display: flex;
+  align-items: flex-end;
+  gap: 18px;
+  height: 220px;
+  padding: 8px 4px 0;
+  border-bottom: 1px solid var(--line);
+}
+.exp-compare-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  height: 100%;
+  gap: 8px;
+}
+.exp-compare-bars {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  flex: 1;
+}
+.exp-compare-bars span {
+  display: block;
+  width: 42%;
+  max-width: 28px;
+  border-radius: 8px 8px 2px 2px;
+  min-height: 4px;
+}
+.exp-compare-bars .sales { background: #e9a178; }
+.exp-compare-bars .actual { background: linear-gradient(180deg, #e9a178, #d97757); }
+.exp-compare-col small {
+  color: var(--text-3);
+  font-size: var(--fs-1);
+}
+.exp-compare-note {
+  margin: 14px 0 0;
+  color: var(--text-3);
+  font-size: var(--fs-1);
+  line-height: 1.5;
+}
+.exp-table-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: flex-start;
+  margin-bottom: 14px;
+}
+.exp-pending-tag {
+  display: inline-flex;
+  align-items: center;
+  height: 26px;
+  padding: 0 10px;
+  border-radius: var(--radius-pill);
+  background: #faece7;
+  color: var(--coral-ink);
+  font-size: 11px;
+  font-weight: 650;
+  white-space: nowrap;
+}
+.exp-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--fs-2);
+}
+.exp-table th {
+  text-align: left;
+  color: var(--text-3);
+  font-weight: 500;
+  font-size: var(--fs-1);
+  padding: 8px 6px;
+  border-bottom: 1px solid var(--line);
+}
+.exp-table td {
+  padding: 10px 6px;
+  border-bottom: 1px solid var(--line-soft);
+  color: var(--text-1);
+}
+.exp-table td.num { text-align: right; font-variant-numeric: tabular-nums; font-weight: 650; }
+.exp-status {
+  display: inline-flex;
+  align-items: center;
+  height: 22px;
+  padding: 0 8px;
+  border-radius: var(--radius-pill);
+  font-size: 11px;
+  font-weight: 650;
+  background: var(--surface-muted);
+  color: var(--text-2);
+}
+.exp-status.pending_confirm { background: #faece7; color: var(--coral-ink); }
+.exp-status.pending_reimburse { background: #faece7; color: var(--coral-ink); }
+.exp-status.reimbursed { background: var(--surface-muted); color: var(--text-2); }
+.exp-status.rejected { background: var(--danger-soft); color: var(--text-danger); }
+
+/* 记一笔报销 */
+.exp-form {
+  max-width: 560px;
+}
+.exp-form .panel { padding: 22px; border-radius: 22px; }
+.exp-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+.exp-fields label,
+.exp-block label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: var(--fs-2);
+  font-weight: 650;
+  color: var(--text-1);
+}
+.exp-fields label small,
+.exp-block label small,
+.exp-block .hint {
+  font-weight: 500;
+  color: var(--text-3);
+  margin-left: 6px;
+}
+.exp-fields input,
+.exp-block input,
+.exp-block textarea {
+  width: 100%;
+  height: 48px;
+  border: 1px solid transparent;
+  border-radius: 16px;
+  background: var(--surface-soft);
+  padding: 0 14px;
+  font: inherit;
+  color: var(--text-1);
+}
+.exp-block textarea { height: auto; min-height: 72px; padding: 12px 14px; resize: vertical; }
+.exp-fields input:focus,
+.exp-block input:focus,
+.exp-block textarea:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px #d9775740;
+  background: #fff;
+}
+.currency-input.exp-amount { display: flex; align-items: center; background: var(--surface-soft); border-radius: 16px; padding-left: 14px; }
+.currency-input.exp-amount span { color: var(--text-2); font-weight: 650; }
+.currency-input.exp-amount input { background: transparent; padding-left: 6px; }
+.exp-block { margin-top: 18px; }
+.exp-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.exp-chips button {
+  height: 36px;
+  padding: 0 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-pill);
+  background: var(--surface-soft);
+  color: var(--text-1);
+  font: inherit;
+  font-size: var(--fs-2);
+}
+.exp-chips button small {
+  display: block;
+  font-size: 10px;
+  color: var(--text-3);
+  line-height: 1.1;
+  margin-top: -2px;
+}
+.exp-chips button.tall { height: auto; padding: 6px 14px; line-height: 1.2; }
+.exp-chips button.selected {
+  background: #faece7;
+  border-color: var(--coral);
+  color: var(--coral-ink);
+  font-weight: 650;
+}
+.exp-chips button.add {
+  border-style: dashed;
+  color: var(--coral-ink);
+}
+.exp-add-cat {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+.exp-add-cat input { flex: 1; }
+.exp-pair {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+.exp-pair .exp-chips button { flex: 1; justify-content: center; }
+.exp-summary {
+  margin-top: 18px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: #faece7;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--text-2);
+  font-size: var(--fs-2);
+}
+.exp-summary b { color: var(--text-1); font-size: var(--fs-4); letter-spacing: -0.03em; }
+.exp-submit {
+  margin-top: 18px;
+  width: 100%;
+  height: 48px;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: var(--accent);
+  color: #fff;
+  font: inherit;
+  font-weight: 650;
+  font-size: var(--fs-3);
+}
+.exp-submit:disabled { opacity: 0.65; }
+
+/* 待确认 */
+.exp-pending-list { display: flex; flex-direction: column; gap: 14px; max-width: 560px; }
+.exp-pending-card {
+  background: var(--surface);
+  border-radius: 20px;
+  padding: 18px 18px 16px;
+  box-shadow: var(--shadow-card);
+}
+.exp-pending-card header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+.exp-pending-card header time { color: var(--text-3); font-size: var(--fs-2); }
+.exp-pending-card h2 {
+  margin: 0;
+  font-size: var(--fs-4);
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+}
+.exp-pending-meta { margin: 6px 0 0; color: var(--text-2); font-size: var(--fs-2); }
+.exp-pending-note { margin: 8px 0 0; color: var(--text-1); font-size: var(--fs-2); }
+.exp-pending-note b { font-weight: 650; margin-right: 6px; }
+.exp-pending-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 16px;
+}
+.exp-pending-actions button {
+  height: 42px;
+  border-radius: 14px;
+  font: inherit;
+  font-weight: 650;
+}
+.exp-pending-actions .ghost {
+  border: 0;
+  background: #faece7;
+  color: var(--text-1);
+}
+.exp-pending-actions .ok {
+  border: 0;
+  background: var(--accent);
+  color: #fff;
+}
+.exp-foot-note {
+  margin: 8px 0 0;
+  color: var(--text-3);
+  font-size: var(--fs-1);
+  text-align: center;
+}
+
+/* 看板三段应得 */
+.exp-shares {
+  margin: 8px 0 4px;
+}
+.exp-shares-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+.exp-shares-head h2 { margin: 0; font-size: var(--fs-4); letter-spacing: -0.03em; }
+.exp-shares-head p { margin: 6px 0 0; color: var(--text-3); font-size: var(--fs-2); }
+.exp-shares-link {
+  border: 0;
+  background: none;
+  color: var(--coral-ink);
+  font: inherit;
+  font-weight: 650;
+  font-size: var(--fs-2);
+  cursor: pointer;
+}
+.exp-share-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+.exp-share-card {
+  background: var(--surface);
+  border-radius: 18px;
+  padding: 16px 18px 14px;
+  box-shadow: var(--shadow-card);
+  min-height: 118px;
+}
+.exp-share-card.current { box-shadow: 0 0 0 2px var(--coral), var(--shadow-card); }
+.exp-share-card header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+  font-weight: 650;
+  font-size: var(--fs-2);
+}
+.exp-share-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-top: 8px;
+  font-size: var(--fs-2);
+  color: var(--text-2);
+}
+.exp-share-row b {
+  color: var(--text-1);
+  font-size: var(--fs-4);
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+}
+.exp-share-row .dash { color: var(--text-3); font-size: var(--fs-4); font-weight: 650; }
+
+/* 手机全貌：这些块默认隐藏，只在窄屏出现，宽屏布局不变 */
+.exp-shares-desc-short,
+.exp-lead-short,
+.exp-overview,
+.exp-detail-cards,
+.exp-date-display,
+.exp-details-jump {
+  display: none;
+}
+.exp-date-field {
+  position: relative;
+}
+
+@media (max-width: 1024px) {
+  .exp-decades, .exp-lower, .exp-share-grid { grid-template-columns: 1fr; }
+  .exp-posted-hint { margin-left: 0; width: 100%; text-align: left; }
+  .exp-compare { height: 200px; }
+}
+
+@media (max-width: 680px) {
+  .topbar:has(.sample-badge) .breadcrumb { display: none; }
+  .topbar:has(.sample-badge) { gap: 8px; }
+  .sample-badge { height: 26px; padding: 0 8px; }
+
+  /* 报销相关页：收起页脚「销售板块」折叠条，给首屏让位；不改销售页 dock */
+  .exp-flow .app-footer { display: none; }
+  .exp-flow .mobile-add { color: var(--text-3); }
+
+  /* A. 看板「十天应得利润」：标题与入口一行，说明改短，三张卡压紧 */
+  .dash-page:has(.exp-shares) .dash-hero {
+    padding-bottom: 16px;
+  }
+  .dash-page:has(.exp-shares) .dash-hero-number {
+    margin-top: 14px;
+  }
+  .dash-page:has(.exp-shares) .dash-hero-meta {
+    margin-top: 12px;
+  }
+  .dash-page:has(.exp-shares) .dash-hero-actions {
+    margin-top: 16px;
+    gap: 4px 16px;
+  }
+  .exp-shares { margin: 0 0 8px; }
+  .exp-shares-head {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: baseline;
+    gap: 2px 10px;
+    margin-bottom: 8px;
+  }
+  .exp-shares-head > div { display: contents; }
+  .exp-shares-head h2 {
+    font-size: var(--fs-3);
+    grid-column: 1;
+    grid-row: 1;
+  }
+  .exp-shares-desc { display: none; }
+  .exp-shares-desc-short {
+    display: block;
+    grid-column: 1 / -1;
+    grid-row: 2;
+    margin: 0;
+    color: var(--text-3);
+    font-size: var(--fs-1);
+    line-height: 1.45;
+  }
+  .exp-shares-link {
+    grid-column: 2;
+    grid-row: 1;
+    font-size: var(--fs-1);
+    white-space: nowrap;
+    padding: 0;
+    justify-self: end;
+  }
+  .exp-share-grid { gap: 8px; }
+  .exp-share-card {
+    padding: 10px 14px 8px;
+    min-height: 0;
+    border-radius: 14px;
+  }
+  .exp-share-card header {
+    margin-bottom: 4px;
+    font-size: var(--fs-2);
+  }
+  .exp-share-row {
+    margin-top: 2px;
+    font-size: var(--fs-2);
+  }
+  .exp-share-row b,
+  .exp-share-row .dash {
+    font-size: var(--fs-3);
+  }
+  .exp-phase {
+    height: 22px;
+    padding: 0 8px;
+  }
+
+  /* B. 报销记账：短标题 + 首屏三段概览 */
+  .exp-page { gap: 12px; }
+  .exp-heading { gap: 10px; }
+  .exp-heading h1 { font-size: var(--fs-4); letter-spacing: -0.03em; }
+  .exp-lead-full { display: none; }
+  .exp-lead-short {
+    display: block;
+    margin: 4px 0 0;
+    max-width: none;
+    color: var(--text-3);
+    font-size: var(--fs-1);
+    line-height: 1.45;
+  }
+  .exp-heading-actions {
+    width: 100%;
+    flex-wrap: nowrap;
+    gap: 8px;
+  }
+  .exp-heading-actions .exp-cta {
+    flex: 1 0 auto;
+    height: 36px;
+    padding: 0 12px;
+    font-size: var(--fs-1);
+    white-space: nowrap;
+  }
+  .exp-month-nav { margin-right: 0; flex: 1 1 auto; }
+  .exp-month-nav strong {
+    min-width: 0;
+    flex: 1;
+    font-size: var(--fs-2);
+  }
+  .exp-overview {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .exp-overview-row {
+    background: var(--surface);
+    border-radius: 14px;
+    padding: 10px 12px 8px;
+    box-shadow: var(--shadow-card);
+  }
+  .exp-overview-row.current {
+    box-shadow: 0 0 0 2px var(--coral), var(--shadow-card);
+  }
+  .exp-overview-row header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .exp-overview-row h3 {
+    margin: 0;
+    font-size: var(--fs-2);
+    font-weight: 650;
+    letter-spacing: -0.02em;
+    flex: 1;
+    min-width: 0;
+  }
+  .exp-overview-row header b {
+    margin-left: auto;
+    font-size: var(--fs-3);
+    letter-spacing: -0.03em;
+    font-variant-numeric: tabular-nums;
+    font-weight: 700;
+  }
+  .exp-overview-row header b.muted { color: var(--text-3); font-weight: 650; }
+  .exp-overview-row p {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2px 12px;
+    margin: 4px 0 0;
+    color: var(--text-2);
+    font-size: var(--fs-1);
+    line-height: 1.45;
+  }
+  .exp-overview-total {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 4px 12px;
+    padding: 10px 12px;
+    border-radius: 14px;
+    background: #faece7;
+    color: var(--coral-ink);
+    font-size: var(--fs-1);
+    font-weight: 650;
+  }
+  .exp-overview-total strong {
+    font-size: var(--fs-2);
+    color: var(--text-1);
+  }
+  .exp-details-jump {
+    display: block;
+    margin: 2px 0 0;
+    color: var(--text-3);
+    font-size: var(--fs-1);
+    text-align: center;
+  }
+  .exp-posted { display: none; }
+  .exp-card { padding: 16px 16px 14px; gap: 10px; }
+  .exp-profit { font-size: 1.6rem; }
+  .exp-detail-cards {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .exp-table { display: none; }
+  .exp-detail-card {
+    padding: 12px 0;
+    border-bottom: 1px solid var(--line-soft);
+  }
+  .exp-detail-card:last-child { border-bottom: 0; padding-bottom: 0; }
+  .exp-detail-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 10px;
+  }
+  .exp-detail-top strong { font-size: var(--fs-2); font-weight: 650; }
+  .exp-detail-top b {
+    font-size: var(--fs-3);
+    letter-spacing: -0.03em;
+    font-variant-numeric: tabular-nums;
+  }
+  .exp-detail-meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px 10px;
+    margin-top: 4px;
+    color: var(--text-3);
+    font-size: var(--fs-1);
+  }
+  .exp-detail-note {
+    margin: 6px 0 0;
+    color: var(--text-2);
+    font-size: var(--fs-1);
+  }
+  .exp-panel { padding: 16px; }
+
+  /* C. 记一笔报销：压紧间距，日期用 2026 / 11 / 14，关键字段尽量一屏内 */
+  .exp-form .page-heading { margin-bottom: 12px; }
+  .exp-form .page-heading h1 { font-size: var(--fs-4); }
+  .exp-form .exp-form-lead {
+    margin-top: 2px;
+    line-height: 1.45;
+  }
+  .exp-form .panel {
+    display: flex;
+    flex-direction: column;
+    padding: 14px 14px 16px;
+    border-radius: 18px;
+  }
+  .exp-form .exp-summary { order: 2; }
+  .exp-form .exp-submit { order: 3; }
+  .exp-form .exp-block:has(#exp-note) { order: 4; }
+  .exp-fields {
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .exp-fields input,
+  .exp-block input,
+  .currency-input.exp-amount {
+    height: 44px;
+  }
+  .exp-block { margin-top: 12px; }
+  .exp-block textarea { min-height: 52px; padding: 8px 12px; }
+  .exp-chips { gap: 6px; }
+  .exp-chips button {
+    height: 32px;
+    padding: 0 11px;
+    font-size: var(--fs-1);
+  }
+  .exp-chips button.tall { padding: 4px 11px; }
+  .exp-pair {
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .exp-summary { margin-top: 12px; padding: 10px 12px; }
+  .exp-submit { margin-top: 12px; height: 44px; }
+  .exp-date-display {
+    display: flex;
+    align-items: center;
+    position: absolute;
+    inset: 0 36px 0 0;
+    padding: 0 14px;
+    pointer-events: none;
+    color: var(--text-1);
+    font: inherit;
+    z-index: 1;
+  }
+  .exp-date-field input[type="date"] {
+    color: transparent;
+    -webkit-text-fill-color: transparent;
+  }
+  .exp-date-field input[type="date"]::-webkit-datetime-edit,
+  .exp-date-field input[type="date"]::-webkit-datetime-edit-fields-wrapper,
+  .exp-date-field input[type="date"]::-webkit-datetime-edit-text,
+  .exp-date-field input[type="date"]::-webkit-datetime-edit-month-field,
+  .exp-date-field input[type="date"]::-webkit-datetime-edit-day-field,
+  .exp-date-field input[type="date"]::-webkit-datetime-edit-year-field {
+    color: transparent;
+    -webkit-text-fill-color: transparent;
+  }
+  .exp-date-field input[type="date"]::-webkit-calendar-picker-indicator {
+    position: relative;
+    z-index: 2;
+    cursor: pointer;
+    opacity: 1;
+  }
+
+  /* D. 待确认：两条记录尽量完整露出 */
+  .exp-pending-page .page-heading { margin-bottom: 12px; }
+  .exp-pending-page .page-heading h1 { font-size: var(--fs-4); }
+  .exp-pending-page .page-heading .subtle { line-height: 1.45; }
+  .exp-pending-list { gap: 10px; }
+  .exp-pending-card { padding: 14px 14px 12px; border-radius: 16px; }
+  .exp-pending-actions { margin-top: 12px; }
+  .exp-pending-actions button { height: 40px; }
+  .exp-foot-note { margin-top: 8px; }
+}

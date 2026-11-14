@@ -15,6 +15,10 @@ export interface Me {
   ownerUid?: string;
   /** 成员头像（AVATARS_ENABLED 开时才有） */
   avatarsEnabled?: boolean;
+  /** 报销记账（EXPENSES_ENABLED 开时才有） */
+  expensesEnabled?: boolean;
+  /** 销售记录「谁付的」（SALES_PAYER_ENABLED 开时才有） */
+  salesPayerEnabled?: boolean;
 }
 export const LEGACY_ME: Me = {
   uid: "",

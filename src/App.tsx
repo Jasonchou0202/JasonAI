@@ -19,6 +19,7 @@ import {
   UserPlus,
   Users,
   ScrollText,
+  Wallet,
 } from "lucide-react";
 import { Dashboard } from "./components/Dashboard";
 import { SaleForm } from "./components/SaleForm";
@@ -34,13 +35,14 @@ import { Brand, ErrorNote, Loading, message } from "./components/ui";
 import { EdgeFade } from "./components/EdgeFade";
 import type { Filters, Sale } from "./domain/model";
 import { cloudApi, configured, session, login, logout } from "./lib/cloud";
-import { createDemo, demoRole, DEMO_ROLE_KEY } from "./lib/demo";
+import { createDemo, demoRole, DEMO_ROLE_KEY, demoExpensePreview } from "./lib/demo";
 import { LEGACY_ME, ME_AUTO_RETRY_MS, TeamProvider, visibleMe, whoAmI, type Me } from "./lib/team-ui";
 import { DirectoryProvider } from "./lib/members-ui";
 import { AvatarEditor, MeBadge } from "./components/MemberProfile";
 import { contentCloudApi } from "./lib/content-api";
 import { createContentDemo } from "./lib/content-demo";
 import { routeParams, readFilters, filterQuery } from "./lib/routes";
+import "./expenses.css";
 // 日程、客户详情、设置按需加载；进入工作台后空闲时预取，断网时也能打开
 const loadSettings = () => import("./components/Settings");
 const loadCalendar = () => import("./components/Calendar");
@@ -48,6 +50,9 @@ const loadCustomer = () => import("./components/CustomerDetails");
 const loadContentEntry = () => import("./components/ContentEntry");
 const loadTeam = () => import("./components/Members");
 const loadAudit = () => import("./components/AuditLog");
+const loadExpenses = () => import("./components/ExpensesPage");
+const loadExpenseForm = () => import("./components/ExpenseForm");
+const loadExpensePending = () => import("./components/ExpensePending");
 const Members = lazy(() => loadTeam().then((m) => ({ default: m.Members })));
 const MemberGate = lazy(() => loadTeam().then((m) => ({ default: m.MemberGate })));
 const AuditLog = lazy(() => loadAudit().then((m) => ({ default: m.AuditLog })));
@@ -63,6 +68,15 @@ const CustomerDetails = lazy(() =>
 const ContentEntry = lazy(() =>
   loadContentEntry().then((m) => ({ default: m.ContentEntry })),
 );
+const ExpensesPage = lazy(() =>
+  loadExpenses().then((m) => ({ default: m.ExpensesPage })),
+);
+const ExpenseForm = lazy(() =>
+  loadExpenseForm().then((m) => ({ default: m.ExpenseForm })),
+);
+const ExpensePending = lazy(() =>
+  loadExpensePending().then((m) => ({ default: m.ExpensePending })),
+);
 type Page =
   | "dashboard"
   | "entry"
@@ -73,9 +87,12 @@ type Page =
   | "content-entry"
   | "members"
   | "audit"
-  | "my-log";
+  | "my-log"
+  | "expenses"
+  | "expense-entry"
+  | "expense-pending";
 /** 成员不能进的页面（云端同样拒绝，这里只是不显示） */
-const ADMIN_PAGES: Page[] = ["settings", "content-entry", "members", "audit"];
+const ADMIN_PAGES: Page[] = ["settings", "content-entry", "members", "audit", "expense-pending"];
 const BOARD = import.meta.env.BASE_URL + "board-e160b241a233/";
 const CONTENT_LINKS = [
   [BOARD, "内容闭环看板"],
@@ -85,7 +102,11 @@ const CONTENT_LINKS = [
 ] as const;
 function salesCurrent(page: Page, id: Page) {
   if (id === "calendar") return page === "calendar" || page === "customer";
+  if (id === "expenses") return page === "expenses" || page === "expense-entry" || page === "expense-pending";
   return page === id;
+}
+function isExpenseFlow(page: Page) {
+  return page === "expenses" || page === "expense-entry" || page === "expense-pending";
 }
 function SalesLinks({
   page,
@@ -100,6 +121,7 @@ function SalesLinks({
   const items: { id: Page; label: string; icon: typeof Plus }[] = [
     { id: "dashboard", label: "生意看板", icon: LayoutDashboard },
     { id: "entry", label: "记一笔", icon: Plus },
+    ...(me.expensesEnabled ? [{ id: "expenses" as Page, label: "报销记账", icon: Wallet }] : []),
     { id: "details", label: "销售明细", icon: ReceiptText },
     { id: "calendar", label: "客户日程", icon: CalendarDays },
     ...(admin ? [{ id: "settings" as Page, label: "账本设置", icon: SettingsIcon }] : []),
@@ -214,6 +236,9 @@ function readRoute(): Page {
     "members",
     "audit",
     "my-log",
+    "expenses",
+    "expense-entry",
+    "expense-pending",
   ].includes(p)
     ? (p as Page)
     : "dashboard";
@@ -272,12 +297,18 @@ export default function App() {
               location.hash = pending;
             sessionStorage.removeItem("zhangyuge-return-route");
           }
-        } else if (alive)
-          setMode(
-            sessionStorage.getItem("zhangyuge-demo") === "true"
-              ? "demo"
-              : "login",
-          );
+        } else if (alive) {
+          const preview = new URLSearchParams(location.search).get("expense-preview");
+          if (preview && preview !== "0") {
+            sessionStorage.setItem("zhangyuge-demo", "true");
+            setMode("demo");
+          } else
+            setMode(
+              sessionStorage.getItem("zhangyuge-demo") === "true"
+                ? "demo"
+                : "login",
+            );
+        }
       })
       .catch((e) => {
         if (alive) {
@@ -381,11 +412,12 @@ export default function App() {
     else if (
       meLoad === "ready" &&
       (((page === "audit" || page === "my-log") && !me.auditEnabled) ||
-        (page === "members" && !me.membersEnabled))
+        (page === "members" && !me.membersEnabled) ||
+        ((page === "expenses" || page === "expense-entry" || page === "expense-pending") && !me.expensesEnabled))
     )
       go("dashboard");
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [me.role, me.auditEnabled, me.membersEnabled, meLoad, page]);
+  }, [me.role, me.auditEnabled, me.membersEnabled, me.expensesEnabled, meLoad, page]);
   const contentApi = useMemo(
     () => (mode === "demo" ? createContentDemo() : contentCloudApi),
     [mode],
@@ -611,7 +643,7 @@ export default function App() {
     );
   return (
     <DirectoryProvider api={api} me={knownMe}>
-    <div className="app-shell">
+    <div className={`app-shell${isExpenseFlow(page) ? " exp-flow" : ""}`}>
       <button
         type="button"
         className="skip-link"
@@ -685,6 +717,9 @@ export default function App() {
                   members: "成员管理",
                   audit: "操作日志",
                   "my-log": "我的操作记录",
+                  expenses: "报销记账",
+                  "expense-entry": "记一笔报销",
+                  "expense-pending": "待确认",
                 }[page]
               }
             </strong>
@@ -725,9 +760,12 @@ export default function App() {
               fallback={!identityReady ? "…" : knownMe.role === "member" ? (knownMe.name || "成").slice(0, 1) : "章"}
               onOpen={() => setAvatarFor(knownMe.uid)}
             />
+            {mode === "demo" && demoExpensePreview() && (
+              <span className="sample-badge">示意 · 示例数据</span>
+            )}
           </div>
         </header>
-        {mode === "demo" && (
+        {mode === "demo" && !demoExpensePreview() && (
           <aside className="demo-banner" aria-label="演示提示">
             <Sparkles size={14} aria-hidden="true" />
             <span className="demo-text">
@@ -795,6 +833,8 @@ export default function App() {
                   onNew={newSale}
                   onEdit={editSale}
                   onCustomer={customer}
+                  expensesEnabled={!!knownMe.expensesEnabled && knownMe.role === "admin"}
+                  onOpenExpenses={() => go("expenses")}
                   onFilter={(f) => {
                     setFilters(f);
                     go("details", filterQuery(f));
@@ -899,6 +939,37 @@ export default function App() {
               {page === "members" && meLoad === "ready" && me.role === "admin" && me.membersEnabled && <Members api={api} />}
               {page === "audit" && meLoad === "ready" && me.role === "admin" && me.auditEnabled && <AuditLog api={api} mode="admin" />}
               {page === "my-log" && meLoad === "ready" && me.auditEnabled && <AuditLog api={api} mode="self" />}
+              {page === "expenses" && meLoad === "pending" && <Loading />}
+              {page === "expenses" && identityReady && knownMe.expensesEnabled && (
+                <ExpensesPage
+                  api={api}
+                  version={version}
+                  month={routeParams().get("month") || new Intl.DateTimeFormat("sv-SE", { timeZone: "Asia/Shanghai", year: "numeric", month: "2-digit" }).format(new Date())}
+                  onMonth={(month) => go("expenses", "month=" + month)}
+                  onNew={() => go("expense-entry")}
+                  onPending={() => go("expense-pending")}
+                />
+              )}
+              {page === "expense-entry" && meLoad === "pending" && <Loading />}
+              {page === "expense-entry" && identityReady && knownMe.expensesEnabled && (
+                <ExpenseForm
+                  api={api}
+                  onSaved={(text) => {
+                    changed(text);
+                    go("expenses");
+                  }}
+                  onBack={() => go("expenses")}
+                />
+              )}
+              {page === "expense-pending" && meLoad === "pending" && <Loading />}
+              {page === "expense-pending" && identityReady && knownMe.role === "admin" && knownMe.expensesEnabled && (
+                <ExpensePending
+                  api={api}
+                  version={version}
+                  onBack={() => go("expenses")}
+                  onChanged={(text) => changed(text)}
+                />
+              )}
             </Suspense>
           </UpdateBoundary>
           </InsightsProvider>
@@ -943,8 +1014,9 @@ export default function App() {
           </button>
           <button
             type="button"
-            className={`mobile-add ${page === "entry" ? "active" : ""}`}
+            className={`mobile-add${page === "entry" ? " active" : ""}`}
             onClick={newSale}
+            aria-current={page === "entry" ? "page" : undefined}
           >
             <span>
               <Plus size={23} />

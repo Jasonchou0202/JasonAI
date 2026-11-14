@@ -20,6 +20,10 @@ export interface TeamConfig {
   avatarsEnabled?: boolean;
   /** sales 加删除人、修改人（SALES_ACTOR_FIELDS_ENABLED=1；改冻结集合 sales，单独解冻） */
   salesActorFieldsEnabled?: boolean;
+  /** 报销记账（EXPENSES_ENABLED=1）；缺省关：侧栏、看板三段、写入都不出现 */
+  expensesEnabled?: boolean;
+  /** 销售记录「谁付的」（SALES_PAYER_ENABLED=1；改冻结集合 sales，单独解冻，不回填历史） */
+  salesPayerEnabled?: boolean;
   /** 头像用的云存储（云函数入口传 CloudBase 云存储，测试/演示传内存版） */
   avatarStorage?: AvatarStorage;
   /** 云函数告警日志（不写库） */
@@ -32,6 +36,8 @@ export function teamConfigFromEnv(env: Record<string, string | undefined>): Team
     ...(env.SCHEDULE_OWNER_ENABLED === "1" ? { scheduleOwnerEnabled: true } : {}),
     ...(env.AVATARS_ENABLED === "1" ? { avatarsEnabled: true } : {}),
     ...(env.SALES_ACTOR_FIELDS_ENABLED === "1" ? { salesActorFieldsEnabled: true } : {}),
+    ...(env.EXPENSES_ENABLED === "1" ? { expensesEnabled: true } : {}),
+    ...(env.SALES_PAYER_ENABLED === "1" ? { salesPayerEnabled: true } : {}),
   };
 }
 /** 日程归属真正生效：两个开关都开 */
@@ -40,6 +46,10 @@ export const ownerOn = (t: TeamConfig) => !!(t.membersEnabled && t.scheduleOwner
 export const avatarsOn = (t: TeamConfig) => ownerOn(t) && !!t.avatarsEnabled && !!t.avatarStorage;
 /** sales 新字段真正生效 */
 export const salesActorOn = (t: TeamConfig) => !!(t.membersEnabled && t.salesActorFieldsEnabled);
+/** 报销记账开关 */
+export const expensesOn = (t: TeamConfig) => !!t.expensesEnabled;
+/** 进货「谁付的」开关（不依赖团队开关，与报销一并在合账里用） */
+export const salesPayerOn = (t: TeamConfig) => !!t.salesPayerEnabled;
 export type Role = "admin" | "member";
 export type MemberStatus = "pending" | "active" | "disabled";
 export interface Member {
@@ -98,6 +108,18 @@ export const MEMBER_ACTIONS = new Set([
 export const OWNER_MEMBER_ACTIONS = new Set(["tasks.claim", "members.directory"]);
 /** 头像开关开后，成员额外可用的 action（云端强制只能改自己的） */
 export const AVATAR_MEMBER_ACTIONS = new Set(["members.avatar.set", "members.avatar.clear"]);
+/** 报销开关开后，成员额外可用的 action（只能动自己的记录） */
+export const EXPENSE_MEMBER_ACTIONS = new Set([
+  "expenses.meta",
+  "expenses.list",
+  "expenses.get",
+  "expenses.create",
+  "expenses.update",
+  "expenses.delete",
+  "expenses.categories.create",
+  "expenses.settlement",
+  "expenses.shares",
+]);
 /** Jason 的头像等资料：members 里的系统文档（_ 开头，不算成员） */
 export const OWNER_PROFILE_ID = "_owner_profile";
 /** 分色计数器（系统文档，_ 开头不算成员）：下一个入队的人用第 next 个颜色 */
@@ -108,10 +130,12 @@ interface ColorCounter {
   updatedAt: string;
 }
 /** 成员只能对自己录入的记录做的操作 → 对应集合 */
-export const OWN_ONLY: Record<string, "sales" | "tasks"> = {
+export const OWN_ONLY: Record<string, "sales" | "tasks" | "expenses"> = {
   "sales.update": "sales",
   "sales.delete": "sales",
   "tasks.delete": "tasks",
+  "expenses.update": "expenses",
+  "expenses.delete": "expenses",
 };
 /** 未入队/待批准/已停用的人也能调用的 action（查自己状态、兑换邀请码） */
 const GATE_ACTIONS = new Set(["members.me", "members.redeem"]);
@@ -153,7 +177,8 @@ export async function authorize(
   const allowed =
     MEMBER_ACTIONS.has(action) ||
     (ownerOn(team) && OWNER_MEMBER_ACTIONS.has(action)) ||
-    (avatarsOn(team) && AVATAR_MEMBER_ACTIONS.has(action));
+    (avatarsOn(team) && AVATAR_MEMBER_ACTIONS.has(action)) ||
+    (expensesOn(team) && EXPENSE_MEMBER_ACTIONS.has(action));
   if (!allowed)
     throw new DeniedError("ADMIN_ONLY", "这个操作只有管理员可以进行", actor);
   // 回收站只给管理员：成员任何 action 只要带了 deleted（sales.list / tasks.list / export 等）一律拒绝
@@ -180,7 +205,7 @@ export async function authorize(
  * 只用于成员的读操作；写操作和管理员仍用原存储。
  */
 export function hideDeleted(store: Store): Store {
-  const trash = (c: string) => c === "sales" || c === "tasks";
+  const trash = (c: string) => c === "sales" || c === "tasks" || c === "expenses";
   const alive = <T>(c: string, row: T | null): T | null =>
     trash(c) && row && (row as { deletedAt?: unknown }).deletedAt ? null : row;
   return {
@@ -264,6 +289,8 @@ export async function executeTeam(
       out.ownerUid = ctx.ownerUid;
       if (avatarsOn(team)) out.avatarsEnabled = true;
     }
+    if (expensesOn(team)) out.expensesEnabled = true;
+    if (salesPayerOn(team)) out.salesPayerEnabled = true;
     return { data: out };
   }
   if (action === "audit.list") {

@@ -103,6 +103,8 @@ export function summarize(kind: string | undefined, value: unknown): Record<stri
     }
     case "invites":
       return pick(row, ["id", "name", "expiresAt", "usedBy", "revokedAt"]);
+    case "expenses":
+      return pick(row, ["date", "amount", "categoryName", "paidBy", "hasInvoice", "status", "revision", "deletedAt", "createdBy", "confirmedBy"], ["note"]);
     default: {
       const out: Record<string, unknown> = {};
       for (const [k, v] of Object.entries(row).slice(0, 12))

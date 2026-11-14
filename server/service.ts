@@ -59,7 +59,8 @@ export type Collection =
   | "members"
   | "invites"
   | "audit_logs"
-  | "redeem_attempts";
+  | "redeem_attempts"
+  | "expenses";
 export interface Transaction {
   get<T>(collection: Collection, id: string): Promise<T | null>;
   put<T>(collection: Collection, id: string, value: T): Promise<void>;
@@ -82,8 +83,9 @@ export interface Context {
    * 冻结集合的新字段开关（只由团队入口按环境变量写入；缺省全关，与原来完全一致）：
    * - tasks：SCHEDULE_OWNER_ENABLED=1 → 新建写 ownerUid，修改类操作写 updatedBy；
    * - sales：SALES_ACTOR_FIELDS_ENABLED=1 → 修改/删除/恢复写 updatedBy，删除写 deletedBy。
+   * - sales.paidBy：SALES_PAYER_ENABLED=1 → 新建/修改可写「谁付的」；关着不写、不回填。
    */
-  actorFields?: { tasks?: boolean; sales?: boolean };
+  actorFields?: { tasks?: boolean; sales?: boolean; salesPayer?: boolean };
 }
 interface Ledger {
   hasSales: boolean;
@@ -108,6 +110,12 @@ function recordId(id: unknown): string {
   if (typeof id !== "string" || !id || id.length > 128 || !/^[\w-]+$/.test(id))
     throw new Error("记录编号无效");
   return id;
+}
+function optionalPayer(value: unknown): string | undefined {
+  if (value === undefined || value === null || value === "") return undefined;
+  if (typeof value !== "string" || value.length > 128 || !/^[\w-]+$/.test(value))
+    throw new Error("付款人无效");
+  return value;
 }
 function filters(value: Record<string, unknown>): Filters {
   for (const key of ["from", "to", "search", "productId"])
@@ -906,6 +914,10 @@ export async function execute(
             revision: 1,
             ...(ctx.actorUid ? { createdBy: ctx.actorUid } : {}),
           };
+        if (ctx.actorFields?.salesPayer) {
+          const paidBy = optionalPayer((p.sale as { paidBy?: unknown } | undefined)?.paidBy) || sale.createdBy || ctx.actorUid;
+          if (paidBy) sale.paidBy = paidBy;
+        }
         await tx.put("batches", "_ledger", { ...ledger, hasSales: true });
         await tx.put("sales", id, sale);
         await ensureCustomer(
@@ -958,6 +970,11 @@ export async function execute(
           row.updatedBy = ctx.actorUid;
           if (action === "sales.delete") row.deletedBy = ctx.actorUid;
           if (action === "sales.restore") delete row.deletedBy;
+        }
+        // 进货「谁付的」：只在 SALES_PAYER_ENABLED 开且这次请求带了 paidBy 时写，不回填历史
+        if (action === "sales.update" && ctx.actorFields?.salesPayer) {
+          const paidBy = optionalPayer((p.sale as { paidBy?: unknown } | undefined)?.paidBy);
+          if (paidBy) row.paidBy = paidBy;
         }
         await tx.put("sales", id, row);
         await ensureCustomer(

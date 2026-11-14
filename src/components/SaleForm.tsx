@@ -28,6 +28,8 @@ import { useInsights } from "../lib/insights-ui";
 import { beijingToUTC, customerRoot } from "../lib/customer-ui";
 import { useQuery, ErrorNote, message } from "./ui";
 import { groupProducts } from "../domain/catalog";
+import type { ExpenseMeta } from "../domain/expenses";
+import "../expenses.css";
 import { ProductEditor } from "./ProductEditor";
 import { ZhDateHint } from "../lib/members-ui";
 type Draft = {
@@ -49,6 +51,8 @@ type Draft = {
   scheduleRequestId?: string;
   /** 顺手建日程时勾选的有效动作（按勾选先后），每行「【色块】动作」 */
   scheduleActions?: { id: string; line: string }[];
+  /** 进货付款人（仅 SALES_PAYER_ENABLED 开时使用） */
+  paidBy?: string;
 };
 /** 销售已存、日程还没建成时，留着重试（同一个 requestId，不会重复建） */
 interface PendingSchedule {
@@ -122,6 +126,7 @@ export function SaleForm({
   const [productVersion, setProductVersion] = useState(0);
   const [addingProduct, setAddingProduct] = useState(false);
   const team = useTeam();
+  const payerOn = !!(team.me.salesPayerEnabled && team.me.expensesEnabled);
   const { data: products, error: productError } = useQuery<Product[]>(
     api,
     "products.list",
@@ -292,7 +297,7 @@ export function SaleForm({
     setBusy(true);
     setError("");
     try {
-      const sale: SaleInput = {
+      const sale: SaleInput & { paidBy?: string } = {
         productId: form.productId,
         productName: form.productName,
         customer: form.customer,
@@ -300,6 +305,7 @@ export function SaleForm({
         revenue: parseYuan(form.revenue, edit?.revenue),
         cost: parseYuan(form.cost, edit?.cost),
         note: form.note,
+        ...(payerOn && form.paidBy ? { paidBy: form.paidBy } : {}),
       };
       // 日程先在本地校验，不合格就不存销售，免得只存了一半
       const plan: PendingSchedule | undefined =
@@ -570,6 +576,13 @@ export function SaleForm({
                 ¥ {profit === null ? "—" : money(profit)}
               </strong>
             </div>
+            {payerOn && (
+              <SalePayerField
+                api={api}
+                value={form.paidBy || edit?.paidBy || edit?.createdBy || team.me.uid}
+                onChange={(uid) => change("paidBy", uid)}
+              />
+            )}
           </section>
           <section>
             <label htmlFor="note">
@@ -769,5 +782,32 @@ function ComboArrow({ target, label }: { target: string; label: string }) {
     >
       <ChevronDown size={16} aria-hidden="true" />
     </button>
+  );
+}
+
+function SalePayerField({
+  api,
+  value,
+  onChange,
+}: {
+  api: Api;
+  value?: string;
+  onChange: (uid: string) => void;
+}) {
+  const { data, error } = useQuery<ExpenseMeta>(api, "expenses.meta", {}, 0);
+  if (error || !data) return null;
+  const current = value || data.owner.uid;
+  return (
+    <div className="exp-block" style={{ marginTop: 16 }}>
+      <label>谁付的进货</label>
+      <div className="exp-chips exp-pair" role="group" aria-label="谁付的进货">
+        <button type="button" className={current === data.owner.uid ? "selected" : ""} aria-pressed={current === data.owner.uid} onClick={() => onChange(data.owner.uid)}>
+          {data.owner.name}
+        </button>
+        <button type="button" className={current === data.partner.uid ? "selected" : ""} aria-pressed={current === data.partner.uid} onClick={() => onChange(data.partner.uid)}>
+          {data.partner.name}
+        </button>
+      </div>
+    </div>
   );
 }

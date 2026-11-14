@@ -27,12 +27,15 @@ import { lastMonthSamePeriod, samePeriodGrowth } from "./growth";
 import heroArt800 from "../assets/hero-octopus-800.webp";
 import heroArt1200 from "../assets/hero-octopus-1200.webp";
 import "../dashboard.css";
+import { DecadeShares } from "./DecadeShares";
 export function Dashboard({
   api,
   version,
   onFilter,
   onNew,
   onCustomer,
+  expensesEnabled = false,
+  onOpenExpenses,
 }: {
   api: Api;
   version: number;
@@ -40,6 +43,8 @@ export function Dashboard({
   onNew: () => void;
   onEdit: (r: Sale) => void;
   onCustomer: (id: string, month: string) => void;
+  expensesEnabled?: boolean;
+  onOpenExpenses?: () => void;
 }) {
   const { data, error, loading } = useQuery<Data>(
     api,
@@ -142,6 +147,9 @@ export function Dashboard({
           </div>
         </div>
       </section>
+      {expensesEnabled && onOpenExpenses && (
+        <DecadeShares api={api} version={version} onOpen={onOpenExpenses} />
+      )}
       <section className="dash-stats" aria-label="本月账本">
         <div>
           <span>本月销售额</span>

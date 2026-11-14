@@ -8,6 +8,7 @@ import { ApiError } from "./team-me";
 import { MemoryAvatarStorage } from "../../server/avatar";
 import { customerId } from "../domain/customers";
 import type { CustomerTask } from "../domain/model";
+import { seedExpenseDemo, expenseDemoTeam, EXPENSE_DEMO_PARTNER } from "./expense-demo";
 export async function sha256(value: string | ArrayBuffer): Promise<string> {
   const buffer =
     typeof value === "string" ? new TextEncoder().encode(value) : value;
@@ -32,6 +33,24 @@ export function demoOwnerPreview(): boolean {
   if (fromUrl === "1") sessionStorage.setItem(DEMO_OWNER_KEY, "1");
   if (fromUrl === "0") sessionStorage.removeItem(DEMO_OWNER_KEY);
   return sessionStorage.getItem(DEMO_OWNER_KEY) === "1";
+}
+/** 演示「报销记账预览」：…/?expense-preview=1（或 admin / member），独立示例账本，开关只在这份预览里打开 */
+export const DEMO_EXPENSE_KEY = "zhangyuge-demo-expense";
+export const EXPENSE_STORE_KEY = "zhangyuge-demo-expense-v1";
+const EXPENSE_SEED = 1;
+export function demoExpensePreview(): boolean {
+  const fromUrl = new URLSearchParams(location.search).get("expense-preview");
+  if (fromUrl === "1" || fromUrl === "admin" || fromUrl === "member") {
+    sessionStorage.setItem(DEMO_EXPENSE_KEY, "1");
+    sessionStorage.setItem(DEMO_ROLE_KEY, fromUrl === "member" ? "member" : "admin");
+  }
+  if (fromUrl === "0") sessionStorage.removeItem(DEMO_EXPENSE_KEY);
+  if (fromUrl === "reset") {
+    sessionStorage.setItem(DEMO_EXPENSE_KEY, "1");
+    if (!sessionStorage.getItem(DEMO_ROLE_KEY)) sessionStorage.setItem(DEMO_ROLE_KEY, "admin");
+    localStorage.removeItem(EXPENSE_STORE_KEY);
+  }
+  return sessionStorage.getItem(DEMO_EXPENSE_KEY) === "1";
 }
 const AVATAR_KEY = "zhangyuge-demo-avatars";
 /** 演示里的「云存储」：图片存在本机 localStorage，临时链接就是 data: 地址 */
@@ -75,17 +94,30 @@ const DEMO_PEOPLE = [
   { uid: "demo-bai", name: "白小舟", color: "c7", at: "2026-11-07T00:00:00.000Z" },
 ] as const;
 export function createDemo(role: "admin" | "member" | null = null): Api {
-  const ownerPreview = role !== null && demoOwnerPreview();
+  const expensePreview = demoExpensePreview();
+  const roleNow: "admin" | "member" | null = expensePreview ? (role ?? demoRole() ?? "admin") : role;
+  const ownerPreview = roleNow !== null && demoOwnerPreview() && !expensePreview;
   const avatarStorage = ownerPreview ? new DemoAvatarStorage() : undefined;
   const store = new MemoryStore();
-  const saved = localStorage.getItem(key);
+  const storeKey = expensePreview ? EXPENSE_STORE_KEY : key;
+  const saved = localStorage.getItem(storeKey);
   if (saved) {
     try {
-      store.data = { ...store.data, ...JSON.parse(saved) };
+      const parsed = JSON.parse(saved);
+      if (expensePreview) {
+        if (parsed && parsed.seed === EXPENSE_SEED && parsed.data) store.data = { ...store.data, ...parsed.data };
+        else seedExpense();
+      } else store.data = { ...store.data, ...parsed };
     } catch {
-      seed();
+      if (expensePreview) seedExpense();
+      else seed();
     }
-  } else seed();
+  } else if (expensePreview) seedExpense();
+  else seed();
+  function seedExpense() {
+    seedExpenseDemo(store);
+    localStorage.setItem(storeKey, JSON.stringify({ seed: EXPENSE_SEED, data: store.data }));
+  }
   function seed() {
     const names = [
       "Plus 会员",
@@ -221,25 +253,29 @@ export function createDemo(role: "admin" | "member" | null = null): Api {
       }
       if (action.startsWith("import.") || action === "backup.restore")
         throw new Error("演示账本不接收真实数据，请连接云端后导入");
-      if (role) {
-        if (!store.data.members["demo-member"])
+      if (roleNow) {
+        if (!expensePreview && !store.data.members["demo-member"])
           store.data.members["demo-member"] = {
             uid: "demo-member", name: "演示成员", status: "active", inviteId: "demo",
             createdAt: "2026-11-12T00:00:00.000Z", updatedAt: "2026-11-12T00:00:00.000Z", revision: 1,
           };
         if (ownerPreview && !store.data.members["demo-song"]) await seedOwnerPreview();
+        const uid = roleNow === "member" ? (expensePreview ? EXPENSE_DEMO_PARTNER : "demo-member") : "demo";
+        const team = expensePreview
+          ? { ...expenseDemoTeam() }
+          : ownerPreview
+            ? { membersEnabled: true, auditEnabled: true, scheduleOwnerEnabled: true, avatarsEnabled: true, salesActorFieldsEnabled: true, avatarStorage }
+            : { membersEnabled: true, auditEnabled: true };
         const r = (await handle(
           () => store,
-          { uid: role === "member" ? "demo-member" : "demo", ownerUid: "demo", hash: sha256 },
+          { uid, ownerUid: "demo", hash: sha256 },
           { action, payload },
           undefined,
           undefined,
-          ownerPreview
-            ? { membersEnabled: true, auditEnabled: true, scheduleOwnerEnabled: true, avatarsEnabled: true, salesActorFieldsEnabled: true, avatarStorage }
-            : { membersEnabled: true, auditEnabled: true },
+          team,
         )) as { ok: boolean; data?: unknown; error?: string; code?: string };
-        localStorage.setItem(key, JSON.stringify(store.data));
-        if (!r.ok) throw ownerPreview ? new ApiError(r.error || "操作未完成", r.code) : new Error(r.error || "操作未完成");
+        localStorage.setItem(storeKey, JSON.stringify(expensePreview ? { seed: EXPENSE_SEED, data: store.data } : store.data));
+        if (!r.ok) throw (ownerPreview || expensePreview) ? new ApiError(r.error || "操作未完成", r.code) : new Error(r.error || "操作未完成");
         return r.data as T;
       }
       const result = await execute(
@@ -248,7 +284,7 @@ export function createDemo(role: "admin" | "member" | null = null): Api {
         action,
         payload,
       );
-      localStorage.setItem(key, JSON.stringify(store.data));
+      localStorage.setItem(storeKey, JSON.stringify(store.data));
       return result as T;
     },
   };
