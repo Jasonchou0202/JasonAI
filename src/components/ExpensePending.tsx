@@ -2,7 +2,8 @@ import { useState } from "react";
 import { ArrowLeft } from "lucide-react";
 import type { Api } from "../domain/model";
 import type { Expense } from "../domain/expenses";
-import { EXPENSE_STATUS_LABEL } from "../domain/expenses";
+import { EXPENSE_STATUS_LABEL, receiptSummary } from "../domain/expenses";
+import { ReceiptLinks } from "./ReceiptLinks";
 import { money } from "../domain/finance";
 import { ErrorNote, message, useQuery } from "./ui";
 import "../expenses.css";
@@ -84,7 +85,8 @@ export function ExpensePending({
               <b>¥{money(row.amount)}</b>
             </h2>
             <p className="exp-pending-meta">
-              {nameOf(row.paidBy)} · {row.hasInvoice ? "有发票" : "无发票"}
+              {nameOf(row.paidBy)} · {receiptSummary(row)}
+              {row.receipts?.length ? <ReceiptLinks api={api} id={row.id} /> : null}
             </p>
             {row.note && (
               <p className="exp-pending-note">

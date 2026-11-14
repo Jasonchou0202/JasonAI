@@ -103,8 +103,12 @@ export function summarize(kind: string | undefined, value: unknown): Record<stri
     }
     case "invites":
       return pick(row, ["id", "name", "expiresAt", "usedBy", "revokedAt"]);
-    case "expenses":
-      return pick(row, ["date", "amount", "categoryName", "paidBy", "hasInvoice", "status", "revision", "deletedAt", "createdBy", "confirmedBy"], ["note"]);
+    case "expenses": {
+      const out = pick(row, ["date", "amount", "categoryName", "paidBy", "hasInvoice", "status", "revision", "deletedAt", "createdBy", "confirmedBy"], ["note"]);
+      // 凭证只记个数，不记文件名和文件编号
+      if (out && Array.isArray(row.receipts)) out.receiptCount = row.receipts.length;
+      return out;
+    }
     default: {
       const out: Record<string, unknown> = {};
       for (const [k, v] of Object.entries(row).slice(0, 12))

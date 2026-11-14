@@ -25,9 +25,117 @@ export const DEFAULT_CATEGORIES: { id: string; name: string; hint?: string }[] =
   { id: "cat-phone", name: "话费" },
   { id: "cat-transport", name: "交通" },
   { id: "cat-office", name: "办公" },
-  { id: "cat-software", name: "软件订阅", hint: "ChatGPT / Claude / Grok Bot" },
   { id: "cat-other", name: "其他" },
 ];
+
+/**
+ * 已下线的预设分类：新记录不再可选（记一笔、分类设置里都不出现）。
+ * 云端 _settings 里原样保留，不改不删；已有记录照常按 categoryName 显示。
+ */
+export const RETIRED_CATEGORY_IDS: ReadonlySet<string> = new Set(["cat-software"]);
+
+/** 新记录可选的分类：去掉已删除（archivedAt）和已下线的预设；自定义分类全部保留 */
+export function selectableCategories(categories: ExpenseCategory[]): ExpenseCategory[] {
+  return categories.filter((c) => !c.archivedAt && !RETIRED_CATEGORY_IDS.has(c.id));
+}
+
+/** 凭证：发票、无发票说明、支付凭证（如支付截图） */
+export type ReceiptKind = "invoice" | "no_invoice" | "payment";
+export const RECEIPT_KINDS: readonly ReceiptKind[] = ["invoice", "no_invoice", "payment"];
+export const RECEIPT_KIND_LABEL: Record<ReceiptKind, string> = {
+  invoice: "发票",
+  no_invoice: "无发票说明",
+  payment: "支付凭证",
+};
+/** 单个文件上限 10MB，一笔最多 9 个 */
+export const RECEIPT_MAX_BYTES = 10 * 1024 * 1024;
+export const RECEIPT_MAX_FILES = 9;
+export const RECEIPT_MIME = ["application/pdf", "image/jpeg", "image/png", "image/webp", "image/heic", "image/heif"] as const;
+export type ReceiptMime = (typeof RECEIPT_MIME)[number];
+const EXT_MIME: Record<string, ReceiptMime> = {
+  pdf: "application/pdf",
+  jpg: "image/jpeg",
+  jpeg: "image/jpeg",
+  png: "image/png",
+  webp: "image/webp",
+  heic: "image/heic",
+  heif: "image/heif",
+};
+export const MIME_EXT: Record<ReceiptMime, string> = {
+  "application/pdf": "pdf",
+  "image/jpeg": "jpg",
+  "image/png": "png",
+  "image/webp": "webp",
+  "image/heic": "heic",
+  "image/heif": "heif",
+};
+export const RECEIPT_ACCEPT = ".pdf,.jpg,.jpeg,.png,.webp,.heic,.heif,application/pdf,image/jpeg,image/png,image/webp,image/heic,image/heif";
+
+/** 浏览器给的 type 可能为空（HEIC 常见），按扩展名兜底；不支持的返回 null */
+export function receiptMime(name: string, type: string): ReceiptMime | null {
+  const t = (type || "").toLowerCase();
+  if ((RECEIPT_MIME as readonly string[]).includes(t)) return t as ReceiptMime;
+  if (t && t !== "application/octet-stream") return null;
+  const ext = (name.split(".").pop() || "").toLowerCase();
+  return EXT_MIME[ext] ?? null;
+}
+
+export interface ExpenseReceipt {
+  /** 云存储 fileID（路径 expenses/<上传人 uid>/…） */
+  fileID: string;
+  name: string;
+  type: ReceiptMime;
+  size: number;
+  kind: ReceiptKind;
+}
+
+/** 有凭证时由凭证推导「有无发票」；旧记录没有凭证，照用原来的 hasInvoice */
+export function deriveHasInvoice(receipts: ExpenseReceipt[] | undefined, fallback: boolean): boolean {
+  if (!receipts || receipts.length === 0) return fallback;
+  return receipts.some((r) => r.kind === "invoice");
+}
+
+/** 分成比例文字：1 → 100%，0.6 → 60%，0 → 0%；混合（-1）返回空串 */
+export function shareLabel(share: number): string {
+  return share >= 0 ? `${Math.round(share * 100)}%` : "";
+}
+
+/** 列表里显示的一句话：有凭证按类型计数；旧记录显示有/无发票 */
+export function receiptSummary(row: Pick<ExpenseInput, "hasInvoice" | "receipts">): string {
+  const list = row.receipts || [];
+  if (!list.length) return row.hasInvoice ? "有发票" : "无发票";
+  return RECEIPT_KINDS.map((k) => [k, list.filter((r) => r.kind === k).length] as const)
+    .filter(([, n]) => n > 0)
+    .map(([k, n]) => `${RECEIPT_KIND_LABEL[k]}${n > 1 ? ` ×${n}` : ""}`)
+    .join(" · ");
+}
+
+const RECEIPT_NAME_MAX = 120;
+/** 校验凭证列表（只校验形状；路径归属由云函数按上传人另查） */
+export function validateReceipts(raw: unknown): ExpenseReceipt[] {
+  if (raw === undefined || raw === null) return [];
+  if (!Array.isArray(raw)) throw new Error("凭证格式无效");
+  if (raw.length > RECEIPT_MAX_FILES) throw new Error(`凭证最多 ${RECEIPT_MAX_FILES} 个`);
+  const seen = new Set<string>();
+  return raw.map((r: any) => {
+    if (!r || typeof r !== "object") throw new Error("凭证格式无效");
+    if (typeof r.fileID !== "string" || !r.fileID || r.fileID.length > 512 || !/^cloud:\/\/[^\s]+\/expenses\/[\w-]+\/[\w.-]+$/.test(r.fileID))
+      throw new Error("凭证文件无效");
+    if (seen.has(r.fileID)) throw new Error("凭证重复");
+    seen.add(r.fileID);
+    if (!(RECEIPT_MIME as readonly string[]).includes(r.type)) throw new Error("凭证只支持 PDF 和图片");
+    if (!Number.isSafeInteger(r.size) || r.size <= 0 || r.size > RECEIPT_MAX_BYTES) throw new Error("凭证单个不能超过 10MB");
+    if (!RECEIPT_KINDS.includes(r.kind)) throw new Error("凭证类型无效");
+    const name = typeof r.name === "string" ? r.name.trim().slice(0, RECEIPT_NAME_MAX) : "";
+    return { fileID: r.fileID, name: name || "凭证", type: r.type, size: r.size, kind: r.kind };
+  });
+}
+
+/** 凭证在云存储里的上传人 uid（路径 expenses/<uid>/<文件名>） */
+export function receiptUploader(fileID: string): string | null {
+  const m = /\/expenses\/([\w-]+)\/[\w.-]+$/.exec(fileID);
+  return m ? m[1] : null;
+}
 
 export const OWNER_SHARE = 0.6;
 export const PARTNER_SHARE = 0.4;
@@ -47,6 +155,8 @@ export function formatCnDate(date: string, withYear = false): string {
 }
 
 export const PROFIT_SHARE_HINT = `${formatCnDate(PROFIT_SHARE_START_DATE)}起开始分成`;
+/** 起算前的段落：利润全归章鱼哥、周诗懿为 0 */
+export const PROFIT_SHARE_BEFORE_HINT = `${formatCnDate(PROFIT_SHARE_START_DATE)}前不分成，利润全归${OWNER_LABEL}，${PARTNER_LABEL}为 0`;
 export const EXPENSE_START_TOO_EARLY = `报销从 ${formatCnDate(EXPENSE_START_DATE, true)}起记，不能录入更早的日期`;
 
 export function countsAsExpense(date: string): boolean {
@@ -80,6 +190,8 @@ export interface ExpenseInput {
   hasInvoice: boolean;
   note: string;
   status: ExpenseStatus;
+  /** 凭证（EXPENSE_RECEIPTS_ENABLED 开后才有；旧记录没有这个字段） */
+  receipts?: ExpenseReceipt[];
 }
 
 export interface Expense extends ExpenseInput {
@@ -116,6 +228,7 @@ export type DecadePhase = "closed" | "current" | "upcoming";
 export interface PayerShare {
   uid: string;
   name: string;
+  /** 本段分成比例：分成起算前章鱼哥 1、周诗懿 0；之后 0.6 / 0.4；合计里起算前后混合时为 -1（只看金额） */
   share: number;
   amount: number;
   advance: number;
@@ -124,7 +237,7 @@ export interface PayerShare {
 export interface DecadeSettlement {
   decade: Decade;
   phase: DecadePhase;
-  /** 是否已到分成起算日；未到时不显示应得，利润分成按起算日之后的账计算 */
+  /** 是否已到分成起算日；未到时利润全归章鱼哥、周诗懿为 0；之后按六四分（只纳入起算日及之后的账） */
   sharesOpen: boolean;
   revenue: number;
   cost: number;
@@ -158,6 +271,8 @@ export interface ExpenseMeta {
   partner: { uid: string; name: string };
   categories: ExpenseCategory[];
   salesPayerEnabled: boolean;
+  /** 凭证上传是否已开放（EXPENSE_RECEIPTS_ENABLED） */
+  receiptsEnabled?: boolean;
 }
 
 const SETTINGS_KEYS = new Set(["id", "_categories", "_settings"]);
@@ -335,8 +450,8 @@ export function settleDecade(
       totalCost: 0,
       salesProfit: 0,
       profit: 0,
-      owner: payerShare(people.ownerUid, ownerName, OWNER_SHARE, zero.owner, 0),
-      partner: payerShare(people.partnerUid, partnerName, PARTNER_SHARE, zero.partner, 0),
+      owner: payerShare(people.ownerUid, ownerName, sharesOpen ? OWNER_SHARE : 1, zero.owner, 0),
+      partner: payerShare(people.partnerUid, partnerName, sharesOpen ? PARTNER_SHARE : 0, zero.partner, 0),
       partnerReceive: 0,
     };
   }
@@ -345,42 +460,46 @@ export function settleDecade(
   const booked = expenses.filter(
     (e) => !e.deletedAt && inRange(e.date) && isBookedStatus(e.status) && countsAsExpense(e.date),
   );
-  // 合账展示本段销售收入、进货和已起算的报销；分成与应得只纳入起算日及之后的账
-  const ledgerRevenue = activeSales.reduce((n, s) => n + s.revenue, 0);
-  const ledgerCost = activeSales.reduce((n, s) => n + s.cost, 0);
+  // 合账展示本段全部销售收入、进货和已起算的报销，实际利润照常计算；
+  // 分成起算日之前的利润全归章鱼哥（周诗懿为 0），起算日及之后的按六四分，垫付也只从起算日算起
+  const revenue = activeSales.reduce((n, s) => n + s.revenue, 0);
+  const cost = activeSales.reduce((n, s) => n + s.cost, 0);
   const expense = booked.reduce((n, e) => n + e.amount, 0);
-  const shareSales = sharesOpen ? activeSales.filter((s) => countsInProfitShare(s.date)) : [];
-  const shareExpenses = sharesOpen ? booked.filter((e) => countsInProfitShare(e.date)) : [];
-  const revenue = sharesOpen ? shareSales.reduce((n, s) => n + s.revenue, 0) : ledgerRevenue;
-  const cost = sharesOpen ? shareSales.reduce((n, s) => n + s.cost, 0) : ledgerCost;
-  const shareExpense = shareExpenses.reduce((n, e) => n + e.amount, 0);
-  const totalCost = sharesOpen ? cost + shareExpense : ledgerCost + expense;
-  const salesProfit = sharesOpen ? revenue - cost : 0;
-  const profit = sharesOpen ? revenue - (cost + shareExpense) : 0;
-  const parts = splitProfit(profit);
+  const totalCost = cost + expense;
+  const salesProfit = revenue - cost;
+  const profit = revenue - totalCost;
+  const shareSales = activeSales.filter((s) => countsInProfitShare(s.date));
+  const shareExpenses = booked.filter((e) => countsInProfitShare(e.date));
+  const shareProfit =
+    shareSales.reduce((n, s) => n + s.revenue - s.cost, 0) - shareExpenses.reduce((n, e) => n + e.amount, 0);
+  const parts = splitProfit(shareProfit);
   const advances: Record<string, number> = {};
   const add = (uid: string, n: number) => {
     advances[uid] = (advances[uid] || 0) + n;
   };
-  if (sharesOpen) {
-    for (const s of shareSales) add(salePayer(s, people.ownerUid, payerEnabled), s.cost);
-    for (const e of shareExpenses) add(e.paidBy || people.ownerUid, e.amount);
-  }
+  for (const s of shareSales) add(salePayer(s, people.ownerUid, payerEnabled), s.cost);
+  for (const e of shareExpenses) add(e.paidBy || people.ownerUid, e.amount);
   const ownerAdvance = advances[people.ownerUid] || 0;
   const partnerAdvance = advances[people.partnerUid] || 0;
   return {
     decade,
     phase,
     sharesOpen,
-    revenue: sharesOpen ? revenue : ledgerRevenue,
-    cost: sharesOpen ? cost : ledgerCost,
+    revenue,
+    cost,
     expense,
-    totalCost: sharesOpen ? cost + shareExpense : ledgerCost + expense,
+    totalCost,
     salesProfit,
     profit,
-    owner: payerShare(people.ownerUid, ownerName, OWNER_SHARE, parts.owner, ownerAdvance),
-    partner: payerShare(people.partnerUid, partnerName, PARTNER_SHARE, parts.partner, partnerAdvance),
-    partnerReceive: sharesOpen ? partnerAdvance + parts.partner : 0,
+    owner: payerShare(
+      people.ownerUid,
+      ownerName,
+      sharesOpen ? OWNER_SHARE : 1,
+      profit - shareProfit + parts.owner,
+      ownerAdvance,
+    ),
+    partner: payerShare(people.partnerUid, partnerName, sharesOpen ? PARTNER_SHARE : 0, parts.partner, partnerAdvance),
+    partnerReceive: partnerAdvance + parts.partner,
   };
 }
 
@@ -396,9 +515,20 @@ export function settleMonth(
     settleDecade(d, today, sales, expenses, people, payerEnabled),
   );
   const posted = emptyPosted(month, people);
-  for (const row of decades) {
-    if (row.phase === "upcoming" || !row.sharesOpen) continue;
-    posted.sharesOpen = true;
+  const counted = decades.filter((row) => row.phase !== "upcoming");
+  // 已出账合计：全部为分成起算前 → 章鱼哥 100%、周诗懿 0；全部已分成 → 六四；混合时比例按金额显示
+  if (counted.length && counted.every((row) => row.sharesOpen)) {
+    posted.owner.share = OWNER_SHARE;
+    posted.partner.share = PARTNER_SHARE;
+  } else if (counted.every((row) => !row.sharesOpen)) {
+    posted.owner.share = 1;
+    posted.partner.share = 0;
+  } else {
+    posted.owner.share = -1;
+    posted.partner.share = -1;
+  }
+  for (const row of counted) {
+    if (row.sharesOpen) posted.sharesOpen = true;
     posted.revenue += row.revenue;
     posted.cost += row.cost;
     posted.expense += row.expense;
@@ -458,7 +588,8 @@ export function validateExpense(raw: ExpenseInput, categories: ExpenseCategory[]
   if (!cat) throw new Error("请选择分类");
   if (typeof raw.paidBy !== "string" || !raw.paidBy || raw.paidBy.length > 128 || !/^[\w-]+$/.test(raw.paidBy))
     throw new Error("请选择谁出的钱");
-  if (typeof raw.hasInvoice !== "boolean") throw new Error("请选择有无发票");
+  const receipts = validateReceipts(raw.receipts);
+  if (typeof raw.hasInvoice !== "boolean" && !receipts.length) throw new Error("请选择有无发票");
   if (typeof raw.note !== "string" || raw.note.length > NOTE_MAX) throw new Error("备注过长");
   if (
     raw.status !== "pending_confirm" &&
@@ -473,9 +604,10 @@ export function validateExpense(raw: ExpenseInput, categories: ExpenseCategory[]
     categoryId: cat.id,
     categoryName: cat.name,
     paidBy: raw.paidBy,
-    hasInvoice: raw.hasInvoice,
+    hasInvoice: deriveHasInvoice(receipts, raw.hasInvoice === true),
     note: raw.note,
     status: raw.status,
+    ...(receipts.length ? { receipts } : {}),
   };
 }
 

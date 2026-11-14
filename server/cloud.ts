@@ -8,6 +8,7 @@ import { webPushSender } from "./reminder-cloud";
 import { appendOnly, auditSync } from "./audit";
 import { ownerOn, teamConfigFromEnv } from "./team";
 import type { AvatarStorage } from "./avatar";
+import type { ReceiptStorage } from "./receipts";
 
 // 单实例内存限流（兜底，主防线是控制台限流）
 const syncLimit = rateLimiter();
@@ -34,13 +35,53 @@ function cloudAvatarStorage(app: any): AvatarStorage {
   };
 }
 
+/**
+ * 报销凭证用的云存储（服务端权限；云存储规则保持仅管理员可读写）。
+ * 直传签名用 getUploadMetadata：只对这一个路径有效、短时有效，网页按 SDK 同样的请求头 PUT 上去。
+ */
+function cloudReceiptStorage(app: any): ReceiptStorage {
+  return {
+    async ticket(cloudPath) {
+      const r = await app.getUploadMetadata({ cloudPath });
+      const d = r?.data;
+      if (!d?.url || !d?.authorization || !d?.fileId) return null;
+      return {
+        url: d.url as string,
+        headers: {
+          Signature: d.authorization,
+          authorization: d.authorization,
+          "x-cos-security-token": d.token || "",
+          "x-cos-meta-fileid": d.cosFileId || "",
+          key: encodeURIComponent(cloudPath),
+        },
+        fileID: d.fileId as string,
+      };
+    },
+    async upload(cloudPath, bytes) {
+      const r = await app.uploadFile({ cloudPath, fileContent: Buffer.from(bytes) });
+      if (!r?.fileID) throw new Error("upload failed");
+      return r.fileID as string;
+    },
+    async remove(fileIDs) {
+      await app.deleteFile({ fileList: fileIDs });
+    },
+    async tempUrls(fileIDs) {
+      const r = await app.getTempFileURL({ fileList: fileIDs.map((fileID) => ({ fileID, maxAge: 7200 })) });
+      const out = new Map<string, string>();
+      for (const f of r?.fileList ?? []) if (f?.tempFileURL && (!f.code || f.code === "SUCCESS")) out.set(f.fileID, f.tempFileURL);
+      return out;
+    },
+  };
+}
+
 export async function main(event: unknown, context: any) {
   const app = cloudbase.init({ env: cloudbase.SYMBOL_CURRENT_ENV });
   // 团队开关：MEMBERS_ENABLED=1 / AUDIT_ENABLED=1 才开启，缺省全关（与原来一致）
-  // 日程归属 SCHEDULE_OWNER_ENABLED、头像 AVATARS_ENABLED、sales 新字段 SALES_ACTOR_FIELDS_ENABLED、报销 EXPENSES_ENABLED、进货付款人 SALES_PAYER_ENABLED：缺省全关
+  // 日程归属 SCHEDULE_OWNER_ENABLED、头像 AVATARS_ENABLED、sales 新字段 SALES_ACTOR_FIELDS_ENABLED、报销 EXPENSES_ENABLED、进货付款人 SALES_PAYER_ENABLED、报销凭证 EXPENSE_RECEIPTS_ENABLED：缺省全关
   const team = {
     ...teamConfigFromEnv(process.env),
     avatarStorage: cloudAvatarStorage(app),
+    receiptStorage: cloudReceiptStorage(app),
     warn: (code: string) => console.warn("sales team", code),
   };
   // iPhone 提醒事项同步：HTTP 访问或带 syncKey 的调用只走同步接口，不进入私人账本的其他操作。

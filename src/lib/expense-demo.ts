@@ -2,6 +2,10 @@ import type { Product, Sale } from "../domain/model";
 import type { Expense, ExpenseSettings } from "../domain/expenses";
 import { DEFAULT_CATEGORIES } from "../domain/expenses";
 import { MemoryStore } from "../../server/memory-store";
+import { MemoryReceiptStorage } from "../../server/receipts";
+
+/** 演示里的凭证「云存储」：只在本页内存里，刷新后文件不保留（只有示例记录） */
+const demoReceipts = new MemoryReceiptStorage();
 
 /** 演示账本（虚构）：对齐示意图数字，人名只用章鱼哥、周诗懿 */
 export const EXPENSE_DEMO_OWNER = "demo";
@@ -129,7 +133,15 @@ export function seedExpenseDemo(store: MemoryStore) {
   const settings: ExpenseSettings = {
     partnerUid: EXPENSE_DEMO_PARTNER,
     partnerName: "周诗懿",
-    categories: DEFAULT_CATEGORIES.map((c) => ({ ...c, preset: true, createdAt: AT })),
+    categories: [
+      ...DEFAULT_CATEGORIES.map((c) => ({ ...c, preset: true, createdAt: AT })),
+      // 模拟云端旧设置里还留着已下线的「软件订阅」预设：新记录里不再出现，旧记录照常显示
+      { id: "cat-software", name: "软件订阅", hint: "ChatGPT / Claude / Grok Bot", preset: true, createdAt: AT },
+      // 模拟用户自己加的三个分类（示例名称）
+      { id: "cat-custom-1", name: "示例分类 · 招待", createdAt: AT },
+      { id: "cat-custom-2", name: "示例分类 · 快递", createdAt: AT },
+      { id: "cat-custom-3", name: "示例分类 · 推广", createdAt: AT },
+    ],
   };
   store.data.expenses["_settings"] = settings;
 
@@ -164,5 +176,7 @@ export function expenseDemoTeam() {
     auditEnabled: true,
     expensesEnabled: true,
     salesPayerEnabled: true,
-  } as const;
+    expenseReceiptsEnabled: true,
+    receiptStorage: demoReceipts,
+  };
 }
