@@ -1,11 +1,14 @@
 import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
 import type { Api } from "../domain/model";
 import type { DecadeSettlement, MonthCompare, Expense, MonthSettlement } from "../domain/expenses";
-import { EXPENSE_STATUS_LABEL, PROFIT_SHARE_HINT, shiftMonth } from "../domain/expenses";
+import { EXPENSE_STATUS_LABEL, PROFIT_SHARE_BEFORE_HINT, PROFIT_SHARE_BEFORE_REFUND_HINT, PROFIT_SHARE_START_DATE, formatCnDate, receiptSummary, shareLabel, shiftMonth } from "../domain/expenses";
+import { ReceiptLinks } from "./ReceiptLinks";
 import { money } from "../domain/finance";
 import { today } from "../domain/dates";
 import { useTeam } from "../lib/team-ui";
 import { ErrorNote, useQuery } from "./ui";
+
+const SPLIT_FROM = formatCnDate(PROFIT_SHARE_START_DATE);
 import "../expenses.css";
 
 interface SettlementPayload extends MonthSettlement {
@@ -29,7 +32,7 @@ function yenOrDash(value: number, upcoming: boolean) {
 
 function DecadeCard({ row, admin }: { row: DecadeSettlement; admin: boolean }) {
   const upcoming = row.phase === "upcoming";
-  const hideShares = upcoming || !row.sharesOpen;
+  const hideShares = upcoming;
   const phaseLabel = row.phase === "closed" ? "已出账" : row.phase === "current" ? "进行中" : "待出账 · 示意";
   const n = (v: number) => (upcoming ? "—" : `¥${money(v)}`);
   const share = (v: number) => (hideShares ? "—" : `¥${money(v)}`);
@@ -43,7 +46,7 @@ function DecadeCard({ row, admin }: { row: DecadeSettlement; admin: boolean }) {
         <span className={`exp-phase ${row.phase}`}>{phaseLabel}</span>
       </div>
       <div className={`exp-profit ${hideShares ? "muted" : ""}`}>
-        {upcoming ? "尚未有数" : row.sharesOpen ? `¥${money(row.profit)}` : "尚未分成"}
+        {upcoming ? "尚未有数" : `¥${money(row.profit)}`}
       </div>
       <div className="exp-grid">
         <div>
@@ -66,25 +69,26 @@ function DecadeCard({ row, admin }: { row: DecadeSettlement; admin: boolean }) {
       </div>
       <hr className="exp-hr" />
       <div className="exp-kv">
-        <div className="exp-row"><span>六四分账</span><span /></div>
-        <div className="exp-row"><span>{row.owner.name} 60%</span><b>{share(row.owner.amount)}</b></div>
-        <div className="exp-row"><span>{row.partner.name} 40%</span><b>{share(row.partner.amount)}</b></div>
+        <div className="exp-row"><span>{row.sharesOpen ? "六四分账" : `分账 · ${SPLIT_FROM}前不分成`}</span><span /></div>
+        <div className="exp-row"><span>{row.owner.name} {shareLabel(row.owner.share)}</span><b>{share(row.owner.amount)}</b></div>
+        <div className="exp-row"><span>{row.partner.name} {shareLabel(row.partner.share)}</span><b>{share(row.partner.amount)}</b></div>
       </div>
       <hr className="exp-hr" />
       <div className="exp-kv">
         <div className="exp-row"><span>本段垫付</span><span /></div>
-        <div className="exp-row"><span>{row.owner.name}垫付</span><b>{share(row.owner.advance)}</b></div>
-        <div className="exp-row"><span>{row.partner.name}垫付</span><b>{share(row.partner.advance)}</b></div>
+        <div className="exp-row"><span>{row.owner.name}垫付</span><b>{row.sharesOpen ? share(row.owner.advance) : upcoming ? share(0) : "不用退"}</b></div>
+        <div className="exp-row"><span>{row.sharesOpen ? `${row.partner.name}垫付` : `${row.partner.name}垫付的报销`}</span><b>{share(row.partner.advance)}</b></div>
       </div>
       {upcoming ? (
         <div className="exp-hint upcoming">本段未出账，不做结算</div>
-      ) : !row.sharesOpen ? (
-        <div className="exp-hint upcoming">{PROFIT_SHARE_HINT}</div>
       ) : admin ? (
         <div className="exp-hint">
           <em>结算提示</em>
           <span>{row.partner.name}应收回 ¥{money(row.partnerReceive)}</span>
+          {!row.sharesOpen && <small>{PROFIT_SHARE_BEFORE_REFUND_HINT}</small>}
         </div>
+      ) : !row.sharesOpen ? (
+        <div className="exp-hint upcoming">{PROFIT_SHARE_BEFORE_HINT}</div>
       ) : (
         <div className="exp-hint upcoming">成员只看自己的报销，结算以管理员账本为准</div>
       )}
@@ -149,9 +153,9 @@ export function ExpensesPage({
         <div>
           <h1>报销记账</h1>
           <p className="exp-lead-full">
-            十天合账与报销明细都在这里。实际利润 = 销售收入（来自销售记录，不必在此重复记）− 进货成本 − 报销成本。分账按{data.people.owner.name} 60%、{data.people.partner.name} 40%。示例按销售收入记在{data.people.owner.name}处结算。
+            十天合账与报销明细都在这里。实际利润 = 销售收入（来自销售记录，不必在此重复记）− 进货成本 − 报销成本。{SPLIT_FROM}起分账按{data.people.owner.name} 60%、{data.people.partner.name} 40%；之前的利润全归{data.people.owner.name}，{data.people.partner.name}为 0。示例按销售收入记在{data.people.owner.name}处结算。
           </p>
-          <p className="exp-lead-short">十天合账。分账按{data.people.owner.name} 60%、{data.people.partner.name} 40%。</p>
+          <p className="exp-lead-short">十天合账。{SPLIT_FROM}起按{data.people.owner.name} 60%、{data.people.partner.name} 40% 分；之前{data.people.partner.name}为 0。</p>
         </div>
         <div className="exp-heading-actions">
           <div className="exp-month-nav" aria-label="切换月份">
@@ -172,7 +176,7 @@ export function ExpensesPage({
       <section className="exp-overview" aria-label="本月三段全貌">
         {data.decades.map((row) => {
           const upcoming = row.phase === "upcoming";
-          const hideShares = upcoming || !row.sharesOpen;
+          const hideShares = upcoming;
           return (
             <article className={`exp-overview-row ${row.phase}`} key={row.decade.from}>
               <header>
@@ -180,29 +184,19 @@ export function ExpensesPage({
                 <span className={`exp-phase ${row.phase}`}>{phaseLabel(row.phase)}</span>
                 <b className={hideShares ? "muted" : ""}>{hideShares ? "—" : `¥${money(row.profit)}`}</b>
               </header>
-              {row.sharesOpen ? (
-                <p>
-                  <span>{row.owner.name} 60% {yenOrDash(row.owner.amount, upcoming)}</span>
-                  <span>{row.partner.name} 40% {yenOrDash(row.partner.amount, upcoming)}</span>
-                  {admin && <span>{row.partner.name}应收回 {yenOrDash(row.partnerReceive, upcoming)}</span>}
-                </p>
-              ) : (
-                <p className="exp-share-wait">{PROFIT_SHARE_HINT}</p>
-              )}
+              <p>
+                <span>{row.owner.name} {shareLabel(row.owner.share)} {yenOrDash(row.owner.amount, upcoming)}</span>
+                <span>{row.partner.name} {shareLabel(row.partner.share)} {yenOrDash(row.partner.amount, upcoming)}</span>
+                {admin && (row.sharesOpen || !upcoming) && <span>{row.partner.name}应收回 {yenOrDash(row.partnerReceive, upcoming)}</span>}
+              </p>
             </article>
           );
         })}
         {admin && (
           <div className="exp-overview-total">
             <strong>已出账合计</strong>
-            {data.posted.sharesOpen ? (
-              <>
-                <span>实际利润 ¥{money(data.posted.profit)}</span>
-                <span>{data.people.partner.name}应收回 ¥{money(data.posted.partnerReceive)}</span>
-              </>
-            ) : (
-              <span>{PROFIT_SHARE_HINT}</span>
-            )}
+            <span>实际利润 ¥{money(data.posted.profit)}</span>
+            <span>{data.people.partner.name}应收回 ¥{money(data.posted.partnerReceive)}</span>
           </div>
         )}
       </section>
@@ -228,11 +222,11 @@ export function ExpensesPage({
             <div><span>总成本</span><b>¥{money(data.posted.totalCost)}</b></div>
             <div><span>实际利润</span><b>¥{money(data.posted.profit)}</b></div>
             <div>
-              <span>六四分账</span>
+              <span>{data.posted.partner.share === 0 ? `分账 · ${SPLIT_FROM}前不分成` : data.posted.partner.share > 0 ? "六四分账" : "分账"}</span>
               <b style={{ fontSize: "0.95rem", fontWeight: 650 }}>
-                {data.people.owner.name} 60%　¥{money(data.posted.owner.amount)}
+                {data.people.owner.name} {shareLabel(data.posted.owner.share)}　¥{money(data.posted.owner.amount)}
                 <br />
-                {data.people.partner.name} 40%　¥{money(data.posted.partner.amount)}
+                {data.people.partner.name} {shareLabel(data.posted.partner.share)}　¥{money(data.posted.partner.amount)}
               </b>
             </div>
           </div>
@@ -240,7 +234,9 @@ export function ExpensesPage({
             {postedFrom && postedTo ? `${slashDate(postedFrom)}–${slashDate(postedTo)} 日结算提示` : "结算提示"}
             <div>{data.people.partner.name}应收回 ¥{money(data.posted.partnerReceive)}</div>
             <small>
-              垫付 ¥{money(data.posted.partner.advance)} + 四成利润 ¥{money(data.posted.partner.amount)}
+              {data.posted.partner.share === 0
+                ? `垫付的报销 ¥${money(data.posted.partner.advance)} + 分成 ¥0 · ${PROFIT_SHARE_BEFORE_REFUND_HINT}`
+                : `垫付 ¥${money(data.posted.partner.advance)} + 四成利润 ¥${money(data.posted.partner.amount)}${data.posted.partner.share < 0 ? `（${SPLIT_FROM}起；此前只退垫付的报销）` : ""}`}
               {data.decades.some((d) => d.phase === "upcoming") ? " · 未出账段未计入" : ""}
             </small>
           </div>
@@ -287,7 +283,7 @@ export function ExpensesPage({
                   <th>分类</th>
                   <th>谁出</th>
                   <th className="num">金额</th>
-                  <th>发票</th>
+                  <th>凭证</th>
                   <th>状态</th>
                 </tr>
               </thead>
@@ -298,7 +294,10 @@ export function ExpensesPage({
                     <td>{row.categoryName}</td>
                     <td>{row.payerName}</td>
                     <td className="num">¥{money(row.amount)}</td>
-                    <td>{row.hasInvoice ? "有" : "无"}</td>
+                    <td>
+                      {receiptSummary(row)}
+                      {row.receipts?.length ? <ReceiptLinks api={api} id={row.id} /> : null}
+                    </td>
                     <td>
                       <span className={`exp-status ${row.status}`}>{EXPENSE_STATUS_LABEL[row.status]}</span>
                     </td>
@@ -316,7 +315,8 @@ export function ExpensesPage({
                   <div className="exp-detail-meta">
                     <span>{slashDate(row.date)}</span>
                     <span>{row.payerName}</span>
-                    <span>{row.hasInvoice ? "有发票" : "无发票"}</span>
+                    <span>{receiptSummary(row)}</span>
+                    {row.receipts?.length ? <ReceiptLinks api={api} id={row.id} /> : null}
                     <span className={`exp-status ${row.status}`}>{EXPENSE_STATUS_LABEL[row.status]}</span>
                   </div>
                   {row.note ? <p className="exp-detail-note">{row.note}</p> : null}

@@ -215,6 +215,14 @@
   font-weight: 500;
   color: var(--text-2);
 }
+.exp-hint { flex-wrap: wrap; }
+.exp-hint small {
+  flex-basis: 100%;
+  font-size: var(--fs-1, 12px);
+  font-weight: 500;
+  color: var(--text-2);
+  line-height: 1.45;
+}
 .exp-hint.upcoming {
   background: var(--surface-soft);
   color: var(--text-3);
@@ -411,26 +419,44 @@
 .exp-status.reimbursed { background: var(--surface-muted); color: var(--text-2); }
 .exp-status.rejected { background: var(--danger-soft); color: var(--text-danger); }
 
-/* 记一笔报销 */
+/* 记一笔报销：桌面铺满内容区（左信息、右凭证与提交），窄屏单列 */
 .exp-form {
-  max-width: 560px;
+  width: 100%;
+  max-width: none;
 }
-.exp-form .panel { padding: 22px; border-radius: 22px; }
+.exp-form-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(340px, 1fr);
+  gap: 20px;
+  align-items: start;
+}
+.exp-form .panel { padding: 26px 28px; border-radius: 22px; margin: 0; }
+.exp-form-side {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  position: sticky;
+  top: 20px;
+  min-width: 0;
+}
+.exp-form-main { min-width: 0; }
 .exp-fields {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 16px;
+  gap: 20px;
 }
 .exp-fields label,
-.exp-block label {
+.exp-block label,
+.exp-receipts-head label {
   display: block;
-  margin-bottom: 6px;
+  margin-bottom: 8px;
   font-size: var(--fs-2);
   font-weight: 650;
   color: var(--text-1);
 }
 .exp-fields label small,
 .exp-block label small,
+.exp-receipts-head label small,
 .exp-block .hint {
   font-weight: 500;
   color: var(--text-3);
@@ -440,15 +466,15 @@
 .exp-block input,
 .exp-block textarea {
   width: 100%;
-  height: 48px;
+  height: 52px;
   border: 1px solid transparent;
   border-radius: 16px;
   background: var(--surface-soft);
-  padding: 0 14px;
+  padding: 0 16px;
   font: inherit;
   color: var(--text-1);
 }
-.exp-block textarea { height: auto; min-height: 72px; padding: 12px 14px; resize: vertical; }
+.exp-block textarea { height: auto; min-height: 96px; padding: 12px 16px; resize: vertical; }
 .exp-fields input:focus,
 .exp-block input:focus,
 .exp-block textarea:focus {
@@ -456,18 +482,49 @@
   box-shadow: 0 0 0 3px #d9775740;
   background: #fff;
 }
-.currency-input.exp-amount { display: flex; align-items: center; background: var(--surface-soft); border-radius: 16px; padding-left: 14px; }
-.currency-input.exp-amount span { color: var(--text-2); font-weight: 650; }
-.currency-input.exp-amount input { background: transparent; padding-left: 6px; }
-.exp-block { margin-top: 18px; }
+/* 金额：¥ 是独立前缀，不再叠在数字上 */
+.exp-amount {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 52px;
+  padding: 0 16px;
+  border-radius: 16px;
+  background: var(--surface-soft);
+  border: 1px solid transparent;
+}
+.exp-amount:focus-within { box-shadow: 0 0 0 3px #d9775740; background: #fff; }
+.exp-amount-prefix {
+  flex: none;
+  color: var(--text-2);
+  font-size: var(--fs-4);
+  font-weight: 650;
+  line-height: 1;
+}
+.exp-fields .exp-amount input {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  font-family: "Manrope", sans-serif;
+  font-size: var(--fs-4);
+  font-weight: 650;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+.exp-fields .exp-amount input:focus { box-shadow: none; background: transparent; }
+.exp-block { margin-top: 24px; }
 .exp-chips {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
 }
 .exp-chips button {
-  height: 36px;
-  padding: 0 14px;
+  height: 38px;
+  padding: 0 16px;
   border: 1px solid var(--line);
   border-radius: var(--radius-pill);
   background: var(--surface-soft);
@@ -502,11 +559,135 @@
 .exp-pair {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 16px;
+  gap: 20px;
 }
-.exp-pair .exp-chips button { flex: 1; justify-content: center; }
+.exp-pair-chips { flex-wrap: nowrap; }
+.exp-pair-chips button { flex: 1; justify-content: center; }
+
+/* 凭证 */
+.exp-receipts-head { display: flex; flex-direction: column; gap: 2px; margin-bottom: 14px; }
+.exp-receipts-head label { margin-bottom: 0; }
+.exp-receipts-rule { color: var(--text-3); font-size: var(--fs-1); }
+.exp-receipt-kinds {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+.exp-receipt-kind {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 84px;
+  padding: 12px 8px;
+  border: 1px dashed #e3b7a6;
+  border-radius: 16px;
+  background: #fdf6f2;
+  color: var(--coral-ink);
+  font-size: var(--fs-2);
+  font-weight: 650;
+  text-align: center;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+.exp-receipt-kind:hover { background: #faece7; border-color: var(--coral); }
+.exp-receipt-kind input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+.exp-receipt-kind.disabled {
+  cursor: not-allowed;
+  border-color: var(--line);
+  background: var(--surface-soft);
+  color: var(--text-3);
+}
+.exp-receipt-kind.disabled input { cursor: not-allowed; }
+.exp-receipt-soon {
+  margin-top: 12px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: var(--surface-soft);
+}
+.exp-receipt-soon p { margin: 0 0 8px; color: var(--text-2); font-size: var(--fs-1); }
+.exp-receipt-empty {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  margin: 12px 0 0;
+  color: var(--text-3);
+  font-size: var(--fs-1);
+  line-height: 1.5;
+}
+.exp-receipt-empty svg { flex: none; margin-top: 2px; }
+.exp-receipt-list {
+  list-style: none;
+  margin: 14px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.exp-receipt-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 8px 8px 8px;
+  border-radius: 14px;
+  background: var(--surface-soft);
+  min-width: 0;
+}
+.exp-receipt-thumb {
+  flex: none;
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #fff;
+  display: grid;
+  place-items: center;
+  color: var(--coral-ink);
+}
+.exp-receipt-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.exp-receipt-meta { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.exp-receipt-meta strong {
+  font-size: var(--fs-2);
+  font-weight: 650;
+  color: var(--text-1);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.exp-receipt-meta small { color: var(--text-3); font-size: var(--fs-1); display: flex; align-items: center; gap: 6px; }
+.exp-receipt-tag {
+  font-style: normal;
+  font-weight: 650;
+  padding: 1px 8px;
+  border-radius: var(--radius-pill);
+  background: #faece7;
+  color: var(--coral-ink);
+}
+.exp-receipt-tag.no_invoice,
+.exp-receipt-tag.payment { background: var(--surface-muted); color: var(--text-2); }
+.exp-receipt-remove {
+  flex: none;
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--text-3);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+}
+.exp-receipt-remove:hover { background: #fff; color: var(--text-1); }
+.exp-receipt-error { margin: 10px 0 0; color: var(--text-danger); font-size: var(--fs-1); }
+
 .exp-summary {
-  margin-top: 18px;
   padding: 14px 16px;
   border-radius: 16px;
   background: #faece7;
@@ -516,11 +697,12 @@
   color: var(--text-2);
   font-size: var(--fs-2);
 }
-.exp-summary b { color: var(--text-1); font-size: var(--fs-4); letter-spacing: -0.03em; }
+.exp-summary b { color: var(--text-1); font-size: var(--fs-4); letter-spacing: -0.03em; white-space: nowrap; }
+.exp-summary-empty { margin: 0; color: var(--text-3); font-size: var(--fs-1); line-height: 1.5; }
 .exp-submit {
-  margin-top: 18px;
+  margin-top: 16px;
   width: 100%;
-  height: 48px;
+  height: 50px;
   border: 0;
   border-radius: var(--radius-pill);
   background: var(--accent);
@@ -530,6 +712,11 @@
   font-size: var(--fs-3);
 }
 .exp-submit:disabled { opacity: 0.65; }
+
+@media (max-width: 1024px) {
+  .exp-form-grid { grid-template-columns: 1fr; }
+  .exp-form-side { position: static; }
+}
 
 /* 待确认 */
 .exp-pending-list { display: flex; flex-direction: column; gap: 14px; max-width: 560px; }
@@ -902,32 +1089,32 @@
   }
   .exp-panel { padding: 16px; }
 
-  /* C. 记一笔报销：压紧间距，日期用 2026 / 11 / 14，关键字段尽量一屏内 */
+  /* C. 记一笔报销：单列，压紧间距，日期用 2026 / 11 / 14 */
   .exp-form .page-heading { margin-bottom: 12px; }
   .exp-form .page-heading h1 { font-size: var(--fs-4); }
   .exp-form .exp-form-lead {
     margin-top: 2px;
     line-height: 1.45;
   }
+  .exp-form-grid { gap: 12px; }
+  .exp-form-side { gap: 12px; }
   .exp-form .panel {
-    display: flex;
-    flex-direction: column;
     padding: 14px 14px 16px;
     border-radius: 18px;
   }
-  .exp-form .exp-summary { order: 2; }
-  .exp-form .exp-submit { order: 3; }
-  .exp-form .exp-block:has(#exp-note) { order: 4; }
   .exp-fields {
     grid-template-columns: 1fr 1fr;
     gap: 10px;
   }
   .exp-fields input,
   .exp-block input,
-  .currency-input.exp-amount {
+  .exp-amount {
     height: 44px;
   }
-  .exp-block { margin-top: 12px; }
+  .exp-amount { padding: 0 12px; gap: 6px; }
+  .exp-amount-prefix { font-size: var(--fs-3); }
+  .exp-fields .exp-amount input { font-size: var(--fs-3); }
+  .exp-block { margin-top: 14px; }
   .exp-block textarea { min-height: 52px; padding: 8px 12px; }
   .exp-chips { gap: 6px; }
   .exp-chips button {
@@ -940,7 +1127,12 @@
     grid-template-columns: 1fr 1fr;
     gap: 10px;
   }
-  .exp-summary { margin-top: 12px; padding: 10px 12px; }
+  .exp-receipts-head { margin-bottom: 10px; }
+  .exp-receipt-kinds { gap: 6px; }
+  .exp-receipt-kind { min-height: 64px; padding: 8px 4px; font-size: var(--fs-1); border-radius: 14px; }
+  .exp-receipt-item { gap: 10px; }
+  .exp-receipt-thumb { width: 40px; height: 40px; }
+  .exp-summary { padding: 10px 12px; }
   .exp-submit { margin-top: 12px; height: 44px; }
   .exp-date-display {
     display: flex;
@@ -983,3 +1175,19 @@
   .exp-pending-actions button { height: 40px; }
   .exp-foot-note { margin-top: 8px; }
 }
+
+/* 明细、待确认里的凭证链接 */
+.exp-receipt-links { display: inline-flex; flex-wrap: wrap; gap: 4px 8px; margin-left: 6px; vertical-align: baseline; }
+.exp-receipt-links a,
+.exp-receipt-view {
+  border: 0;
+  padding: 0;
+  background: none;
+  color: var(--coral-ink);
+  font: inherit;
+  font-weight: 650;
+  text-decoration: none;
+  cursor: pointer;
+}
+.exp-receipt-links a:hover,
+.exp-receipt-view:hover { text-decoration: underline; }

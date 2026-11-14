@@ -13,6 +13,7 @@ import {
   recordOwner,
   expensesOn,
   salesPayerOn,
+  receiptsOn,
   EXPENSE_MEMBER_ACTIONS,
   type Actor,
   type TeamConfig,
@@ -27,6 +28,12 @@ import {
   upcomingDecades,
   validateCategoryName,
   validateExpense,
+  selectableCategories,
+  receiptMime,
+  receiptUploader,
+  RECEIPT_MAX_BYTES,
+  RECEIPT_MAX_FILES,
+  type ExpenseReceipt,
   type Expense,
   type ExpenseCategory,
   type ExpenseInput,
@@ -38,6 +45,7 @@ import {
 } from "../src/domain/expenses";
 import type { Sale } from "../src/domain/model";
 import { today as todayOf } from "../src/domain/dates";
+import { ReceiptError, decodeReceipt, receiptPath, sniffReceipt } from "./receipts";
 
 export const EXPENSES_COLLECTION = "expenses" as const;
 export const EXPENSE_SETTINGS_ID = "_settings";
@@ -55,8 +63,19 @@ export const EXPENSE_ACTIONS = new Set([
   "expenses.reject",
   "expenses.categories.create",
   "expenses.categories.archive",
+  "expenses.receipts.prepare",
+  "expenses.receipts.upload",
+  "expenses.receipts.discard",
+  "expenses.receipts.urls",
   "expenses.settlement",
   "expenses.shares",
+]);
+
+const RECEIPT_ACTIONS = new Set([
+  "expenses.receipts.prepare",
+  "expenses.receipts.upload",
+  "expenses.receipts.discard",
+  "expenses.receipts.urls",
 ]);
 
 export const EXPENSE_AUDITED_ACTIONS = new Set([
@@ -124,6 +143,33 @@ function monthOf(value: unknown, fallback: string): string {
   return value;
 }
 
+function randomName(): string {
+  return globalThis.crypto.randomUUID().replace(/-/g, "");
+}
+
+/**
+ * 保存时核对凭证：本次新加的文件必须是操作人自己上传的（路径 expenses/<自己 uid>/）；
+ * 原来就挂在这条记录上的照旧保留。凭证没开时不接受新凭证。
+ */
+function checkReceipts(
+  team: TeamConfig,
+  actor: Actor,
+  next: ExpenseReceipt[] | undefined,
+  prev: ExpenseReceipt[] | undefined,
+) {
+  const before = new Set((prev || []).map((r) => r.fileID));
+  for (const r of next || []) {
+    if (before.has(r.fileID)) continue;
+    if (!receiptsOn(team)) throw new Error("凭证上传尚未开放");
+    if (receiptUploader(r.fileID) !== actor.uid) throw new Error("只能附上自己上传的凭证");
+  }
+}
+
+async function removeFiles(team: TeamConfig, fileIDs: string[]) {
+  if (!fileIDs.length || !team.receiptStorage) return;
+  await team.receiptStorage.remove(fileIDs).catch(() => team.warn?.("receipt.delete_failed"));
+}
+
 export async function executeExpenses(
   store: Store,
   ctx: Context,
@@ -140,6 +186,72 @@ export async function executeExpenses(
   const time = now();
   const today = todayOf(new Date(time));
   const payerEnabled = salesPayerOn(team);
+  if (RECEIPT_ACTIONS.has(action) && !receiptsOn(team)) throw new UnsupportedActionError();
+
+  if (action === "expenses.receipts.prepare") {
+    // 直传：每个文件给一个只对指定路径有效的上传签名；拿不到签名时 ticket 为 null，网页改走中转
+    const files = Array.isArray(p.files) ? p.files : [];
+    if (!files.length || files.length > RECEIPT_MAX_FILES) throw new ReceiptError(`一次最多上传 ${RECEIPT_MAX_FILES} 个凭证`);
+    const storage = team.receiptStorage!;
+    const items = [];
+    for (const f of files) {
+      const name = typeof f?.name === "string" ? f.name.slice(0, 200) : "";
+      const mime = receiptMime(name, typeof f?.type === "string" ? f.type : "");
+      if (!mime) throw new ReceiptError("凭证只支持 PDF 和图片（JPG、PNG、HEIC、WebP）");
+      if (!Number.isSafeInteger(f?.size) || f.size <= 0 || f.size > RECEIPT_MAX_BYTES)
+        throw new ReceiptError("凭证单个不能超过 10MB");
+      const cloudPath = receiptPath(actor.uid, mime, randomName(), today);
+      const ticket = await storage.ticket(cloudPath).catch(() => {
+        team.warn?.("receipt.ticket_failed");
+        return null;
+      });
+      items.push({ type: mime, ticket });
+    }
+    return { data: { items } };
+  }
+
+  if (action === "expenses.receipts.upload") {
+    // 中转（≤4MB）：查文件头，类型以文件头为准
+    const bytes = decodeReceipt(p.data);
+    const mime = sniffReceipt(bytes);
+    if (!mime) throw new ReceiptError("凭证只支持 PDF 和图片（JPG、PNG、HEIC、WebP）");
+    const fileID = await team.receiptStorage!.upload(receiptPath(actor.uid, mime, randomName(), today), bytes);
+    return { data: { fileID, type: mime, size: bytes.length } };
+  }
+
+  if (action === "expenses.receipts.discard") {
+    // 放弃还没保存进记录的凭证：只删自己上传、且没挂在任何记录上的
+    const ids: string[] = (Array.isArray(p.fileIDs) ? p.fileIDs : [])
+      .filter((x: unknown): x is string => typeof x === "string" && x.length <= 512)
+      .slice(0, RECEIPT_MAX_FILES);
+    const mine = ids.filter((id) => receiptUploader(id) === actor.uid);
+    if (!mine.length) return { data: { removed: 0 } };
+    const used = new Set((await listExpenses(store)).flatMap((r) => (r.receipts || []).map((x) => x.fileID)));
+    const free = mine.filter((id) => !used.has(id));
+    await removeFiles(team, free);
+    return { data: { removed: free.length } };
+  }
+
+  if (action === "expenses.receipts.urls") {
+    const id = recordId(p.id);
+    const row = await store.get<Expense>(EXPENSES_COLLECTION, id);
+    if (!row || !isExpenseRecord(row) || (row.deletedAt && !admin)) throw new Error("记录不存在");
+    ensureOwn(actor, row, ctx.ownerUid);
+    const list = row.receipts || [];
+    let urls = new Map<string, string>();
+    if (list.length) {
+      try {
+        urls = await team.receiptStorage!.tempUrls(list.map((r) => r.fileID));
+      } catch {
+        team.warn?.("receipt.url_failed");
+      }
+    }
+    return {
+      data: {
+        items: list.map((r) => ({ name: r.name, type: r.type, kind: r.kind, size: r.size, url: urls.get(r.fileID) || null })),
+      },
+    };
+  }
 
   if (action === "expenses.meta") {
     const settings = await loadSettings(store, time);
@@ -147,8 +259,9 @@ export async function executeExpenses(
     const data: ExpenseMeta = {
       owner: { uid: people.ownerUid, name: people.ownerName || OWNER_LABEL },
       partner: { uid: people.partnerUid, name: people.partnerName || PARTNER_LABEL },
-      categories: settings.categories.filter((c) => !c.archivedAt),
+      categories: selectableCategories(settings.categories),
       salesPayerEnabled: payerEnabled,
+      ...(receiptsOn(team) ? { receiptsEnabled: true } : {}),
     };
     return { data };
   }
@@ -244,8 +357,9 @@ export async function executeExpenses(
           : people.ownerUid;
     const input = validateExpense(
       { ...raw, paidBy, status },
-      settings.categories.filter((c) => !c.archivedAt),
+      selectableCategories(settings.categories),
     );
+    checkReceipts(team, actor, input.receipts, undefined);
     return store.transaction(async (tx) => {
       const existing = await tx.get<Expense>(EXPENSES_COLLECTION, id);
       if (existing) {
@@ -277,7 +391,7 @@ export async function executeExpenses(
     const settings = await loadSettings(store, time);
     const people = peopleOf(ctx, settings);
     const allowedPayers = new Set([people.ownerUid, people.partnerUid]);
-    return store.transaction(async (tx) => {
+    const r = await store.transaction(async (tx): Promise<{ data: Expense; target: { type: string; id: string; before?: Expense; after: Expense } }> => {
       const old = await tx.get<Expense>(EXPENSES_COLLECTION, id);
       if (!old || !isExpenseRecord(old)) throw new Error("记录不存在");
       if (old.lastMutation === requestId) return { data: old, target: { type: "expenses", id, after: old } };
@@ -306,9 +420,15 @@ export async function executeExpenses(
           hasInvoice: typeof raw.hasInvoice === "boolean" ? raw.hasInvoice : old.hasInvoice,
           note: typeof raw.note === "string" ? raw.note : old.note,
           status,
+          receipts: raw.receipts !== undefined ? raw.receipts : old.receipts,
         },
-        settings.categories.filter((c) => !c.archivedAt || c.id === (raw.categoryId ?? old.categoryId)),
+        // 原记录的分类即使已删除或已下线（如「软件订阅」）也可以保留
+        [
+          ...selectableCategories(settings.categories),
+          ...settings.categories.filter((c) => c.id === old.categoryId && c.id === (raw.categoryId ?? old.categoryId)),
+        ],
       );
+      checkReceipts(team, actor, input.receipts, old.receipts);
       const row: Expense = {
         ...old,
         ...input,
@@ -317,9 +437,15 @@ export async function executeExpenses(
         lastMutation: requestId,
         ...(actor.uid ? { updatedBy: actor.uid } : {}),
       };
+      if (!input.receipts) delete row.receipts;
       await tx.put(EXPENSES_COLLECTION, id, row);
       return { data: row, target: { type: "expenses", id, before: old, after: row } };
     });
+    // 改记录时拿掉的凭证：提交后再删文件（删失败只告警，不影响记录）
+    const kept = new Set((r.data.receipts || []).map((x) => x.fileID));
+    const dropped = (r.target.before as Expense | undefined)?.receipts?.filter((x) => !kept.has(x.fileID)) || [];
+    if (r.target.before !== r.target.after) await removeFiles(team, dropped.map((x) => x.fileID));
+    return r;
   }
 
   if (action === "expenses.delete" || action === "expenses.restore") {
@@ -359,6 +485,10 @@ export async function executeExpenses(
       if (!old.deletedAt) throw new Error("只能彻底删除回收站中的记录");
       await tx.del(EXPENSES_COLLECTION, id);
       return { data: { purged: true }, target: { type: "expenses", id, before: old } };
+    }).then(async (r) => {
+      // 彻底删除后再删凭证文件
+      await removeFiles(team, ((r.target.before as Expense).receipts || []).map((x) => x.fileID));
+      return r;
     });
   }
 

@@ -213,3 +213,139 @@ describe("进货付款人开关", () => {
     expect(def.data.paidBy).toBe(ZHOU);
   });
 });
+
+describe("报销凭证（EXPENSE_RECEIPTS_ENABLED）", () => {
+  const PDF = Buffer.from("%PDF-1.4\n示例\n%%EOF").toString("base64");
+  const PNG = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 0]).toString("base64");
+  const base = { date: "2026-11-14", amount: 10_000, categoryId: "cat-phone", categoryName: "话费", note: "", status: "pending_reimburse" };
+  async function rig(allowTicket = false) {
+    const { MemoryReceiptStorage } = await import("../server/receipts");
+    const storage = new MemoryReceiptStorage(allowTicket);
+    const s = await seed();
+    const team: TeamConfig = { ...ON, expenseReceiptsEnabled: true, receiptStorage: storage };
+    return { s, storage, call: caller(s, team) };
+  }
+
+  it("环境变量 EXPENSE_RECEIPTS_ENABLED=1 才开；关着时凭证接口 UNSUPPORTED，meta 不带 receiptsEnabled，也不接受新凭证", async () => {
+    expect(teamConfigFromEnv({ EXPENSE_RECEIPTS_ENABLED: "1" })).toMatchObject({ expenseReceiptsEnabled: true });
+    expect(teamConfigFromEnv({ EXPENSE_RECEIPTS_ENABLED: "true" }).expenseReceiptsEnabled).toBeUndefined();
+    const { MemoryReceiptStorage } = await import("../server/receipts");
+    const s = await seed();
+    const call = caller(s, { ...ON, receiptStorage: new MemoryReceiptStorage() });
+    expect(await call(OWNER, "expenses.receipts.upload", { data: PDF })).toMatchObject({ ok: false, code: "UNSUPPORTED_ACTION" });
+    const meta = await call(OWNER, "expenses.meta");
+    expect(meta.data.receiptsEnabled).toBeUndefined();
+    expect(await call(OWNER, "expenses.create", {
+      requestId: "x1",
+      expense: { ...base, paidBy: OWNER, hasInvoice: false, receipts: [{ fileID: `cloud://demo/expenses/${OWNER}/a.pdf`, name: "a.pdf", type: "application/pdf", size: 10, kind: "invoice" }] },
+    })).toMatchObject({ ok: false, error: "凭证上传尚未开放" });
+    // 关着时旧写法（只有 hasInvoice）照常
+    expect(await call(OWNER, "expenses.create", { requestId: "x2", expense: { ...base, paidBy: OWNER, hasInvoice: true } })).toMatchObject({ ok: true });
+  });
+
+  it("中转上传查文件头；存 expenses/<自己 uid>/；保存后 hasInvoice 由凭证推导；临时链接只给本人和管理员", async () => {
+    const { s, storage, call } = await rig();
+    expect((await call(OWNER, "expenses.meta")).data.receiptsEnabled).toBe(true);
+    expect(await call(ZHOU, "expenses.receipts.upload", { data: Buffer.from("GIF89a....").toString("base64") })).toMatchObject({ ok: false, error: expect.stringMatching(/PDF/) });
+    const pdf = await call(ZHOU, "expenses.receipts.upload", { name: "发票.pdf", data: PDF });
+    expect(pdf).toMatchObject({ ok: true, data: { type: "application/pdf" } });
+    expect(pdf.data.fileID).toMatch(new RegExp(`^cloud://demo/expenses/${ZHOU}/20261114-\\w+\\.pdf$`));
+    const png = await call(ZHOU, "expenses.receipts.upload", { name: "截图.png", data: PNG });
+    expect(png.data.type).toBe("image/png");
+    const created = await call(ZHOU, "expenses.create", {
+      requestId: "r1",
+      expense: {
+        ...base, paidBy: ZHOU, hasInvoice: false,
+        receipts: [
+          { fileID: pdf.data.fileID, name: "发票.pdf", type: "application/pdf", size: pdf.data.size, kind: "invoice" },
+          { fileID: png.data.fileID, name: "截图.png", type: "image/png", size: png.data.size, kind: "payment" },
+        ],
+      },
+    });
+    expect(created).toMatchObject({ ok: true, data: { hasInvoice: true, status: "pending_confirm" } });
+    expect(created.data.receipts).toHaveLength(2);
+    const urls = await call(ZHOU, "expenses.receipts.urls", { id: "r1" });
+    expect(urls.data.items.map((x: any) => x.kind)).toEqual(["invoice", "payment"]);
+    expect(urls.data.items[0].url).toMatch(/^data:application\/pdf;base64,/);
+    expect(urls.data.items[0].fileID).toBeUndefined();
+    expect((await call(OWNER, "expenses.receipts.urls", { id: "r1" })).ok).toBe(true);
+    // 审计只记凭证个数
+    const log = Object.values(s.data.audit_logs || {}).find((l: any) => l.action === "expenses.create" && l.targetId === "r1") as any;
+    expect(log.after.receiptCount).toBe(2);
+    expect(JSON.stringify(log)).not.toContain("发票.pdf");
+    expect(storage.files.size).toBe(2);
+  });
+
+  it("不能附上别人上传的文件；成员不能看别人的凭证；放弃只删自己没挂上的", async () => {
+    const { storage, call } = await rig();
+    const mine = await call(OWNER, "expenses.receipts.upload", { data: PDF });
+    expect(await call(ZHOU, "expenses.create", {
+      requestId: "r2",
+      expense: { ...base, paidBy: ZHOU, hasInvoice: false, receipts: [{ fileID: mine.data.fileID, name: "a.pdf", type: "application/pdf", size: 10, kind: "invoice" }] },
+    })).toMatchObject({ ok: false, error: "只能附上自己上传的凭证" });
+    await call(OWNER, "expenses.create", {
+      requestId: "r3",
+      expense: { ...base, paidBy: OWNER, hasInvoice: false, receipts: [{ fileID: mine.data.fileID, name: "a.pdf", type: "application/pdf", size: 10, kind: "invoice" }] },
+    });
+    expect(await call(ZHOU, "expenses.receipts.urls", { id: "r3" })).toMatchObject({ ok: false, code: "NOT_OWNER_OF_RECORD" });
+    // 已挂在记录上的不删；别人的不删
+    expect((await call(ZHOU, "expenses.receipts.discard", { fileIDs: [mine.data.fileID] })).data.removed).toBe(0);
+    expect((await call(OWNER, "expenses.receipts.discard", { fileIDs: [mine.data.fileID] })).data.removed).toBe(0);
+    const loose = await call(ZHOU, "expenses.receipts.upload", { data: PNG });
+    expect((await call(ZHOU, "expenses.receipts.discard", { fileIDs: [loose.data.fileID] })).data.removed).toBe(1);
+    expect(storage.files.has(loose.data.fileID)).toBe(false);
+    expect(storage.files.has(mine.data.fileID)).toBe(true);
+  });
+
+  it("改记录拿掉的凭证、彻底删除的记录：提交后删文件；软删除保留文件", async () => {
+    const { storage, call } = await rig();
+    const a = await call(OWNER, "expenses.receipts.upload", { data: PDF });
+    const b = await call(OWNER, "expenses.receipts.upload", { data: PNG });
+    const ra = { fileID: a.data.fileID, name: "a.pdf", type: "application/pdf", size: a.data.size, kind: "invoice" };
+    const rb = { fileID: b.data.fileID, name: "b.png", type: "image/png", size: b.data.size, kind: "payment" };
+    const row = await call(OWNER, "expenses.create", { requestId: "r4", expense: { ...base, paidBy: OWNER, hasInvoice: false, receipts: [ra, rb] } });
+    const upd = await call(OWNER, "expenses.update", { id: "r4", requestId: "u1", revision: row.data.revision, expense: { receipts: [rb] } });
+    expect(upd).toMatchObject({ ok: true, data: { hasInvoice: false } });
+    expect(storage.removed).toEqual([a.data.fileID]);
+    const del = await call(OWNER, "expenses.delete", { id: "r4", requestId: "d1", revision: upd.data.revision });
+    expect(storage.files.has(b.data.fileID)).toBe(true);
+    await call(OWNER, "expenses.purge", { id: "r4", revision: del.data.revision });
+    expect(storage.removed).toEqual([a.data.fileID, b.data.fileID]);
+  });
+
+  it("直传：给只对 expenses/<自己 uid>/ 有效的签名，类型和大小先在云端挡一遍", async () => {
+    const { storage, call } = await rig(true);
+    const r = await call(ZHOU, "expenses.receipts.prepare", { files: [{ name: "IMG_1.HEIC", type: "", size: 3_000_000 }, { name: "a.pdf", type: "application/pdf", size: 9_000_000 }] });
+    expect(r.ok).toBe(true);
+    expect(r.data.items.map((x: any) => x.type)).toEqual(["image/heic", "application/pdf"]);
+    expect(storage.tickets.every((p) => p.startsWith(`expenses/${ZHOU}/`))).toBe(true);
+    expect(r.data.items[0].ticket.fileID).toMatch(/\.heic$/);
+    expect(await call(ZHOU, "expenses.receipts.prepare", { files: [{ name: "a.pdf", type: "application/pdf", size: 10 * 1024 * 1024 + 1 }] })).toMatchObject({ ok: false, error: "凭证单个不能超过 10MB" });
+    expect(await call(ZHOU, "expenses.receipts.prepare", { files: [{ name: "a.zip", type: "application/zip", size: 10 }] })).toMatchObject({ ok: false, error: expect.stringMatching(/PDF/) });
+    expect(await call(STRANGER, "expenses.receipts.prepare", { files: [{ name: "a.pdf", type: "application/pdf", size: 10 }] })).toMatchObject({ ok: false });
+  });
+
+  it("软件订阅：meta 不再给出、新记录不能选；旧记录分类照常，改别的字段也不报错", async () => {
+    const { s, call } = await rig();
+    (s.data.expenses["_settings"] as any).categories.push(
+      { id: "cat-software", name: "软件订阅", preset: true, createdAt: NOW },
+      { id: "u-1", name: "自定义一", createdAt: NOW },
+    );
+    s.data.expenses["old-1"] = {
+      id: "old-1", date: "2026-11-14", amount: 50_000, categoryId: "cat-software", categoryName: "软件订阅", paidBy: OWNER,
+      hasInvoice: false, note: "", status: "pending_reimburse", createdAt: NOW, updatedAt: NOW, deletedAt: null, revision: 1,
+    };
+    const meta = await call(OWNER, "expenses.meta");
+    const names = meta.data.categories.map((c: any) => c.name);
+    expect(names).not.toContain("软件订阅");
+    expect(names).toContain("自定义一");
+    expect(await call(OWNER, "expenses.create", { requestId: "n1", expense: { ...base, categoryId: "cat-software", categoryName: "软件订阅", paidBy: OWNER, hasInvoice: false } })).toMatchObject({ ok: false, error: "请选择分类" });
+    expect(await call(OWNER, "expenses.create", { requestId: "n2", expense: { ...base, categoryId: "u-1", categoryName: "自定义一", paidBy: OWNER, hasInvoice: false } })).toMatchObject({ ok: true });
+    const upd = await call(OWNER, "expenses.update", { id: "old-1", requestId: "u2", revision: 1, expense: { note: "补备注" } });
+    expect(upd).toMatchObject({ ok: true, data: { categoryName: "软件订阅", note: "补备注" } });
+    const list = await call(OWNER, "expenses.settlement", { month: "2026-11" });
+    expect(list.data.details.find((d: any) => d.id === "old-1").categoryName).toBe("软件订阅");
+    // 云端设置原样保留，没有被改写
+    expect((s.data.expenses["_settings"] as any).categories.some((c: any) => c.id === "cat-software" && !c.archivedAt)).toBe(true);
+  });
+});

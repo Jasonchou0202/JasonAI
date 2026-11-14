@@ -139,27 +139,31 @@ describe("示例账合账（对齐示意图）", () => {
     expect(splitProfit(yuan(7200))).toEqual({ owner: yuan(4320), partner: yuan(2880) });
     expect(splitProfit(yuan(10800))).toEqual({ owner: yuan(6480), partner: yuan(4320) });
   });
-  it("1–10 已出账：分成未开始，起算日前的报销不进合账，不显示应得", () => {
+  it("1–10 已出账：分成未开始，起算日前的报销不进合账；利润全归章鱼哥，周诗懿为 0", () => {
     const row = settleDecade(decadeOf("2026-11-03"), TODAY, SALES, EXPENSES, PEOPLE, false);
     expect(row.phase).toBe("closed");
     expect(row.sharesOpen).toBe(false);
     expect(row.revenue).toBe(yuan(12000));
     expect(row.cost).toBe(yuan(4000));
     expect(row.expense).toBe(0);
-    expect(row.profit).toBe(0);
-    expect(row.owner.amount).toBe(0);
+    expect(row.profit).toBe(yuan(8000));
+    expect(row.owner.share).toBe(1);
+    expect(row.partner.share).toBe(0);
+    expect(row.owner.amount).toBe(yuan(8000));
     expect(row.partner.amount).toBe(0);
+    expect(row.owner.advance).toBe(0);
+    expect(row.partner.advance).toBe(0);
     expect(row.partnerReceive).toBe(0);
   });
-  it("11–20 进行中：11-14 起的已入账报销计入合账，待确认与更早的不进；尚未分成", () => {
+  it("11–20 进行中：11-14 起的已入账报销计入合账，待确认与更早的不进；周诗懿为 0", () => {
     const row = settleDecade(decadeOf("2026-11-14"), TODAY, SALES, EXPENSES, PEOPLE, false);
     expect(row.phase).toBe("current");
     expect(row.sharesOpen).toBe(false);
     expect(row.revenue).toBe(yuan(18000));
     expect(row.cost).toBe(yuan(6000));
     expect(row.expense).toBe(yuan(800));
-    expect(row.profit).toBe(0);
-    expect(row.owner.amount).toBe(0);
+    expect(row.profit).toBe(yuan(11200));
+    expect(row.owner.amount).toBe(yuan(11200));
     expect(row.partner.amount).toBe(0);
     expect(row.partnerReceive).toBe(0);
   });
@@ -171,14 +175,18 @@ describe("示例账合账（对齐示意图）", () => {
     expect(row.profit).toBe(0);
     expect(row.partnerReceive).toBe(0);
   });
-  it("11 月 14 日已出账合计：分成尚未开始，应得为 0；待确认只计起算日及之后", () => {
+  it("11/1–11/20 已出账合计：照常合计利润，章鱼哥 100%、周诗懿 0；待确认只计起算日及之后", () => {
     const month = settleMonth("2026-11", TODAY, SALES, EXPENSES, PEOPLE, false);
     expect(month.pendingCount).toBe(1);
     expect(month.posted.sharesOpen).toBe(false);
-    expect(month.posted.profit).toBe(0);
-    expect(month.posted.salesProfit).toBe(0);
-    expect(month.posted.owner.amount).toBe(0);
+    expect(month.posted.revenue).toBe(yuan(30000));
+    expect(month.posted.profit).toBe(yuan(19200));
+    expect(month.posted.salesProfit).toBe(yuan(20000));
+    expect(month.posted.owner.share).toBe(1);
+    expect(month.posted.partner.share).toBe(0);
+    expect(month.posted.owner.amount).toBe(yuan(19200));
     expect(month.posted.partner.amount).toBe(0);
+    expect(month.posted.partner.advance).toBe(0);
     expect(month.posted.partnerReceive).toBe(0);
   });
   it("已驳回、回收站里的报销不进合账", () => {
@@ -218,12 +226,12 @@ describe("进货付款人开关", () => {
 });
 
 describe("利润对照：进行中的月份只计到已出账/进行中的段", () => {
-  it("11 月 14 日分成尚未开始，对照里本月利润为 0", () => {
+  it("11 月 14 日：对照里本月按已出账/进行中的段合计实际利润（与分成无关）", () => {
     const rows = compareMonths(TODAY, SALES, EXPENSES, PEOPLE, false, 1);
     expect(rows[0].month).toBe("2026-11");
     expect(rows[0].partial).toBe(true);
-    expect(rows[0].salesProfit).toBe(0);
-    expect(rows[0].profit).toBe(0);
+    expect(rows[0].salesProfit).toBe(yuan(20000));
+    expect(rows[0].profit).toBe(yuan(19200));
   });
 });
 
@@ -283,6 +291,44 @@ describe("起算日", () => {
     const row = settleDecade(decadeOf("2026-11-14"), TODAY, [], rows, PEOPLE, false);
     expect(row.expense).toBe(yuan(300));
   });
+  it("11-14 至 11-20：周诗懿垫付且已确认的报销退给她（照常扣利润），分成仍为 0；11-13 的和章鱼哥垫付的不退", () => {
+    const sales: Sale[] = [sale("s", "2026-11-15", 5000, 1000, "demo")];
+    const expenses: Expense[] = [
+      exp("zhou-early", "2026-11-13", 700, "demo-zhou", "reimbursed"),
+      exp("zhou-15", "2026-11-15", 260, "demo-zhou", "pending_reimburse"),
+      exp("zhou-pending", "2026-11-16", 90, "demo-zhou", "pending_confirm"),
+      exp("owner-17", "2026-11-17", 150, "demo", "reimbursed"),
+    ];
+    const row = settleDecade(decadeOf("2026-11-15"), "2026-11-22", sales, expenses, PEOPLE, false);
+    expect(row.sharesOpen).toBe(false);
+    expect(row.expense).toBe(yuan(410));
+    expect(row.profit).toBe(yuan(3590));
+    expect(row.owner.amount).toBe(yuan(3590));
+    expect(row.partner.share).toBe(0);
+    expect(row.partner.amount).toBe(0);
+    expect(row.partner.advance).toBe(yuan(260));
+    expect(row.owner.advance).toBe(0);
+    expect(row.partnerReceive).toBe(yuan(260));
+
+    const month = settleMonth("2026-11", "2026-11-22", sales, expenses, PEOPLE, false);
+    expect(month.decades[0].partnerReceive).toBe(0);
+    expect(month.posted.partner.advance).toBe(yuan(260));
+    expect(month.posted.partner.amount).toBe(0);
+    expect(month.posted.partnerReceive).toBe(yuan(260));
+  });
+  it("只有 11-13 周诗懿垫付的报销：不计入合账、不退", () => {
+    const row = settleDecade(
+      decadeOf("2026-11-13"),
+      "2026-11-22",
+      [],
+      [exp("zhou-13", "2026-11-13", 500, "demo-zhou", "reimbursed")],
+      PEOPLE,
+      false,
+    );
+    expect(row.expense).toBe(0);
+    expect(row.partner.advance).toBe(0);
+    expect(row.partnerReceive).toBe(0);
+  });
   it("11-20 不分；11-21 起按实际利润六四分成，只纳入当日及之后的销售、进货和报销", () => {
     const sales: Sale[] = [
       sale("before", "2026-11-20", 5000, 1000, "demo"),
@@ -296,9 +342,10 @@ describe("起算日", () => {
     ];
     const closed = settleDecade(decadeOf("2026-11-20"), "2026-11-22", sales, expenses, PEOPLE, false);
     expect(closed.sharesOpen).toBe(false);
-    expect(closed.profit).toBe(0);
-    expect(closed.owner.amount).toBe(0);
+    expect(closed.profit).toBe(yuan(3600));
+    expect(closed.owner.amount).toBe(yuan(3600));
     expect(closed.partner.amount).toBe(0);
+    expect(closed.partnerReceive).toBe(0);
     expect(closed.expense).toBe(yuan(400));
 
     const open = settleDecade(decadeOf("2026-11-21"), "2026-11-22", sales, expenses, PEOPLE, false);
@@ -346,12 +393,18 @@ describe("示例账本种子", () => {
     const people = { ownerUid: EXPENSE_DEMO_OWNER, ownerName: "章鱼哥", partnerUid: EXPENSE_DEMO_PARTNER, partnerName: "周诗懿" };
     const month = settleMonth("2026-11", "2026-11-14", sales, expenses, people, false);
     expect(month.posted.sharesOpen).toBe(false);
-    expect(month.posted.profit).toBe(0);
+    // 示例里 11-14 周诗懿垫付 ¥180 已确认：照常扣利润，并退给她
+    expect(month.posted.profit).toBe(1_902_000);
+    expect(month.posted.owner.amount).toBe(1_902_000);
+    expect(month.posted.partner.amount).toBe(0);
+    expect(month.posted.partnerReceive).toBe(18_000);
     expect(month.decades[0].sharesOpen).toBe(false);
-    expect(month.decades[0].profit).toBe(0);
+    expect(month.decades[0].profit).toBe(800_000);
+    expect(month.decades[0].partner.amount).toBe(0);
     expect(month.decades[1].sharesOpen).toBe(false);
-    expect(month.decades[1].profit).toBe(0);
-    expect(month.decades[1].owner.amount).toBe(0);
+    expect(month.decades[1].profit).toBe(1_102_000);
+    expect(month.decades[1].owner.amount).toBe(1_102_000);
+    expect(month.decades[1].partnerReceive).toBe(18_000);
     expect(month.decades[1].partner.amount).toBe(0);
     expect(month.decades[2].sharesOpen).toBe(true);
     expect(month.pendingCount).toBe(1);
@@ -368,6 +421,59 @@ describe("示例账本种子", () => {
     expect(on22.decades[2].owner.amount).toBe(540_000);
     expect(on22.decades[2].partner.amount).toBe(360_000);
     expect(on22.posted.sharesOpen).toBe(true);
-    expect(on22.posted.profit).toBe(900_000);
+    // 合计：1–20 日 19,020 全归章鱼哥（已扣 11-14 周诗懿垫付 180）；21 日起 9,000 六四分
+    expect(on22.posted.profit).toBe(2_802_000);
+    expect(on22.posted.owner.amount).toBe(1_902_000 + 540_000);
+    expect(on22.posted.partnerReceive).toBe(on22.decades[1].partnerReceive + on22.decades[2].partnerReceive);
+    expect(on22.decades[1].partnerReceive).toBe(18_000);
+    expect(on22.posted.partner.amount).toBe(360_000);
+    expect(on22.posted.owner.share).toBe(-1);
+  });
+});
+
+describe("分类：软件订阅下线，自定义分类保留", () => {
+  it("默认预设里没有软件订阅；云端旧设置里的软件订阅不再可选，自定义和其他预设都保留", async () => {
+    const { DEFAULT_CATEGORIES, selectableCategories } = await import("../src/domain/expenses");
+    expect(DEFAULT_CATEGORIES.some((c) => c.name === "软件订阅")).toBe(false);
+    const saved = [
+      ...defaultSettings("2026-11-14T00:00:00.000Z").categories,
+      { id: "cat-software", name: "软件订阅", preset: true, createdAt: "x" },
+      { id: "u1", name: "自定义一", createdAt: "x" },
+      { id: "u2", name: "自定义二", createdAt: "x" },
+      { id: "u3", name: "自定义三", createdAt: "x" },
+      { id: "u4", name: "已删", createdAt: "x", archivedAt: "y" },
+    ];
+    const names = selectableCategories(saved).map((c) => c.name);
+    expect(names).not.toContain("软件订阅");
+    expect(names).not.toContain("已删");
+    expect(names).toEqual(expect.arrayContaining(["自定义一", "自定义二", "自定义三", "话费", "其他"]));
+  });
+});
+
+describe("凭证", () => {
+  it("类型按 type 或扩展名判断；推导有无发票；列表摘要", async () => {
+    const { receiptMime, deriveHasInvoice, receiptSummary, validateReceipts, receiptUploader, shareLabel } = await import("../src/domain/expenses");
+    expect(receiptMime("a.pdf", "application/pdf")).toBe("application/pdf");
+    expect(receiptMime("IMG_1.HEIC", "")).toBe("image/heic");
+    expect(receiptMime("x.webp", "image/webp")).toBe("image/webp");
+    expect(receiptMime("x.gif", "image/gif")).toBe(null);
+    expect(receiptMime("x.exe", "")).toBe(null);
+    const r = (kind: "invoice" | "no_invoice" | "payment", n = 1) => ({
+      fileID: `cloud://env.bucket/expenses/demo/f${kind}${n}.pdf`, name: "a.pdf", type: "application/pdf" as const, size: 10, kind,
+    });
+    expect(deriveHasInvoice([r("payment")], true)).toBe(false);
+    expect(deriveHasInvoice([r("payment"), r("invoice")], false)).toBe(true);
+    expect(deriveHasInvoice([], true)).toBe(true);
+    expect(receiptSummary({ hasInvoice: true })).toBe("有发票");
+    expect(receiptSummary({ hasInvoice: false, receipts: [r("invoice"), r("payment", 1), r("payment", 2)] })).toBe("发票 · 支付凭证 ×2");
+    expect(receiptUploader("cloud://env.bucket/expenses/u-1/20261115-ab.pdf")).toBe("u-1");
+    expect(() => validateReceipts([{ ...r("invoice"), fileID: "cloud://env/avatars/demo/a.jpg" }])).toThrow(/凭证文件无效/);
+    expect(() => validateReceipts([{ ...r("invoice"), size: 10 * 1024 * 1024 + 1 }])).toThrow(/10MB/);
+    expect(() => validateReceipts([{ ...r("invoice"), type: "image/gif" }])).toThrow(/PDF/);
+    expect(() => validateReceipts(Array.from({ length: 10 }, (_, i) => r("invoice", i)))).toThrow(/最多/);
+    expect(shareLabel(1)).toBe("100%");
+    expect(shareLabel(0)).toBe("0%");
+    expect(shareLabel(0.6)).toBe("60%");
+    expect(shareLabel(-1)).toBe("");
   });
 });

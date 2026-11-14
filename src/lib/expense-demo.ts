@@ -2,6 +2,10 @@ import type { Product, Sale } from "../domain/model";
 import type { Expense, ExpenseSettings } from "../domain/expenses";
 import { DEFAULT_CATEGORIES } from "../domain/expenses";
 import { MemoryStore } from "../../server/memory-store";
+import { MemoryReceiptStorage } from "../../server/receipts";
+
+/** 演示里的凭证「云存储」：只在本页内存里，刷新后文件不保留（只有示例记录） */
+const demoReceipts = new MemoryReceiptStorage();
 
 /** 演示账本（虚构）：对齐示意图数字，人名只用章鱼哥、周诗懿 */
 export const EXPENSE_DEMO_OWNER = "demo";
@@ -129,7 +133,15 @@ export function seedExpenseDemo(store: MemoryStore) {
   const settings: ExpenseSettings = {
     partnerUid: EXPENSE_DEMO_PARTNER,
     partnerName: "周诗懿",
-    categories: DEFAULT_CATEGORIES.map((c) => ({ ...c, preset: true, createdAt: AT })),
+    categories: [
+      ...DEFAULT_CATEGORIES.map((c) => ({ ...c, preset: true, createdAt: AT })),
+      // 模拟云端旧设置里还留着已下线的「软件订阅」预设：新记录里不再出现，旧记录照常显示
+      { id: "cat-software", name: "软件订阅", hint: "ChatGPT / Claude / Grok Bot", preset: true, createdAt: AT },
+      // 模拟用户自己加的三个分类（示例名称）
+      { id: "cat-custom-1", name: "示例分类 · 招待", createdAt: AT },
+      { id: "cat-custom-2", name: "示例分类 · 快递", createdAt: AT },
+      { id: "cat-custom-3", name: "示例分类 · 推广", createdAt: AT },
+    ],
   };
   store.data.expenses["_settings"] = settings;
 
@@ -137,6 +149,7 @@ export function seedExpenseDemo(store: MemoryStore) {
     expense("e-1103", "2026-11-03", 200, "cat-phone", "话费", EXPENSE_DEMO_PARTNER, "reimbursed", true, "十一月手机话费", EXPENSE_DEMO_PARTNER),
     expense("e-1106", "2026-11-06", 600, "cat-software", "软件订阅", EXPENSE_DEMO_OWNER, "pending_reimburse", false, "Claude、ChatGPT 十一月订阅"),
     expense("e-1112", "2026-11-12", 400, "cat-transport", "交通", EXPENSE_DEMO_PARTNER, "pending_reimburse", true, "客户拜访交通", EXPENSE_DEMO_PARTNER),
+    expense("e-1114", "2026-11-14", 180, "cat-transport", "交通", EXPENSE_DEMO_PARTNER, "pending_reimburse", true, "客户拜访打车", EXPENSE_DEMO_PARTNER),
     expense("e-1116", "2026-11-16", 500, "cat-office", "办公", EXPENSE_DEMO_OWNER, "reimbursed", true, "办公用品"),
     expense("e-1118", "2026-11-18", 300, "cat-phone", "话费", EXPENSE_DEMO_OWNER, "reimbursed", true, "十一月话费"),
     expense("p-1113", "2026-11-13", 200, "cat-phone", "话费", EXPENSE_DEMO_PARTNER, "pending_confirm", true, "十一月手机话费", EXPENSE_DEMO_PARTNER),
@@ -164,5 +177,7 @@ export function expenseDemoTeam() {
     auditEnabled: true,
     expensesEnabled: true,
     salesPayerEnabled: true,
-  } as const;
+    expenseReceiptsEnabled: true,
+    receiptStorage: demoReceipts,
+  };
 }

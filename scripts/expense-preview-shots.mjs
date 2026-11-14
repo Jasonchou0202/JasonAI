@@ -33,7 +33,7 @@ try {
     await page.goto(`${base}?expense-preview=reset#/expense-entry`, { waitUntil: "networkidle" });
     await page.waitForSelector("h1:text('记一笔报销')", { timeout: 20000 });
     await page.locator("#exp-amount").fill("600");
-    await page.getByRole("button", { name: /软件订阅/ }).click();
+    await page.getByRole("button", { name: /办公/ }).click();
     await page.locator("#exp-note").fill("Claude、ChatGPT 十一月订阅");
     await page.evaluate(() => window.scrollTo(0, 0));
     await page.locator("h1:text('记一笔报销')").scrollIntoViewIfNeeded();
