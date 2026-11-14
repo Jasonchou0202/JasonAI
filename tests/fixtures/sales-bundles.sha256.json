@@ -1,5 +1,5 @@
 {
-  "cloudfunctions/sales/index.js": "f4ee2438bf06405d7e0c620ebc49a658536fdc64a72957a58ee8aa8e9aa24e5b",
+  "cloudfunctions/sales/index.js": "3d427d787d4849e0fb3e9e009c1001560746b60c85f06eb35092a9ff2844868d",
   "cloudfunctions/sales/package.json": "944e52692cd1080082096acef034f82209183b7a22afa2b0f90a183fe8adb874",
   "cloudfunctions/reminders/index.js": "828e5d2736e2696fc961507ef01b5e609f1589237b61ee83c13c23802d7cbbff",
   "cloudfunctions/reminders/package.json": "9285fa9e260fbe4c0b4d9b882dea9f039705c3151e5db4f9294495cde260e4c0",
