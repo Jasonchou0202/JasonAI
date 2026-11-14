@@ -105,6 +105,9 @@ function salesCurrent(page: Page, id: Page) {
   if (id === "expenses") return page === "expenses" || page === "expense-entry" || page === "expense-pending";
   return page === id;
 }
+function isExpenseFlow(page: Page) {
+  return page === "expenses" || page === "expense-entry" || page === "expense-pending";
+}
 function SalesLinks({
   page,
   onOpen,
@@ -640,7 +643,7 @@ export default function App() {
     );
   return (
     <DirectoryProvider api={api} me={knownMe}>
-    <div className="app-shell">
+    <div className={`app-shell${isExpenseFlow(page) ? " exp-flow" : ""}`}>
       <button
         type="button"
         className="skip-link"
@@ -1011,8 +1014,9 @@ export default function App() {
           </button>
           <button
             type="button"
-            className={`mobile-add ${page === "entry" ? "active" : ""}`}
+            className={`mobile-add${page === "entry" ? " active" : ""}`}
             onClick={newSale}
+            aria-current={page === "entry" ? "page" : undefined}
           >
             <span>
               <Plus size={23} />

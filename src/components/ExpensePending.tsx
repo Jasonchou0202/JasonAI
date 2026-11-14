@@ -54,7 +54,7 @@ export function ExpensePending({
   }
   const items = data?.items || [];
   return (
-    <div>
+    <div className="exp-pending-page">
       <div className="page-heading">
         <div>
           <button className="back-link" type="button" onClick={onBack}>

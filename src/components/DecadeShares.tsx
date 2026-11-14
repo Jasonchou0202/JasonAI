@@ -32,7 +32,8 @@ export function DecadeShares({
       <div className="exp-shares-head">
         <div>
           <h2>十天应得利润</h2>
-          <p>只看当前这一段和后面两段，按实际利润六四分成。合账明细在报销记账。</p>
+          <p className="exp-shares-desc">只看当前这一段和后面两段，按实际利润六四分成。合账明细在报销记账。</p>
+          <p className="exp-shares-desc-short">当前段与后两段，按实际利润六四分。</p>
         </div>
         <button type="button" className="exp-shares-link" onClick={onOpen}>
           查看报销记账 →

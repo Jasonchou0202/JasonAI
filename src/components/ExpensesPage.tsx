@@ -19,6 +19,14 @@ function slashDate(date: string) {
   return `${Number(date.slice(5, 7))}/${Number(date.slice(8, 10))}`;
 }
 
+function phaseLabel(phase: DecadeSettlement["phase"]) {
+  return phase === "closed" ? "已出账" : phase === "current" ? "进行中" : "待出账 · 示意";
+}
+
+function yenOrDash(value: number, upcoming: boolean) {
+  return upcoming ? "—" : `¥${money(value)}`;
+}
+
 function DecadeCard({ row, admin }: { row: DecadeSettlement; admin: boolean }) {
   const upcoming = row.phase === "upcoming";
   const phaseLabel = row.phase === "closed" ? "已出账" : row.phase === "current" ? "进行中" : "待出账 · 示意";
@@ -136,9 +144,10 @@ export function ExpensesPage({
       <div className="exp-heading">
         <div>
           <h1>报销记账</h1>
-          <p>
+          <p className="exp-lead-full">
             十天合账与报销明细都在这里。实际利润 = 销售收入（来自销售记录，不必在此重复记）− 进货成本 − 报销成本。分账按{data.people.owner.name} 60%、{data.people.partner.name} 40%。示例按销售收入记在{data.people.owner.name}处结算。
           </p>
+          <p className="exp-lead-short">十天合账。分账按{data.people.owner.name} 60%、{data.people.partner.name} 40%。</p>
         </div>
         <div className="exp-heading-actions">
           <div className="exp-month-nav" aria-label="切换月份">
@@ -156,6 +165,33 @@ export function ExpensesPage({
           </button>
         </div>
       </div>
+      <section className="exp-overview" aria-label="本月三段全貌">
+        {data.decades.map((row) => {
+          const upcoming = row.phase === "upcoming";
+          return (
+            <article className={`exp-overview-row ${row.phase}`} key={row.decade.from}>
+              <header>
+                <h3>{row.decade.label}</h3>
+                <span className={`exp-phase ${row.phase}`}>{phaseLabel(row.phase)}</span>
+                <b className={upcoming ? "muted" : ""}>{yenOrDash(row.profit, upcoming)}</b>
+              </header>
+              <p>
+                <span>{row.owner.name} 60% {yenOrDash(row.owner.amount, upcoming)}</span>
+                <span>{row.partner.name} 40% {yenOrDash(row.partner.amount, upcoming)}</span>
+                {admin && <span>{row.partner.name}应收回 {yenOrDash(row.partnerReceive, upcoming)}</span>}
+              </p>
+            </article>
+          );
+        })}
+        {admin && (
+          <div className="exp-overview-total">
+            <strong>已出账合计</strong>
+            <span>实际利润 ¥{money(data.posted.profit)}</span>
+            <span>{data.people.partner.name}应收回 ¥{money(data.posted.partnerReceive)}</span>
+          </div>
+        )}
+      </section>
+      <p className="exp-details-jump">下滑查看各段明细与报销清单</p>
       <div className="exp-decades">
         {data.decades.map((row) => (
           <DecadeCard key={row.decade.from} row={row} admin={admin} />
@@ -228,6 +264,7 @@ export function ExpensesPage({
           {data.details.length === 0 ? (
             <p className="subtle">这个月还没有报销记录。</p>
           ) : (
+            <>
             <table className="exp-table">
               <thead>
                 <tr>
@@ -254,6 +291,24 @@ export function ExpensesPage({
                 ))}
               </tbody>
             </table>
+            <ul className="exp-detail-cards">
+              {data.details.map((row) => (
+                <li key={row.id} className="exp-detail-card">
+                  <div className="exp-detail-top">
+                    <strong>{row.categoryName}</strong>
+                    <b>¥{money(row.amount)}</b>
+                  </div>
+                  <div className="exp-detail-meta">
+                    <span>{slashDate(row.date)}</span>
+                    <span>{row.payerName}</span>
+                    <span>{row.hasInvoice ? "有发票" : "无发票"}</span>
+                    <span className={`exp-status ${row.status}`}>{EXPENSE_STATUS_LABEL[row.status]}</span>
+                  </div>
+                  {row.note ? <p className="exp-detail-note">{row.note}</p> : null}
+                </li>
+              ))}
+            </ul>
+            </>
           )}
         </section>
       </div>

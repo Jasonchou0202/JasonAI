@@ -101,7 +101,7 @@ export function ExpenseForm({
             返回报销记账
           </button>
           <h1>记一笔报销</h1>
-          <p className="subtle">从报销记账进入。进货成本从销售记录带出，不必重复记。</p>
+          <p className="subtle exp-form-lead">从报销记账进入。进货成本从销售记录带出，不必重复记。</p>
         </div>
       </div>
       <form
@@ -114,7 +114,12 @@ export function ExpenseForm({
         <div className="exp-fields">
           <div>
             <label htmlFor="exp-date">日期</label>
-            <input id="exp-date" type="date" value={date} onChange={(e) => setDate(e.target.value)} required min="1900-01-01" max="2199-12-31" />
+            <div className="exp-date-field">
+              <span className="exp-date-display" aria-hidden="true">
+                {date ? `${date.slice(0, 4)} / ${date.slice(5, 7)} / ${date.slice(8, 10)}` : ""}
+              </span>
+              <input id="exp-date" type="date" value={date} onChange={(e) => setDate(e.target.value)} required min="1900-01-01" max="2199-12-31" />
+            </div>
           </div>
           <div>
             <label htmlFor="exp-amount">金额</label>
