@@ -18,6 +18,7 @@ import {
   type TeamConfig,
 } from "./team";
 import {
+  countsAsExpense,
   defaultSettings,
   displayPayer,
   isExpenseRecord,
@@ -414,7 +415,7 @@ export async function executeExpenses(
     const compare = compareMonths(today, activeSales, visibleExpenses, people, payerEnabled, 5);
     // 明细：成员只看自己的；管理员看全部（含待确认）
     const details = visibleTo(actor, expenses, ctx.ownerUid)
-      .filter((e) => !e.deletedAt && e.date.startsWith(month))
+      .filter((e) => !e.deletedAt && e.date.startsWith(month) && countsAsExpense(e.date))
       .sort(
         (a, b) =>
           b.date.localeCompare(a.date) ||

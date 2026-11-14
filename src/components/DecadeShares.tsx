@@ -1,5 +1,6 @@
 import type { Api } from "../domain/model";
 import type { DecadeSettlement } from "../domain/expenses";
+import { PROFIT_SHARE_HINT } from "../domain/expenses";
 import { money } from "../domain/finance";
 import { useQuery } from "./ui";
 import "../expenses.css";
@@ -49,14 +50,20 @@ export function DecadeShares({
                 <span>{titleOf(row)}</span>
                 <span className={`exp-phase ${row.phase}`}>{phase}</span>
               </header>
-              <div className="exp-share-row">
-                <span>{row.owner.name} 60%</span>
-                {upcoming ? <span className="dash">—</span> : <b>¥{money(row.owner.amount)}</b>}
-              </div>
-              <div className="exp-share-row">
-                <span>{row.partner.name} 40%</span>
-                {upcoming ? <span className="dash">—</span> : <b>¥{money(row.partner.amount)}</b>}
-              </div>
+              {!row.sharesOpen ? (
+                <p className="exp-share-wait">{PROFIT_SHARE_HINT}</p>
+              ) : (
+                <>
+                  <div className="exp-share-row">
+                    <span>{row.owner.name} 60%</span>
+                    {upcoming ? <span className="dash">—</span> : <b>¥{money(row.owner.amount)}</b>}
+                  </div>
+                  <div className="exp-share-row">
+                    <span>{row.partner.name} 40%</span>
+                    {upcoming ? <span className="dash">—</span> : <b>¥{money(row.partner.amount)}</b>}
+                  </div>
+                </>
+              )}
             </article>
           );
         })}

@@ -93,6 +93,8 @@ export function seedExpenseDemo(store: MemoryStore) {
     { prefix: "n1z", dates: ["2026-11-01", "2026-11-04", "2026-11-06", "2026-11-08"], revenue: yuan(4800), cost: yuan(1600), who: EXPENSE_DEMO_PARTNER },
     { prefix: "n2o", dates: ["2026-11-11", "2026-11-12", "2026-11-13", "2026-11-14", "2026-11-16", "2026-11-17", "2026-11-18", "2026-11-19"], revenue: yuan(10200), cost: yuan(3400), who: EXPENSE_DEMO_OWNER },
     { prefix: "n2z", dates: ["2026-11-11", "2026-11-12", "2026-11-13", "2026-11-14", "2026-11-15", "2026-11-18"], revenue: yuan(7800), cost: yuan(2600), who: EXPENSE_DEMO_PARTNER },
+    { prefix: "n3o", dates: ["2026-11-21", "2026-11-22", "2026-11-24", "2026-11-26", "2026-11-28"], revenue: yuan(9000), cost: yuan(3000), who: EXPENSE_DEMO_OWNER },
+    { prefix: "n3z", dates: ["2026-11-21", "2026-11-23", "2026-11-25", "2026-11-27"], revenue: yuan(6000), cost: yuan(2000), who: EXPENSE_DEMO_PARTNER },
   ];
   let n = 0;
   for (const block of plan) {
@@ -139,6 +141,8 @@ export function seedExpenseDemo(store: MemoryStore) {
     expense("e-1118", "2026-11-18", 300, "cat-phone", "话费", EXPENSE_DEMO_OWNER, "reimbursed", true, "十一月话费"),
     expense("p-1113", "2026-11-13", 200, "cat-phone", "话费", EXPENSE_DEMO_PARTNER, "pending_confirm", true, "十一月手机话费", EXPENSE_DEMO_PARTNER),
     expense("p-1114", "2026-11-14", 120, "cat-transport", "交通", EXPENSE_DEMO_PARTNER, "pending_confirm", false, "去见客户打车", EXPENSE_DEMO_PARTNER),
+    expense("e-1121", "2026-11-21", 400, "cat-software", "软件订阅", EXPENSE_DEMO_OWNER, "pending_reimburse", false, "Claude、ChatGPT 十一月订阅"),
+    expense("e-1125", "2026-11-25", 600, "cat-office", "办公", EXPENSE_DEMO_PARTNER, "reimbursed", true, "办公用品", EXPENSE_DEMO_PARTNER),
   ];
   for (const r of rows) store.data.expenses[r.id] = r;
 

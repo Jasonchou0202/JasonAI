@@ -37,7 +37,7 @@ export function demoOwnerPreview(): boolean {
 /** 演示「报销记账预览」：…/?expense-preview=1（或 admin / member），独立示例账本，开关只在这份预览里打开 */
 export const DEMO_EXPENSE_KEY = "zhangyuge-demo-expense";
 export const EXPENSE_STORE_KEY = "zhangyuge-demo-expense-v1";
-const EXPENSE_SEED = 1;
+const EXPENSE_SEED = 2;
 export function demoExpensePreview(): boolean {
   const fromUrl = new URLSearchParams(location.search).get("expense-preview");
   if (fromUrl === "1" || fromUrl === "admin" || fromUrl === "member") {

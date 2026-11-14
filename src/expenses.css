@@ -645,6 +645,19 @@
 }
 .exp-share-row .dash { color: var(--text-3); font-size: var(--fs-4); font-weight: 650; }
 
+.exp-share-wait,
+.exp-date-hint {
+  margin: 4px 0 0;
+  color: var(--text-3);
+  font-size: var(--fs-2);
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  line-height: 1.45;
+}
+.exp-share-card .exp-share-wait {
+  margin-top: 2px;
+}
+
 /* 手机全貌：这些块默认隐藏，只在窄屏出现，宽屏布局不变 */
 .exp-shares-desc-short,
 .exp-lead-short,
@@ -736,6 +749,10 @@
   .exp-share-row b,
   .exp-share-row .dash {
     font-size: var(--fs-3);
+  }
+  .exp-share-wait,
+  .exp-date-hint {
+    font-size: var(--fs-1);
   }
   .exp-phase {
     height: 22px;

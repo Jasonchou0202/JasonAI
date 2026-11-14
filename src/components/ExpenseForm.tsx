@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { ArrowLeft } from "lucide-react";
 import type { Api } from "../domain/model";
 import type { ExpenseCategory, ExpenseMeta, ExpenseStatus } from "../domain/expenses";
-import { OWNER_LABEL, PARTNER_LABEL } from "../domain/expenses";
+import { EXPENSE_START_DATE, formatCnDate, OWNER_LABEL, PARTNER_LABEL } from "../domain/expenses";
 import { money, parseYuan } from "../domain/finance";
 import { today } from "../domain/dates";
 import { useTeam } from "../lib/team-ui";
@@ -20,7 +20,10 @@ export function ExpenseForm({
 }) {
   const { me } = useTeam();
   const { data: meta, error: metaError, loading } = useQuery<ExpenseMeta>(api, "expenses.meta", {}, 0);
-  const [date, setDate] = useState(today());
+  const [date, setDate] = useState(() => {
+    const t = today();
+    return t < EXPENSE_START_DATE ? EXPENSE_START_DATE : t;
+  });
   const [amount, setAmount] = useState("");
   const [categoryId, setCategoryId] = useState("");
   const [paidBy, setPaidBy] = useState("");
@@ -118,8 +121,9 @@ export function ExpenseForm({
               <span className="exp-date-display" aria-hidden="true">
                 {date ? `${date.slice(0, 4)} / ${date.slice(5, 7)} / ${date.slice(8, 10)}` : ""}
               </span>
-              <input id="exp-date" type="date" value={date} onChange={(e) => setDate(e.target.value)} required min="1900-01-01" max="2199-12-31" />
+              <input id="exp-date" type="date" value={date} onChange={(e) => setDate(e.target.value < EXPENSE_START_DATE ? EXPENSE_START_DATE : e.target.value)} required min={EXPENSE_START_DATE} max="2199-12-31" />
             </div>
+            <p className="exp-date-hint">从 {formatCnDate(EXPENSE_START_DATE)}起记，不能选更早的日期</p>
           </div>
           <div>
             <label htmlFor="exp-amount">金额</label>

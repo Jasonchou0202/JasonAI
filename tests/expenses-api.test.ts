@@ -86,21 +86,21 @@ describe("报销记账（开关开）", () => {
 
     const adminRow = await call(OWNER, "expenses.create", {
       requestId: "e-admin",
-      expense: { date: "2026-11-06", amount: 60_000, categoryId: "cat-phone", categoryName: "话费", paidBy: OWNER, hasInvoice: false, note: "软件", status: "pending_reimburse" },
+      expense: { date: "2026-11-14", amount: 60_000, categoryId: "cat-phone", categoryName: "话费", paidBy: OWNER, hasInvoice: false, note: "软件", status: "pending_reimburse" },
     });
     expect(adminRow).toMatchObject({ ok: true });
     expect(adminRow.data.status).toBe("pending_reimburse");
 
     const memberRow = await call(ZHOU, "expenses.create", {
       requestId: "e-zhou",
-      expense: { date: "2026-11-13", amount: 20_000, categoryId: "cat-phone", categoryName: "话费", paidBy: ZHOU, hasInvoice: true, note: "话费", status: "reimbursed" },
+      expense: { date: "2026-11-15", amount: 20_000, categoryId: "cat-phone", categoryName: "话费", paidBy: ZHOU, hasInvoice: true, note: "话费", status: "reimbursed" },
     });
     expect(memberRow.data.status).toBe("pending_confirm");
 
     const before = await call(OWNER, "expenses.settlement", { month: "2026-11" });
     expect(before.data.pendingCount).toBe(1);
-    expect(before.data.decades[0].expense).toBe(60_000);
-    expect(before.data.decades[1].expense).toBe(0);
+    expect(before.data.decades[0].expense).toBe(0);
+    expect(before.data.decades[1].expense).toBe(60_000);
 
     expect(await call(ZHOU, "expenses.confirm", { id: "e-zhou", requestId: "c1", revision: 1 })).toMatchObject({
       ok: false, code: "ADMIN_ONLY",
@@ -109,7 +109,7 @@ describe("报销记账（开关开）", () => {
     expect(ok.data.status).toBe("pending_reimburse");
     const after = await call(OWNER, "expenses.settlement", { month: "2026-11" });
     expect(after.data.pendingCount).toBe(0);
-    expect(after.data.decades[1].expense).toBe(20_000);
+    expect(after.data.decades[1].expense).toBe(80_000);
 
     const pending = await call(ZHOU, "expenses.create", {
       requestId: "e-rej",
@@ -117,7 +117,7 @@ describe("报销记账（开关开）", () => {
     });
     await call(OWNER, "expenses.reject", { id: "e-rej", requestId: "r1", revision: pending.data.revision });
     const settled = await call(OWNER, "expenses.settlement", { month: "2026-11" });
-    expect(settled.data.decades[1].expense).toBe(20_000);
+    expect(settled.data.decades[1].expense).toBe(80_000);
     expect(settled.data.details.find((d: { id: string }) => d.id === "e-rej").status).toBe("rejected");
   });
 
@@ -126,11 +126,11 @@ describe("报销记账（开关开）", () => {
     const call = caller(s, ON);
     await call(OWNER, "expenses.create", {
       requestId: "e-admin",
-      expense: { date: "2026-11-06", amount: 60_000, categoryId: "cat-phone", categoryName: "话费", paidBy: OWNER, hasInvoice: false, note: "", status: "pending_reimburse" },
+      expense: { date: "2026-11-14", amount: 60_000, categoryId: "cat-phone", categoryName: "话费", paidBy: OWNER, hasInvoice: false, note: "", status: "pending_reimburse" },
     });
     await call(ZHOU, "expenses.create", {
       requestId: "e-zhou",
-      expense: { date: "2026-11-13", amount: 20_000, categoryId: "cat-phone", categoryName: "话费", paidBy: ZHOU, hasInvoice: true, note: "", status: "pending_confirm" },
+      expense: { date: "2026-11-15", amount: 20_000, categoryId: "cat-phone", categoryName: "话费", paidBy: ZHOU, hasInvoice: true, note: "", status: "pending_confirm" },
     });
     const list = await call(ZHOU, "expenses.list");
     expect(list.data.items.map((r: { id: string }) => r.id)).toEqual(["e-zhou"]);
@@ -139,7 +139,7 @@ describe("报销记账（开关开）", () => {
     await call(OWNER, "expenses.confirm", { id: "e-zhou", requestId: "c1", revision: 1 });
     expect(await call(ZHOU, "expenses.update", {
       id: "e-zhou", requestId: "u1", revision: 2,
-      expense: { date: "2026-11-13", amount: 1, categoryId: "cat-phone", categoryName: "话费", paidBy: ZHOU, hasInvoice: true, note: "", status: "reimbursed" },
+      expense: { date: "2026-11-15", amount: 1, categoryId: "cat-phone", categoryName: "话费", paidBy: ZHOU, hasInvoice: true, note: "", status: "reimbursed" },
     })).toMatchObject({ ok: false, code: "ADMIN_ONLY" });
 
     const cat = await call(ZHOU, "expenses.categories.create", { name: "招待", requestId: "cat-treat" });
@@ -156,6 +156,35 @@ describe("报销记账（开关开）", () => {
     const call = caller(s, ON);
     expect(await call(STRANGER, "expenses.create", { requestId: "x", expense: {} })).toMatchObject({ ok: false, code: "NOT_MEMBER" });
     expect(await call(null, "expenses.meta")).toMatchObject({ ok: false, code: "NOT_SIGNED_IN" });
+  });
+});
+
+describe("报销起算日写入", () => {
+  it("云函数拒绝早于 11 月 14 日的报销写入，并返回中文说明", async () => {
+    const s = await seed();
+    const call = caller(s, ON);
+    const created = await call(OWNER, "expenses.create", {
+      requestId: "e-early",
+      expense: { date: "2026-11-13", amount: 10_000, categoryId: "cat-phone", categoryName: "话费", paidBy: OWNER, hasInvoice: false, note: "", status: "pending_reimburse" },
+    });
+    expect(created.ok).toBe(false);
+    expect(created.error).toMatch(/2026 年 11 月 14 日/);
+    expect(Object.keys(s.data.expenses).filter((k) => !k.startsWith("_"))).toEqual([]);
+
+    const ok = await call(OWNER, "expenses.create", {
+      requestId: "e-ok",
+      expense: { date: "2026-11-14", amount: 10_000, categoryId: "cat-phone", categoryName: "话费", paidBy: OWNER, hasInvoice: false, note: "", status: "pending_reimburse" },
+    });
+    expect(ok.ok).toBe(true);
+    const updated = await call(OWNER, "expenses.update", {
+      id: "e-ok",
+      requestId: "e-ok-u",
+      revision: ok.data.revision,
+      expense: { date: "2026-11-13", amount: 10_000, categoryId: "cat-phone", categoryName: "话费", paidBy: OWNER, hasInvoice: false, note: "", status: "pending_reimburse" },
+    });
+    expect(updated.ok).toBe(false);
+    expect(updated.error).toMatch(/2026 年 11 月 14 日/);
+    expect((s.data.expenses["e-ok"] as { date: string }).date).toBe("2026-11-14");
   });
 });
 
