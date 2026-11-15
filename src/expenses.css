@@ -307,10 +307,13 @@
 }
 .exp-legend {
   display: flex;
-  gap: 16px;
-  margin: 16px 0 8px;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+  margin: 14px 0 0;
+  color: var(--text-3);
   font-size: var(--fs-1);
-  color: var(--text-2);
+  line-height: 1.5;
 }
 .exp-legend i {
   display: inline-block;
@@ -318,9 +321,10 @@
   height: 8px;
   border-radius: 99px;
   margin-right: 6px;
+  vertical-align: 0.05em;
 }
-.exp-legend .sales { background: #e9a178; }
-.exp-legend .actual { background: #d97757; }
+.exp-legend .sales { background: var(--coral); }
+.exp-legend .actual { background: var(--ink-blue); }
 .exp-compare {
   display: flex;
   align-items: flex-end;
@@ -353,14 +357,14 @@
   border-radius: 8px 8px 2px 2px;
   min-height: 4px;
 }
-.exp-compare-bars .sales { background: #e9a178; }
-.exp-compare-bars .actual { background: linear-gradient(180deg, #e9a178, #d97757); }
+.exp-compare-bars .sales { background: var(--coral); }
+.exp-compare-bars .actual { background: var(--ink-blue); }
 .exp-compare-col small {
   color: var(--text-3);
   font-size: var(--fs-1);
 }
 .exp-compare-note {
-  margin: 14px 0 0;
+  margin: 8px 0 0;
   color: var(--text-3);
   font-size: var(--fs-1);
   line-height: 1.5;

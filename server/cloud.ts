@@ -48,11 +48,9 @@ function cloudReceiptStorage(app: any): ReceiptStorage {
       return {
         url: d.url as string,
         headers: {
-          Signature: d.authorization,
           authorization: d.authorization,
           "x-cos-security-token": d.token || "",
           "x-cos-meta-fileid": d.cosFileId || "",
-          key: encodeURIComponent(cloudPath),
         },
         fileID: d.fileId as string,
       };
