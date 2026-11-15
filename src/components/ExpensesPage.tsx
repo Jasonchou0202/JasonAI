@@ -248,8 +248,8 @@ export function ExpensesPage({
           <p className="exp-lead">近 {data.compare.length} 个月对照。{month === today().slice(0, 7) && data.compare.some((c) => c.partial) ? `${Number(m)} 月只记已出账或进行中的段。` : ""}</p>
           <CompareChart rows={data.compare} today={data.today} />
           <div className="exp-legend">
-            <span><i className="sales" />只算销售</span>
-            <span><i className="actual" />实际利润</span>
+            <span><i className="sales" />只算销售的利润</span>
+            <span><i className="actual" />扣成本后的实际利润</span>
           </div>
           <p className="exp-compare-note">
             {Number(m)} 月{data.compare.find((c) => c.month === month)?.partial ? "按已记账的段合计" : "整月合计"}

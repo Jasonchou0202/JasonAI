@@ -323,8 +323,8 @@
   margin-right: 6px;
   vertical-align: 0.05em;
 }
-.exp-legend .sales { background: #d9d2c7; }
-.exp-legend .actual { background: #d97757; }
+.exp-legend .sales { background: var(--coral); }
+.exp-legend .actual { background: var(--ink-blue); }
 .exp-compare {
   display: flex;
   align-items: flex-end;
@@ -357,8 +357,8 @@
   border-radius: 8px 8px 2px 2px;
   min-height: 4px;
 }
-.exp-compare-bars .sales { background: #d9d2c7; }
-.exp-compare-bars .actual { background: #d97757; }
+.exp-compare-bars .sales { background: var(--coral); }
+.exp-compare-bars .actual { background: var(--ink-blue); }
 .exp-compare-col small {
   color: var(--text-3);
   font-size: var(--fs-1);
