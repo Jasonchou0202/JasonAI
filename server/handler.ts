@@ -8,9 +8,11 @@ import {
   summarize,
   type AuditInput,
 } from "./audit";
-import { authorize, DeniedError, executeTeam, hideDeleted, memberResult, ownerOn, salesActorOn, expensesOn, salesPayerOn, type Actor, type TeamConfig } from "./team";
+import { authorize, DeniedError, executeTeam, hideDeleted, memberResult, ownerOn, salesActorOn, expensesOn, salesPayerOn, renewOn, type Actor, type TeamConfig } from "./team";
+import type { CustomerTask } from "../src/domain/model";
 import { OWNER_ACTIONS, transferOwner } from "./schedule-owner";
 import { EXPENSE_ACTIONS, EXPENSE_AUDITED_ACTIONS, executeExpenses } from "./expenses";
+import { RENEW_ACTION, renewExpense } from "./expense-renew";
 import { taskOwner } from "../src/domain/members";
 
 function failure(error: unknown, diagnose?: (code: string) => void) {
@@ -101,6 +103,19 @@ function targetOf(action: string, p: Record<string, any>): { type?: string; id?:
   return { type, id: typeof raw === "string" && ID.test(raw) ? raw : undefined };
 }
 
+/** 成员通过 authorize 后进入原有业务代码用的身份：以所有者身份执行，带上真实操作人和各开关的新字段 */
+function businessCtx(ctx: Context, team: TeamConfig, actor: Actor): Context {
+  return {
+    ...ctx,
+    uid: ctx.ownerUid,
+    ...(team.membersEnabled ? { actorUid: actor.uid } : {}),
+    // 冻结集合的新字段：各自开关开才写（关着时不带这个键，业务代码与现在一字不差）
+    ...(ownerOn(team) || salesActorOn(team) || salesPayerOn(team)
+      ? { actorFields: { ...(ownerOn(team) ? { tasks: true } : {}), ...(salesActorOn(team) ? { sales: true } : {}), ...(salesPayerOn(team) ? { salesPayer: true } : {}) } }
+      : {}),
+  };
+}
+
 async function teamHandle(
   store: () => Store,
   ctx: Context,
@@ -175,6 +190,22 @@ async function teamHandle(
         });
       return { ok: true, data: r.data };
     }
+    // 报销续费提醒（开关关时不进这里：照旧 UNSUPPORTED_ACTION）。日程走原有 tasks.create：谁点归谁
+    if (renewOn(team) && action === RENEW_ACTION) {
+      const who = actor;
+      const r = await renewExpense(guardAudit(base()), { ...ctx, now }, who, p, now, (requestId, task) =>
+        execute(guardAudit(base()), businessCtx(ctx, team, who), "tasks.create", { requestId, task }) as Promise<CustomerTask>,
+      );
+      if (team.auditEnabled)
+        await record({
+          targetType: r.target.type,
+          targetId: r.target.id,
+          before: summarize(r.target.type, r.target.before),
+          after: summarize(r.target.type, r.target.after),
+          result: "ok",
+        });
+      return { ok: true, data: r.data };
+    }
     // 认领 / 指派（开关关时不进这里：管理员照旧得到 UNSUPPORTED_ACTION，成员照旧被白名单拒）
     if (ownerOn(team) && OWNER_ACTIONS.has(action)) {
       target = audited ? targetOf(action, p) : {};
@@ -198,14 +229,8 @@ async function teamHandle(
     // 同时带上真实操作人，用于写 createdBy。
     const autoCreated: string[] = [];
     const execCtx: Context = {
-      ...ctx,
-      uid: ctx.ownerUid,
-      ...(team.membersEnabled ? { actorUid: actor.uid } : {}),
+      ...businessCtx(ctx, team, actor),
       ...(team.auditEnabled ? { onAutoCreate: (ids: string[]) => void autoCreated.push(...ids) } : {}),
-      // 冻结集合的新字段：各自开关开才写（关着时不带这个键，业务代码与现在一字不差）
-      ...(ownerOn(team) || salesActorOn(team) || salesPayerOn(team)
-        ? { actorFields: { ...(ownerOn(team) ? { tasks: true } : {}), ...(salesActorOn(team) ? { sales: true } : {}), ...(salesPayerOn(team) ? { salesPayer: true } : {}) } }
-        : {}),
     };
     // 成员的读操作：看不到回收站里的销售/日程（含 dashboard、客户详情、导出等全部读路径）
     const memberRead = actor.role === "member" && !AUDITED_ACTIONS.has(action);

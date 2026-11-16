@@ -1195,3 +1195,49 @@
 }
 .exp-receipt-links a:hover,
 .exp-receipt-view:hover { text-decoration: underline; }
+
+/* 续费提醒（只在 EXPENSE_RENEW_ENABLED 开时出现） */
+.exp-renew {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 30px;
+  padding: 0 12px;
+  border: 1px solid var(--coral);
+  border-radius: var(--radius-pill);
+  background: var(--surface);
+  color: var(--coral-ink);
+  font: inherit;
+  font-size: var(--fs-1);
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.exp-renew:hover { background: #faece7; }
+.exp-renew.done {
+  border-color: transparent;
+  background: var(--surface-muted);
+  color: var(--text-2);
+  cursor: default;
+}
+.exp-renew.done svg { color: var(--coral); }
+.exp-renew-cell { white-space: nowrap; }
+/* 明细多一列：利润对照与明细各占一整行，表格不挤 */
+.exp-lower.renew-on { grid-template-columns: 1fr; }
+.exp-renew-confirm { white-space: normal; text-align: left; }
+.exp-detail-renew { margin-top: 8px; }
+.exp-renew-confirm label { margin-top: 14px; }
+.exp-renew-confirm input { width: 100%; }
+.exp-renew-line { font-size: var(--fs-2) !important; color: var(--ink); }
+.exp-renew-line b { color: var(--coral-ink); font-weight: 650; }
+.exp-renew-hint { color: var(--text-3); }
+.exp-renew-error { color: var(--text-danger); }
+.exp-renew-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 16px;
+}
+@media (max-width: 640px) {
+  .exp-renew-actions .button { flex: 1; }
+}

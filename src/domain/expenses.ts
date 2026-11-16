@@ -1,3 +1,4 @@
+import type { ExpenseRenew } from "./renew";
 import { addDays, validDate } from "./dates";
 import type { Sale } from "./model";
 
@@ -208,6 +209,8 @@ export interface Expense extends ExpenseInput {
   deletedBy?: string;
   confirmedBy?: string;
   confirmedAt?: string;
+  /** 续费提醒（EXPENSE_RENEW_ENABLED 开后点「续费提醒」才写；有了就不再建） */
+  renew?: ExpenseRenew;
 }
 
 export interface ExpenseSettings {
