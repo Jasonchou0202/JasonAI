@@ -3,6 +3,9 @@ import type { Api } from "../domain/model";
 import type { DecadeSettlement, MonthCompare, Expense, MonthSettlement } from "../domain/expenses";
 import { EXPENSE_STATUS_LABEL, PROFIT_SHARE_BEFORE_HINT, PROFIT_SHARE_BEFORE_REFUND_HINT, PROFIT_SHARE_START_DATE, formatCnDate, receiptSummary, shareLabel, shiftMonth } from "../domain/expenses";
 import { ReceiptLinks } from "./ReceiptLinks";
+import { RenewButton } from "./ExpenseRenew";
+import type { ExpenseRenew } from "../domain/renew";
+import { useState } from "react";
 import { money } from "../domain/finance";
 import { today } from "../domain/dates";
 import { useTeam } from "../lib/team-ui";
@@ -16,6 +19,8 @@ interface SettlementPayload extends MonthSettlement {
   details: (Expense & { payerName: string })[];
   people: { owner: { uid: string; name: string }; partner: { uid: string; name: string } };
   today: string;
+  /** 续费提醒按钮（EXPENSE_RENEW_ENABLED 开时才有） */
+  renewEnabled?: boolean;
 }
 
 function slashDate(date: string) {
@@ -140,6 +145,8 @@ export function ExpensesPage({
     { month },
     version,
   );
+  // 刚设好的续费提醒：先在本页显示，不必整页重读
+  const [renewed, setRenewed] = useState<Record<string, ExpenseRenew>>({});
   if (error) return <ErrorNote>{error}</ErrorNote>;
   if (!data || loading) return <p className="subtle">正在打开报销记账…</p>;
   const [y, m] = month.split("-");
@@ -147,6 +154,16 @@ export function ExpensesPage({
   const postedTo = [...data.decades].reverse().find((d) => d.phase !== "upcoming")?.decade.to;
   const booked = data.details.filter((d) => d.status === "pending_reimburse" || d.status === "reimbursed");
   const pending = data.details.filter((d) => d.status === "pending_confirm");
+  const renewOn = !!data.renewEnabled;
+  const renewCell = (row: Expense) => (
+    <RenewButton
+      api={api}
+      row={row}
+      renew={renewed[row.id] ?? row.renew}
+      admin={admin}
+      onDone={(r) => setRenewed((m) => ({ ...m, [row.id]: r }))}
+    />
+  );
   return (
     <div className="exp-page">
       <div className="exp-heading">
@@ -242,7 +259,7 @@ export function ExpensesPage({
           </div>
         </section>
       )}
-      <div className="exp-lower">
+      <div className={`exp-lower ${renewOn ? "renew-on" : ""}`}>
         <section className="exp-panel">
           <h2>利润对照</h2>
           <p className="exp-lead">近 {data.compare.length} 个月对照。{month === today().slice(0, 7) && data.compare.some((c) => c.partial) ? `${Number(m)} 月只记已出账或进行中的段。` : ""}</p>
@@ -285,6 +302,7 @@ export function ExpensesPage({
                   <th className="num">金额</th>
                   <th>凭证</th>
                   <th>状态</th>
+                  {renewOn && <th>续费</th>}
                 </tr>
               </thead>
               <tbody>
@@ -301,6 +319,7 @@ export function ExpensesPage({
                     <td>
                       <span className={`exp-status ${row.status}`}>{EXPENSE_STATUS_LABEL[row.status]}</span>
                     </td>
+                    {renewOn && <td className="exp-renew-cell">{renewCell(row)}</td>}
                   </tr>
                 ))}
               </tbody>
@@ -320,6 +339,7 @@ export function ExpensesPage({
                     <span className={`exp-status ${row.status}`}>{EXPENSE_STATUS_LABEL[row.status]}</span>
                   </div>
                   {row.note ? <p className="exp-detail-note">{row.note}</p> : null}
+                  {renewOn && <div className="exp-detail-renew">{renewCell(row)}</div>}
                 </li>
               ))}
             </ul>

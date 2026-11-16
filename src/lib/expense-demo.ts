@@ -178,6 +178,7 @@ export function expenseDemoTeam() {
     expensesEnabled: true,
     salesPayerEnabled: true,
     expenseReceiptsEnabled: true,
+    expenseRenewEnabled: true,
     receiptStorage: demoReceipts,
   };
 }

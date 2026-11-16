@@ -14,6 +14,7 @@ import {
   expensesOn,
   salesPayerOn,
   receiptsOn,
+  renewOn,
   EXPENSE_MEMBER_ACTIONS,
   type Actor,
   type TeamConfig,
@@ -566,6 +567,7 @@ export async function executeExpenses(
           partner: { uid: people.partnerUid, name: people.partnerName },
         },
         salesPayerEnabled: payerEnabled,
+        ...(renewOn(team) ? { renewEnabled: true } : {}),
         today,
       },
     };

@@ -26,6 +26,8 @@ export interface TeamConfig {
   salesPayerEnabled?: boolean;
   /** 报销凭证上传（EXPENSE_RECEIPTS_ENABLED=1；要报销开着、并且有云存储）；缺省关 */
   expenseReceiptsEnabled?: boolean;
+  /** 报销「续费提醒」按钮（EXPENSE_RENEW_ENABLED=1；要报销开着）；缺省关：按钮不出现、接口不认 */
+  expenseRenewEnabled?: boolean;
   /** 凭证用的云存储（路径 expenses/…；云函数入口传 CloudBase 云存储，测试/演示传内存版） */
   receiptStorage?: import("./receipts").ReceiptStorage;
   /** 头像用的云存储（云函数入口传 CloudBase 云存储，测试/演示传内存版） */
@@ -43,6 +45,7 @@ export function teamConfigFromEnv(env: Record<string, string | undefined>): Team
     ...(env.EXPENSES_ENABLED === "1" ? { expensesEnabled: true } : {}),
     ...(env.SALES_PAYER_ENABLED === "1" ? { salesPayerEnabled: true } : {}),
     ...(env.EXPENSE_RECEIPTS_ENABLED === "1" ? { expenseReceiptsEnabled: true } : {}),
+    ...(env.EXPENSE_RENEW_ENABLED === "1" ? { expenseRenewEnabled: true } : {}),
   };
 }
 /** 日程归属真正生效：两个开关都开 */
@@ -55,6 +58,8 @@ export const salesActorOn = (t: TeamConfig) => !!(t.membersEnabled && t.salesAct
 export const expensesOn = (t: TeamConfig) => !!t.expensesEnabled;
 /** 报销凭证上传真正生效：报销开 + 凭证开 + 有云存储 */
 export const receiptsOn = (t: TeamConfig) => expensesOn(t) && !!t.expenseReceiptsEnabled && !!t.receiptStorage;
+/** 报销续费提醒真正生效：报销开 + 续费提醒开 */
+export const renewOn = (t: TeamConfig) => expensesOn(t) && !!t.expenseRenewEnabled;
 /** 进货「谁付的」开关（不依赖团队开关，与报销一并在合账里用） */
 export const salesPayerOn = (t: TeamConfig) => !!t.salesPayerEnabled;
 export type Role = "admin" | "member";
@@ -189,7 +194,8 @@ export async function authorize(
     MEMBER_ACTIONS.has(action) ||
     (ownerOn(team) && OWNER_MEMBER_ACTIONS.has(action)) ||
     (avatarsOn(team) && AVATAR_MEMBER_ACTIONS.has(action)) ||
-    (expensesOn(team) && EXPENSE_MEMBER_ACTIONS.has(action));
+    (expensesOn(team) && EXPENSE_MEMBER_ACTIONS.has(action)) ||
+    (renewOn(team) && action === "expenses.renew");
   if (!allowed)
     throw new DeniedError("ADMIN_ONLY", "这个操作只有管理员可以进行", actor);
   // 回收站只给管理员：成员任何 action 只要带了 deleted（sales.list / tasks.list / export 等）一律拒绝
