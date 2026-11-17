@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useTeam } from "../lib/team-ui";
+import { SaleInvoiceSwitch, useSaleInvoices } from "./Invoices";
 import { MemberTag, useDirectory, ZhDateHint } from "../lib/members-ui";
 import {
   Download,
@@ -79,6 +80,7 @@ export function Details({
     filters,
     version,
   );
+  const invoices = useSaleInvoices(api, !!team.me.invoiceEnabled && !filters.deleted, data?.items.map((s) => s.id) || [], version);
   const { data: products } = useQuery<Product[]>(
     api,
     "products.list",
@@ -377,6 +379,11 @@ export function Details({
                       </strong>
                     </span>
                   </div>
+                  {team.me.invoiceEnabled && !filters.deleted && (
+                    <div className="inv-sale-slot">
+                      <SaleInvoiceSwitch api={api} sale={r} info={invoices.map[r.id]} compact onChanged={(msg) => { invoices.reload(); onChange(msg); }} />
+                    </div>
+                  )}
                   <div className={trashOwn ? "detail-actions trash-actions" : "detail-actions"}>
                     {filters.deleted ? (
                       <>

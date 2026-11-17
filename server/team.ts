@@ -28,6 +28,8 @@ export interface TeamConfig {
   expenseReceiptsEnabled?: boolean;
   /** 报销「续费提醒」按钮（EXPENSE_RENEW_ENABLED=1；要报销开着）；缺省关：按钮不出现、接口不认 */
   expenseRenewEnabled?: boolean;
+  /** 普票开票管理（INVOICE_ENABLED=1；附件复用报销凭证的云存储）；缺省关：入口、客户卡、销售明细都不出现，接口不认 */
+  invoiceEnabled?: boolean;
   /** 凭证用的云存储（路径 expenses/…；云函数入口传 CloudBase 云存储，测试/演示传内存版） */
   receiptStorage?: import("./receipts").ReceiptStorage;
   /** 头像用的云存储（云函数入口传 CloudBase 云存储，测试/演示传内存版） */
@@ -46,6 +48,7 @@ export function teamConfigFromEnv(env: Record<string, string | undefined>): Team
     ...(env.SALES_PAYER_ENABLED === "1" ? { salesPayerEnabled: true } : {}),
     ...(env.EXPENSE_RECEIPTS_ENABLED === "1" ? { expenseReceiptsEnabled: true } : {}),
     ...(env.EXPENSE_RENEW_ENABLED === "1" ? { expenseRenewEnabled: true } : {}),
+    ...(env.INVOICE_ENABLED === "1" ? { invoiceEnabled: true } : {}),
   };
 }
 /** 日程归属真正生效：两个开关都开 */
@@ -120,6 +123,11 @@ export const MEMBER_ACTIONS = new Set([
 export const OWNER_MEMBER_ACTIONS = new Set(["tasks.claim", "members.directory"]);
 /** 头像开关开后，成员额外可用的 action（云端强制只能改自己的） */
 export const AVATAR_MEMBER_ACTIONS = new Set(["members.avatar.set", "members.avatar.clear"]);
+/** 开票开关开后，成员额外可用的 action（与 server/invoices.ts 的 INVOICE_ACTIONS 一致） */
+export const INVOICE_MEMBER_ACTIONS = new Set([
+  "invoices.meta", "invoices.list", "invoices.forSales", "invoices.profile.get", "invoices.profile.save",
+  "invoices.toggle", "invoices.update", "invoices.files.upload", "invoices.files.discard", "invoices.files.urls",
+]);
 /** 报销开关开后，成员额外可用的 action（只能动自己的记录） */
 export const EXPENSE_MEMBER_ACTIONS = new Set([
   "expenses.meta",
@@ -195,7 +203,8 @@ export async function authorize(
     (ownerOn(team) && OWNER_MEMBER_ACTIONS.has(action)) ||
     (avatarsOn(team) && AVATAR_MEMBER_ACTIONS.has(action)) ||
     (expensesOn(team) && EXPENSE_MEMBER_ACTIONS.has(action)) ||
-    (renewOn(team) && action === "expenses.renew");
+    (renewOn(team) && action === "expenses.renew") ||
+    (!!team.invoiceEnabled && action.startsWith("invoices.") && INVOICE_MEMBER_ACTIONS.has(action));
   if (!allowed)
     throw new DeniedError("ADMIN_ONLY", "这个操作只有管理员可以进行", actor);
   // 回收站只给管理员：成员任何 action 只要带了 deleted（sales.list / tasks.list / export 等）一律拒绝
@@ -308,6 +317,7 @@ export async function executeTeam(
     }
     if (expensesOn(team)) out.expensesEnabled = true;
     if (salesPayerOn(team)) out.salesPayerEnabled = true;
+    if (team.invoiceEnabled) out.invoiceEnabled = true;
     return { data: out };
   }
   if (action === "audit.list") {

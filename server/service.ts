@@ -60,7 +60,8 @@ export type Collection =
   | "invites"
   | "audit_logs"
   | "redeem_attempts"
-  | "expenses";
+  | "expenses"
+  | "invoices";
 export interface Transaction {
   get<T>(collection: Collection, id: string): Promise<T | null>;
   put<T>(collection: Collection, id: string, value: T): Promise<void>;

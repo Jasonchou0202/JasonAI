@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import type { Api, Customer, Product, Sale, SaleInput } from "../domain/model";
 import { useTeam } from "../lib/team-ui";
+import { SaleInvoiceSwitch, useSaleInvoices } from "./Invoices";
 import { today } from "../domain/dates";
 import { displayCustomerName } from "../domain/customers";
 import { money, moneyInput, parseYuan } from "../domain/finance";
@@ -711,6 +712,7 @@ export function SaleForm({
               </button>
             )}
           </div>
+          {edit && team.me.invoiceEnabled && <SaleFormInvoice api={api} sale={edit} />}
         </form>
         <aside className="entry-aside" aria-label="本笔小票">
           <div className="paper-slip">
@@ -809,5 +811,16 @@ function SalePayerField({
         </button>
       </div>
     </div>
+  );
+}
+
+/** 编辑已保存的销售时：「需要开票」开关（新记一笔时保存后到销售明细里打开） */
+function SaleFormInvoice({ api, sale }: { api: Api; sale: Sale }) {
+  const inv = useSaleInvoices(api, true, [sale.id], 0);
+  return (
+    <section className="inv-sale-form-slot" aria-label="开票">
+      <h3>开票</h3>
+      <SaleInvoiceSwitch api={api} sale={sale} info={inv.map[sale.id]} onChanged={() => inv.reload()} />
+    </section>
   );
 }

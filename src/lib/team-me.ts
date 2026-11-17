@@ -17,6 +17,8 @@ export interface Me {
   avatarsEnabled?: boolean;
   /** 报销记账（EXPENSES_ENABLED 开时才有） */
   expensesEnabled?: boolean;
+  /** 普票开票管理（INVOICE_ENABLED 开时才有） */
+  invoiceEnabled?: boolean;
   /** 销售记录「谁付的」（SALES_PAYER_ENABLED 开时才有） */
   salesPayerEnabled?: boolean;
 }

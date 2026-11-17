@@ -24,6 +24,8 @@ import { Empty, ErrorNote, Loading, Money } from "./ui";
 import { QuadrantDot, useInsights } from "../lib/insights-ui";
 import { CustomerChips, CustomerProfileEditor } from "./CustomerProfile";
 import "../customer.css";
+import { useTeam } from "../lib/team-ui";
+import { InvoiceProfileCard } from "./Invoices";
 import { ZhDateHint, ZhDay } from "../lib/members-ui";
 
 export interface CustomerDetailsProps {
@@ -55,6 +57,7 @@ function CustomerProfile({
   onCustomer,
   onEditSale,
 }: CustomerDetailsProps) {
+  const team = useTeam();
   const explicitMonth =
     initialMonth && initialMonth !== "all" ? initialMonth : undefined;
   const [month, setMonth] = useState(explicitMonth || currentMonth);
@@ -188,6 +191,9 @@ function CustomerProfile({
         <>
           {!data.customer.mergedInto && (
             <CustomerProfileEditor key={data.customer.id + ":" + data.customer.revision} api={api} customer={data.customer} onSaved={onChange} />
+          )}
+          {team.me.invoiceEnabled && !data.customer.mergedInto && (
+            <InvoiceProfileCard api={api} customerId={data.customer.id} onSaved={onChange} />
           )}
           {data.customer.mergedInto && (
             <div className="customer-merged">

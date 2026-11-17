@@ -4,6 +4,7 @@ import {
   LayoutDashboard,
   Plus,
   ReceiptText,
+  FileCheck2,
   Settings as SettingsIcon,
   LogOut,
   Github,
@@ -43,6 +44,7 @@ import { contentCloudApi } from "./lib/content-api";
 import { createContentDemo } from "./lib/content-demo";
 import { routeParams, readFilters, filterQuery } from "./lib/routes";
 import "./expenses.css";
+import { InvoicesPage } from "./components/Invoices";
 // 日程、客户详情、设置按需加载；进入工作台后空闲时预取，断网时也能打开
 const loadSettings = () => import("./components/Settings");
 const loadCalendar = () => import("./components/Calendar");
@@ -90,7 +92,8 @@ type Page =
   | "my-log"
   | "expenses"
   | "expense-entry"
-  | "expense-pending";
+  | "expense-pending"
+  | "invoices";
 /** 成员不能进的页面（云端同样拒绝，这里只是不显示） */
 const ADMIN_PAGES: Page[] = ["settings", "content-entry", "members", "audit", "expense-pending"];
 const BOARD = import.meta.env.BASE_URL + "board-e160b241a233/";
@@ -122,6 +125,7 @@ function SalesLinks({
     { id: "dashboard", label: "生意看板", icon: LayoutDashboard },
     { id: "entry", label: "记一笔", icon: Plus },
     ...(me.expensesEnabled ? [{ id: "expenses" as Page, label: "报销记账", icon: Wallet }] : []),
+    ...(me.invoiceEnabled ? [{ id: "invoices" as Page, label: "开票", icon: FileCheck2 }] : []),
     { id: "details", label: "销售明细", icon: ReceiptText },
     { id: "calendar", label: "客户日程", icon: CalendarDays },
     ...(admin ? [{ id: "settings" as Page, label: "账本设置", icon: SettingsIcon }] : []),
@@ -239,6 +243,7 @@ function readRoute(): Page {
     "expenses",
     "expense-entry",
     "expense-pending",
+    "invoices",
   ].includes(p)
     ? (p as Page)
     : "dashboard";
@@ -413,11 +418,11 @@ export default function App() {
       meLoad === "ready" &&
       (((page === "audit" || page === "my-log") && !me.auditEnabled) ||
         (page === "members" && !me.membersEnabled) ||
-        ((page === "expenses" || page === "expense-entry" || page === "expense-pending") && !me.expensesEnabled))
+        ((page === "expenses" || page === "expense-entry" || page === "expense-pending") && !me.expensesEnabled) || (page === "invoices" && !me.invoiceEnabled))
     )
       go("dashboard");
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [me.role, me.auditEnabled, me.membersEnabled, me.expensesEnabled, meLoad, page]);
+  }, [me.role, me.auditEnabled, me.membersEnabled, me.expensesEnabled, me.invoiceEnabled, meLoad, page]);
   const contentApi = useMemo(
     () => (mode === "demo" ? createContentDemo() : contentCloudApi),
     [mode],
@@ -718,6 +723,7 @@ export default function App() {
                   audit: "操作日志",
                   "my-log": "我的操作记录",
                   expenses: "报销记账",
+                  invoices: "开票",
                   "expense-entry": "记一笔报销",
                   "expense-pending": "待确认",
                 }[page]
@@ -939,6 +945,17 @@ export default function App() {
               {page === "members" && meLoad === "ready" && me.role === "admin" && me.membersEnabled && <Members api={api} />}
               {page === "audit" && meLoad === "ready" && me.role === "admin" && me.auditEnabled && <AuditLog api={api} mode="admin" />}
               {page === "my-log" && meLoad === "ready" && me.auditEnabled && <AuditLog api={api} mode="self" />}
+              {page === "invoices" && meLoad === "pending" && <Loading />}
+              {page === "invoices" && identityReady && knownMe.invoiceEnabled && (
+                <InvoicesPage
+                  api={api}
+                  version={version}
+                  month={routeParams().get("month") || new Intl.DateTimeFormat("sv-SE", { timeZone: "Asia/Shanghai", year: "numeric", month: "2-digit" }).format(new Date())}
+                  onMonth={(month) => go("invoices", "month=" + month)}
+                  onCustomer={(id) => customer(id, "all")}
+                  onChanged={changed}
+                />
+              )}
               {page === "expenses" && meLoad === "pending" && <Loading />}
               {page === "expenses" && identityReady && knownMe.expensesEnabled && (
                 <ExpensesPage
