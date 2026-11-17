@@ -1,4 +1,22 @@
-/* 开票管理：奶油底、珊瑚橙；缺资料使用正式告警色。仅开关开启时挂载组件。 */
+/* 开票管理：奶油底、珊瑚橙；缺资料使用正式告警色。仅开关开启时挂载组件。
+   开票状态色：待收资料灰、待开票正式告警红、已开票浅绿、已寄出深绿（Jason 指定，覆盖成功态不用绿）。
+   变量挂在 :root，客户卡徽章和开票录入弹层也能用到。 */
+:root {
+  --inv-awaiting-fg: #5C5854;
+  --inv-awaiting-bg: #EEEAE4;
+  --inv-awaiting-line: #D8D3CC;
+  --inv-pending-fg: #9E2A1E;
+  --inv-pending-bg: #F8DAD4;
+  --inv-pending-line: #E8C0B8;
+  --inv-issued-fg: #1B6B40;
+  --inv-issued-bg: #E3F6EA;
+  --inv-issued-line: #C5E6D1;
+  --inv-sent-fg: #0B3D28;
+  --inv-sent-bg: #A8D5B8;
+  --inv-sent-line: #7EBE98;
+  --inv-retired-fg: #5C5854;
+  --inv-retired-bg: #EEEAE4;
+}
 .inv-page { display:flex; flex-direction:column; gap:24px; min-width:0; }
 .inv-stats { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:16px; }
 .inv-stat { display:flex; flex-direction:column; align-items:flex-start; text-align:left; gap:10px; min-width:0; padding:26px 28px; border:1px solid var(--line); border-radius:20px; background:var(--surface); box-shadow:var(--shadow-card); color:var(--ink); }
@@ -12,6 +30,14 @@
 .inv-chips { display:flex; flex-wrap:wrap; gap:6px; }
 .inv-chips button,.inv-seg button { background:transparent; color:var(--text-2); font-size:13px; border-radius:999px; border:1px solid transparent; padding:7px 12px; font-weight:550; }
 .inv-chips button.active,.inv-seg button.active { background:var(--cream); color:var(--coral-ink); border-color:var(--border); }
+.inv-chips button.s-awaiting_info { color:var(--inv-awaiting-fg); }
+.inv-chips button.s-pending { color:var(--inv-pending-fg); }
+.inv-chips button.s-issued { color:var(--inv-issued-fg); }
+.inv-chips button.s-sent { color:var(--inv-sent-fg); }
+.inv-chips button.s-awaiting_info.active { background:var(--inv-awaiting-bg); color:var(--inv-awaiting-fg); border-color:var(--inv-awaiting-line); }
+.inv-chips button.s-pending.active { background:var(--inv-pending-bg); color:var(--inv-pending-fg); border-color:var(--inv-pending-line); }
+.inv-chips button.s-issued.active { background:var(--inv-issued-bg); color:var(--inv-issued-fg); border-color:var(--inv-issued-line); }
+.inv-chips button.s-sent.active { background:var(--inv-sent-bg); color:var(--inv-sent-fg); border-color:var(--inv-sent-line); }
 .inv-filters select { width:150px; min-width:0; font-size:13px; padding:8px 12px; }
 .inv-list { list-style:none; padding:0; margin:0; }
 .inv-row { display:grid; grid-template-columns:minmax(150px,1fr) 100px 105px 56px; gap:18px; align-items:center; padding:22px 0; border-bottom:1px solid var(--line-soft); }
@@ -25,15 +51,18 @@
 .inv-chip,.inv-badge { display:inline-flex; align-items:center; gap:4px; border-radius:999px; padding:4px 8px; font-size:11px; line-height:1.2; font-weight:550; white-space:nowrap; }
 .inv-badge.ok { color:#9c4526; background:#f4e6d4; }
 .inv-badge.missing { color:#9E2A1E; background:#F8DAD4; }
-.inv-chip.s-awaiting_info { color:#9E2A1E; background:#F8DAD4; }
-.inv-chip.s-pending { color:#9c4526; background:#f4e6d4; }
-.inv-chip.s-issued,.inv-chip.s-sent { color:#3d5a80; background:#edf0f5; }
-.inv-chip.s-void,.inv-chip.s-red { color:var(--text-3); background:#f4f0ea; }
+.inv-chip.s-awaiting_info { color:var(--inv-awaiting-fg); background:var(--inv-awaiting-bg); }
+.inv-chip.s-pending { color:var(--inv-pending-fg); background:var(--inv-pending-bg); }
+.inv-chip.s-issued { color:var(--inv-issued-fg); background:var(--inv-issued-bg); }
+.inv-chip.s-sent { color:var(--inv-sent-fg); background:var(--inv-sent-bg); }
+.inv-chip.s-void,.inv-chip.s-red { color:var(--inv-retired-fg); background:var(--inv-retired-bg); }
 .inv-quick { display:flex; flex-direction:column; align-items:flex-start; gap:5px; }
-.inv-status-select { font:inherit; font-size:12px; background:transparent; border:1px solid var(--line); border-radius:999px; padding:7px 5px 7px 10px; width:105px; min-width:0; color:var(--text-2); }
-.inv-status-select.s-awaiting_info { color:#9E2A1E; background:#F8DAD4; border-color:#F8DAD4; }
-.inv-status-select.s-pending { color:#9c4526; background:#f4e6d4; }
-.inv-status-select.s-issued,.inv-status-select.s-sent { color:#3d5a80; background:#edf0f5; }
+.inv-status-select { font:inherit; font-size:12px; font-weight:550; background:transparent; border:1px solid var(--line); border-radius:999px; padding:7px 5px 7px 10px; width:105px; min-width:0; color:var(--text-2); }
+.inv-status-select.s-awaiting_info { color:var(--inv-awaiting-fg); background:var(--inv-awaiting-bg); border-color:var(--inv-awaiting-line); }
+.inv-status-select.s-pending { color:var(--inv-pending-fg); background:var(--inv-pending-bg); border-color:var(--inv-pending-line); }
+.inv-status-select.s-issued { color:var(--inv-issued-fg); background:var(--inv-issued-bg); border-color:var(--inv-issued-line); }
+.inv-status-select.s-sent { color:var(--inv-sent-fg); background:var(--inv-sent-bg); border-color:var(--inv-sent-line); }
+.inv-status-select.s-void,.inv-status-select.s-red { color:var(--inv-retired-fg); background:var(--inv-retired-bg); border-color:var(--inv-awaiting-line); }
 .inv-card { padding:26px; }
 .inv-card-head { display:flex; align-items:flex-start; justify-content:space-between; gap:15px; }
 .inv-card-head h2 { margin:0; font-size:20px; font-weight:650; letter-spacing:-.025em; }
@@ -72,8 +101,11 @@
 .inv-steps { display:flex; gap:6px; flex-wrap:wrap; }
 .inv-step { font:inherit; font-size:12px; padding:8px 10px; background:transparent; color:var(--text-3); border:1px solid var(--line); border-radius:8px; }
 .inv-step.active { background:#f4e6d4; border-color:#D97757; color:#9c4526; }
-.inv-step.active.s-awaiting_info { color:#9E2A1E; background:#F8DAD4; border-color:#9E2A1E; }
-.inv-step.active.s-void,.inv-step.active.s-red { color:#9E2A1E; background:#F8DAD4; border-color:#9E2A1E; }
+.inv-step.active.s-awaiting_info { color:var(--inv-awaiting-fg); background:var(--inv-awaiting-bg); border-color:var(--inv-awaiting-line); }
+.inv-step.active.s-pending { color:var(--inv-pending-fg); background:var(--inv-pending-bg); border-color:var(--inv-pending-line); }
+.inv-step.active.s-issued { color:var(--inv-issued-fg); background:var(--inv-issued-bg); border-color:var(--inv-issued-line); }
+.inv-step.active.s-sent { color:var(--inv-sent-fg); background:var(--inv-sent-bg); border-color:var(--inv-sent-line); }
+.inv-step.active.s-void,.inv-step.active.s-red { color:var(--inv-retired-fg); background:var(--inv-retired-bg); border-color:var(--inv-awaiting-line); }
 .inv-switch { display:flex; flex-wrap:wrap; align-items:center; gap:12px; min-width:0; }
 .inv-toggle { display:inline-flex; align-items:center; gap:8px; cursor:pointer; position:relative; font-size:12px; white-space:nowrap; color:var(--text-2); }
 .inv-toggle input { position:absolute; opacity:0; width:34px; height:20px; margin:0; }

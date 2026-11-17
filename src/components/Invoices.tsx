@@ -12,8 +12,6 @@ import {
   FIELD_LABEL,
   INVOICE_ACCEPT,
   INVOICE_FILE_MAX_BYTES,
-  INVOICE_STATUSES,
-  INVOICE_STATUS_LABEL,
   INVOICE_TYPE_LABEL,
   OPEN_STATUSES,
   PROFILE_ACCEPT,
@@ -27,6 +25,7 @@ import {
   type InvoiceRow,
   type InvoiceStatus,
 } from "../domain/invoices";
+import { INVOICE_STATUS_FILTERS, invoiceStatusLabel, invoiceStatusSelectOptions, isRetiredInvoiceStatus } from "../lib/invoice-status-ui";
 import { ErrorNote, Modal, message, useQuery } from "./ui";
 import "../invoices.css";
 
@@ -44,7 +43,7 @@ export function parseInvoiceAmount(text: string): number {
 }
 
 export function StatusChip({ status }: { status: InvoiceStatus }) {
-  return <span className={`inv-chip s-${status}`}>{INVOICE_STATUS_LABEL[status]}</span>;
+  return <span className={`inv-chip s-${status}`}>{invoiceStatusLabel(status)}</span>;
 }
 export function ProfileBadge({ complete }: { complete: boolean }) {
   return complete ? (
@@ -293,8 +292,8 @@ export function InvoiceEditor({ api, record, filesEnabled, onClose, onSaved }: {
   const [note, setNote] = useState(record.note || "");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-  const locked = record.status === "void" || record.status === "red";
-  const issued = status === "issued" || status === "sent" || status === "void" || status === "red";
+  const locked = isRetiredInvoiceStatus(record.status);
+  const issued = status === "issued" || status === "sent" || isRetiredInvoiceStatus(status);
   async function save() {
     setBusy(true);
     setError("");
@@ -310,7 +309,7 @@ export function InvoiceEditor({ api, record, filesEnabled, onClose, onSaved }: {
         files,
         note,
       });
-      onSaved(r.record, `已保存 · ${INVOICE_STATUS_LABEL[r.record.status]}`);
+      onSaved(r.record, `已保存 · ${invoiceStatusLabel(r.record.status)}`);
     } catch (e) {
       setError(message(e));
     } finally {
@@ -327,7 +326,7 @@ export function InvoiceEditor({ api, record, filesEnabled, onClose, onSaved }: {
         <div className="inv-field">
           <span>状态</span>
           <div className="inv-steps" role="radiogroup" aria-label="开票状态">
-            {INVOICE_STATUSES.map((s) => (
+            {invoiceStatusSelectOptions(record.status).map((s) => (
               <button
                 key={s}
                 type="button"
@@ -337,7 +336,7 @@ export function InvoiceEditor({ api, record, filesEnabled, onClose, onSaved }: {
                 className={`inv-step s-${s} ${status === s ? "active" : ""}`}
                 onClick={() => setStatus(s)}
               >
-                {s === "void" ? "作废" : s === "red" ? "红冲" : INVOICE_STATUS_LABEL[s]}
+                {invoiceStatusLabel(s)}
               </button>
             ))}
           </div>
@@ -385,7 +384,7 @@ export function InvoiceEditor({ api, record, filesEnabled, onClose, onSaved }: {
           <input value={note} disabled={locked} onChange={(e) => setNote(e.target.value)} />
         </label>
         {status === "pending" && record.status !== "pending" && <p className="inv-hint">待开票 3 天没动，会在你的日程里提醒。</p>}
-        {locked && <p className="inv-hint">已作废或红冲的发票不能再改。</p>}
+        {locked && <p className="inv-hint">这张发票已作废或已红冲，不能再改。</p>}
         {error && <ErrorNote>{error}</ErrorNote>}
         <div className="inv-actions">
           <button type="button" className="button secondary" onClick={onClose}>取消</button>
@@ -471,13 +470,13 @@ export function SaleInvoiceSwitch({
   }
   return (
     <div className={`inv-switch ${compact ? "compact" : ""}`} onClick={(e) => e.stopPropagation()}>
-      <label className="inv-toggle" title={canOff ? "" : "已开出的发票不能取消，请改为作废或红冲"}>
+      <label className="inv-toggle" title={canOff ? "" : "已开出的发票不能取消"}>
         <input type="checkbox" role="switch" checked={on} disabled={busy || !canOff} onChange={() => void toggle()} aria-label="需要开票" />
         <i aria-hidden />
         <span>需要开票</span>
       </label>
       {info && (
-        <button type="button" className="inv-switch-status" onClick={() => void edit()} disabled={busy} aria-label={`开票：${INVOICE_STATUS_LABEL[info.status]}，点按编辑`}>
+        <button type="button" className="inv-switch-status" onClick={() => void edit()} disabled={busy} aria-label={`开票：${invoiceStatusLabel(info.status)}，点按编辑`}>
           <StatusChip status={info.status} />
           {!compact && <span className="inv-switch-amount">¥{invoiceMoney(info.amount)}</span>}
           <Pencil size={13} />
@@ -507,11 +506,7 @@ function shiftMonth(month: string, n: number) {
   const d = new Date(Date.UTC(y, m - 1 + n, 1));
   return d.toISOString().slice(0, 7);
 }
-const FILTERS: { id: string; label: string }[] = [
-  { id: "", label: "全部" },
-  { id: "open", label: "未开" },
-  ...INVOICE_STATUSES.map((s) => ({ id: s, label: INVOICE_STATUS_LABEL[s] })),
-];
+const FILTERS = INVOICE_STATUS_FILTERS;
 
 export function InvoicesPage({
   api,
@@ -565,7 +560,7 @@ export function InvoicesPage({
         <div className="inv-filters">
           <div className="inv-chips" role="group" aria-label="按状态筛选">
             {FILTERS.map((f) => (
-              <button key={f.id || "all"} type="button" className={status === f.id ? "active" : ""} aria-pressed={status === f.id} onClick={() => setStatus(f.id)}>
+              <button key={f.id || "all"} type="button" className={`${f.id ? `s-${f.id}` : "s-all"} ${status === f.id ? "active" : ""}`} aria-pressed={status === f.id} onClick={() => setStatus(f.id)}>
                 {f.label}
               </button>
             ))}
@@ -637,15 +632,15 @@ function Stat({ label, value, sub, warn, onClick }: { label: string; value: stri
 function QuickStatus({ api, row, onDone, onNeedDetails }: { api: Api; row: InvoiceRow; onDone: (msg: string) => void; onNeedDetails: () => void }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-  const locked = row.status === "void" || row.status === "red";
+  const locked = isRetiredInvoiceStatus(row.status);
   async function change(next: InvoiceStatus) {
-    if ((next === "issued" || next === "sent" || next === "void" || next === "red") && !row.invoiceNo) return onNeedDetails();
+    if ((next === "issued" || next === "sent") && !row.invoiceNo) return onNeedDetails();
     if (next === "sent" && !row.sentTo) return onNeedDetails();
     setBusy(true);
     setError("");
     try {
       await api.call("invoices.update", { id: row.id, revision: row.revision, status: next });
-      onDone(`已改为${INVOICE_STATUS_LABEL[next]}`);
+      onDone(`已改为${invoiceStatusLabel(next)}`);
     } catch (e) {
       setError(message(e));
     } finally {
@@ -661,8 +656,8 @@ function QuickStatus({ api, row, onDone, onNeedDetails }: { api: Api; row: Invoi
         disabled={busy || locked}
         onChange={(e) => void change(e.target.value as InvoiceStatus)}
       >
-        {INVOICE_STATUSES.map((s) => (
-          <option key={s} value={s}>{s === "void" ? "作废" : s === "red" ? "红冲" : INVOICE_STATUS_LABEL[s]}</option>
+        {invoiceStatusSelectOptions(row.status).map((s) => (
+          <option key={s} value={s}>{invoiceStatusLabel(s)}</option>
         ))}
       </select>
       {error && <small className="inv-error">{error}</small>}
