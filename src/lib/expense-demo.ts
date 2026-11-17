@@ -3,6 +3,7 @@ import type { Expense, ExpenseSettings } from "../domain/expenses";
 import { DEFAULT_CATEGORIES } from "../domain/expenses";
 import { MemoryStore } from "../../server/memory-store";
 import { MemoryReceiptStorage } from "../../server/receipts";
+import type { InvoiceProfile, InvoiceRecord, InvoiceStatus } from "../domain/invoices";
 
 /** 演示里的凭证「云存储」：只在本页内存里，刷新后文件不保留（只有示例记录） */
 const demoReceipts = new MemoryReceiptStorage();
@@ -90,7 +91,8 @@ export function seedExpenseDemo(store: MemoryStore) {
     store.data.products[p.id] = p;
   });
   const p0 = products[0];
-  const customers = ["示例客户 · 小林", "示例客户 · 阿远", "示例客户 · 木木", "示例客户 · 陈同学"];
+  // 全是虚构名称（开票预览用公司名）
+  const customers = ["示例公司 · 青禾文化", "示例公司 · 远山科技", "示例公司 · 木木设计", "示例客户 · 陈同学"];
 
   const plan: { prefix: string; dates: string[]; revenue: number; cost: number; who: string }[] = [
     { prefix: "n1o", dates: ["2026-11-02", "2026-11-03", "2026-11-05", "2026-11-07", "2026-11-09", "2026-11-10"], revenue: yuan(7200), cost: yuan(2400), who: EXPENSE_DEMO_OWNER },
@@ -169,6 +171,7 @@ export function seedExpenseDemo(store: MemoryStore) {
     revision: 1,
   };
   store.data.batches["_ledger"] = { hasSales: true };
+  seedInvoiceDemo(store, customers);
 }
 
 export function expenseDemoTeam() {
@@ -179,6 +182,68 @@ export function expenseDemoTeam() {
     salesPayerEnabled: true,
     expenseReceiptsEnabled: true,
     expenseRenewEnabled: true,
+    invoiceEnabled: true,
     receiptStorage: demoReceipts,
   };
+}
+
+/** 开票预览（虚构抬头、税号、号码）：四位示例客户，状态覆盖待收资料 / 待开票 / 已开票 / 已寄出 */
+function seedInvoiceDemo(store: MemoryStore, names: string[]) {
+  const ids = ["demo-c-qinghe", "demo-c-yuanshan", "demo-c-mumu", "demo-c-chen"];
+  names.forEach((name, i) => {
+    store.data.customers[ids[i]] = { id: ids[i], name, mergedInto: null, revision: 1, createdAt: AT, updatedAt: AT };
+  });
+  const profile = (i: number, p: Partial<InvoiceProfile>): InvoiceProfile => ({
+    kind: "profile", id: `prof_${ids[i]}`, customerId: ids[i], text: "", fields: {}, files: [],
+    createdAt: AT, updatedAt: AT, updatedBy: EXPENSE_DEMO_OWNER, revision: 1, ...p,
+  });
+  const profiles = [
+    profile(0, {
+      fields: {
+        title: "示例 · 青禾文化传播有限公司",
+        taxNo: "91310000MA1DEMO01X",
+        addressPhone: "上海市示例区示例路 88 号 021-0000 0000",
+        bankAccount: "示例银行上海分行 6222 0000 0000 0001",
+        email: "fapiao@qinghe.example",
+      },
+    }),
+    profile(1, {
+      text: "名称：示例 · 远山科技有限公司\n税号：91440300MA5DEMO02Y\n地址电话：深圳市示例区科技园 0755-0000 0000\n收票邮箱：finance@yuanshan.example",
+      files: [{ fileID: "cloud://demo/invoices/demo/20261110-yuanshan.docx", name: "远山开票资料.docx", type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document", size: 18_432 }],
+    }),
+    profile(2, { fields: { title: "示例 · 木木设计工作室" } }),
+  ];
+  for (const p of profiles) store.data.invoices[p.id] = p;
+  const sales = Object.values(store.data.sales) as Sale[];
+  const of = (name: string) => sales.filter((x) => x.customer === name && x.date.startsWith("2026-11")).sort((a, b) => a.date.localeCompare(b.date));
+  const plan: [number, number, InvoiceStatus, Partial<InvoiceRecord>?][] = [
+    [0, 0, "sent", { invoiceNo: "26312000000041230001", issuedOn: "2026-11-06", sentTo: "fapiao@qinghe.example", sentOn: "2026-11-06", files: [{ fileID: "cloud://demo/invoices/demo/20261106-a.pdf", name: "发票-青禾-1106.pdf", type: "application/pdf", size: 86_000 }] }],
+    [0, 1, "issued", { invoiceNo: "26312000000041230002", issuedOn: "2026-11-13" }],
+    [0, 2, "pending"],
+    [1, 0, "issued", { invoiceNo: "26442000000088120003", issuedOn: "2026-11-11" }],
+    [1, 1, "pending"],
+    [1, 2, "pending"],
+    [2, 0, "awaiting_info"],
+    [2, 1, "awaiting_info"],
+    [3, 0, "awaiting_info"],
+  ];
+  for (const [ci, si, status, extra] of plan) {
+    const sale = of(names[ci])[si];
+    if (!sale) continue;
+    const p = profiles[ci];
+    const title = !p ? "" : p.fields.title || p.text.split("\n")[0].replace(/^名称：/, "");
+    const statusAt = `${addDay(sale.date, status === "pending" && si === 1 ? 0 : 1)}T03:00:00.000Z`;
+    const rec: InvoiceRecord = {
+      kind: "invoice", id: `inv_${sale.id}`, saleId: sale.id, customerId: ids[ci], customerName: names[ci],
+      productName: sale.productName, saleDate: sale.date, saleRevenue: sale.revenue, amount: sale.revenue,
+      type: "vat_normal", status, title, statusAt, createdAt: statusAt, updatedAt: statusAt,
+      createdBy: sale.createdBy || EXPENSE_DEMO_OWNER, revision: 1, ...extra,
+    };
+    store.data.invoices[rec.id] = rec;
+  }
+}
+function addDay(date: string, n: number) {
+  const d = new Date(`${date}T00:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + n);
+  return d.toISOString().slice(0, 10);
 }

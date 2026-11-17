@@ -14,6 +14,7 @@ import { OWNER_ACTIONS, transferOwner } from "./schedule-owner";
 import { EXPENSE_ACTIONS, EXPENSE_AUDITED_ACTIONS, executeExpenses } from "./expenses";
 import { RENEW_ACTION, renewExpense } from "./expense-renew";
 import { taskOwner } from "../src/domain/members";
+import { INVOICE_ACTIONS, INVOICE_AUDITED_ACTIONS, executeInvoices, invoicesOn } from "./invoices";
 
 function failure(error: unknown, diagnose?: (code: string) => void) {
   const code =
@@ -47,7 +48,8 @@ export async function handle(
     (!team.membersEnabled &&
       !team.auditEnabled &&
       !expensesOn(team) &&
-      !salesPayerOn(team))
+      !salesPayerOn(team) &&
+      !invoicesOn(team))
   )
     return legacy(store, ctx, event, diagnose, extra);
   return teamHandle(store, ctx, event, team, diagnose, extra);
@@ -202,6 +204,25 @@ async function teamHandle(
           targetId: r.target.id,
           before: summarize(r.target.type, r.target.before),
           after: summarize(r.target.type, r.target.after),
+          result: "ok",
+        });
+      return { ok: true, data: r.data };
+    }
+    // 普票开票（开关关时不进这里：照旧 UNSUPPORTED_ACTION）。提醒日程走原有 tasks.create / tasks.complete
+    if (invoicesOn(team) && INVOICE_ACTIONS.has(action)) {
+      const who = actor;
+      const r = await executeInvoices(guardAudit(base()), { ...ctx, now }, team, who, action, p, now, {
+        createTask: (ownerUid, requestId, task) =>
+          execute(guardAudit(base()), businessCtx(ctx, team, { ...who, uid: ownerUid }), "tasks.create", { requestId, task }) as Promise<CustomerTask>,
+        completeTask: (task, requestId) =>
+          execute(guardAudit(base()), businessCtx(ctx, team, who), "tasks.complete", { id: task.id, revision: task.revision, requestId }),
+      });
+      if (team.auditEnabled && INVOICE_AUDITED_ACTIONS.has(action) && r.target)
+        await record({
+          targetType: r.target.type,
+          targetId: r.target.id,
+          before: (r.target.before as Record<string, unknown> | null) ?? null,
+          after: (r.target.after as Record<string, unknown> | null) ?? null,
           result: "ok",
         });
       return { ok: true, data: r.data };

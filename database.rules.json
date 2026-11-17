@@ -13,5 +13,6 @@
   "members": { "read": false, "write": false },
   "invites": { "read": false, "write": false },
   "audit_logs": { "read": false, "write": false },
-  "redeem_attempts": { "read": false, "write": false }
+  "redeem_attempts": { "read": false, "write": false },
+  "invoices": { "read": false, "write": false }
 }
