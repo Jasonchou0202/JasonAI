@@ -288,9 +288,11 @@ async function apply(deps: MiniappDeps, store: MiniStore, who: Who, p: Record<st
   const all = await store.list<Application>("miniapp_applications");
   if (all.filter((a) => a.status === "pending").length >= LIMITS.maxPending)
     throw deny("APPLY_FULL", "申请已满，请联系管理员");
-  const hourId = "g_apply_" + hourKey(time);
+  // 全局每小时计数：一个文档，换了小时就从 0 记（不会越积越多）
+  const hourId = "g_apply_hour";
   return store.transaction(async (tx) => {
-    const hour = await tx.get<Attempts>("miniapp_attempts", hourId);
+    const saved = await tx.get<Attempts>("miniapp_attempts", hourId);
+    const hour = saved && saved.since === hourKey(time) ? saved : null;
     if ((hour?.count ?? 0) >= LIMITS.maxPerHour) throw deny("APPLY_BUSY", "申请的人有点多，请过一小时再试");
     const fresh = await tx.get<Application>("miniapp_applications", key.appId);
     if (fresh?.status === "pending") return { status: "pending" };
@@ -310,7 +312,7 @@ async function apply(deps: MiniappDeps, store: MiniStore, who: Who, p: Record<st
       linkUid: null,
       phonePurgedAt: null,
     };
-    await tx.put("miniapp_attempts", hourId, { count: (hour?.count ?? 0) + 1, since: hour?.since ?? time });
+    await tx.put("miniapp_attempts", hourId, { count: (hour?.count ?? 0) + 1, since: hourKey(time) });
     await tx.put("miniapp_applications", key.appId, row);
     return { status: "pending" };
   });

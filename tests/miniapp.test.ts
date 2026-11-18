@@ -178,6 +178,17 @@ describe("Jason 本人：绑定码", () => {
     const fresh = (await t.call(WEB_OWNER, "miniapp.owner.code")).data.code;
     expect((await t.call(BOB_WX, "miniapp.owner.redeem", { code: fresh })).ok).toBe(true);
   });
+  it("两个微信同时兑换同一个码：只有一个成功（事务里重读）", async () => {
+    const t = setup();
+    const code = (await t.call(WEB_OWNER, "miniapp.owner.code")).data.code;
+    const [a, b] = await Promise.all([
+      t.call(JASON_WX, "miniapp.owner.redeem", { code }),
+      t.call(BOB_WX, "miniapp.owner.redeem", { code }),
+    ]);
+    expect([a.ok, b.ok].filter(Boolean)).toHaveLength(1);
+    const owners = Object.values(t.store.data.miniapp_bindings) as { kind: string }[];
+    expect(owners.filter((x) => x.kind === "owner")).toHaveLength(1);
+  });
   it("最多绑 2 个微信；小程序里不能生成绑定码", async () => {
     const t = setup();
     await bindJason(t, JASON_WX);
@@ -314,6 +325,8 @@ describe("拒绝、拉黑、防刷、隐私", () => {
     for (let i = 10; i < 20; i++) expect((await applyAs(t, { openid: `o-user-${100 + i}`, appid: APPID })).ok).toBe(true);
     t.advance(3600_000);
     expect(await applyAs(t, { openid: "o-user-999", appid: APPID })).toMatchObject({ code: "APPLY_FULL" });
+    // 每小时计数只占一个文档
+    expect(Object.keys(t.store.data.miniapp_attempts)).toEqual(["g_apply_hour"]);
   });
   it("拉黑：显示无权限、不能再申请、不写库；已有绑定一并撤销；解除后可马上重新申请", async () => {
     const t = setup();
