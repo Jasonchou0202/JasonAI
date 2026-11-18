@@ -14,7 +14,7 @@ import { teamConfigFromEnv } from "./team";
 import type { Store } from "./service";
 import { handleMiniapp, miniappConfigFromEnv } from "./miniapp/gate";
 import { cloudAvatarStorage, cloudReceiptStorage } from "./miniapp/cloud-storage";
-import type { PlatformIdentity } from "./miniapp/source";
+import { isValidOpenid, type PlatformIdentity } from "./miniapp/source";
 import type { MiniStore } from "./miniapp/types";
 import { cdnHostsFromEnv, type FileFetcher } from "./miniapp/extras";
 import { batch3ConfigFromEnv, fetchCdnText } from "./miniapp/batch3";
@@ -79,7 +79,8 @@ export async function main(event: unknown, context: any) {
   const warn = (code: string) => console.warn("miniapp", code);
   const wx = wxFromContext(context);
   let uid: string | undefined;
-  if (!wx.openid) {
+  // 只有合法 openid 才当小程序来源；缺省、空值或格式不对时都去取网页登录 uid。
+  if (!isValidOpenid(wx.openid)) {
     const auth = await app.auth().getAuthContext(context);
     uid = auth.uid || undefined;
   }
