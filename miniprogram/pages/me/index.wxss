@@ -1,0 +1,5 @@
+.avatar { width: 96rpx; height: 96rpx; border-radius: 999rpx; background: #FBE9E2; color: #B4532F; font-size: 40rpx; font-weight: 600; display: flex; align-items: center; justify-content: center; margin-right: 24rpx; }
+.menu { padding-top: 8rpx; padding-bottom: 8rpx; }
+.arrow { margin-left: 12rpx; }
+.tip { margin: 28rpx 8rpx 0; }
+.leave { color: #9E2A1E; margin-top: 60rpx; }

@@ -1,0 +1,38 @@
+<view class="screen" wx:if="{{form}}">
+  <view class="large-title">{{edit ? '编辑日程' : '新建日程'}}</view>
+  <view class="sheet">
+    <view class="form-label" style="margin-top:0">客户</view>
+    <view class="row between field picked" wx:if="{{form.customerName}}">
+      <text>{{form.customerName}}</text>
+      <text class="coral small" data-id="" data-name="" bindtap="pickCustomer">换一个</text>
+    </view>
+    <block wx:else>
+      <input class="field" placeholder="搜客户名字" value="{{search}}" bindinput="typeSearch" />
+      <view class="hints" wx:if="{{matches.length}}">
+        <view class="hint-item" wx:for="{{matches}}" wx:key="id" data-id="{{item.id}}" data-name="{{item.name}}" bindtap="pickCustomer">{{item.name}}</view>
+      </view>
+    </block>
+
+    <view class="form-label">时间（北京时间）</view>
+    <view class="row">
+      <picker class="grow" mode="date" value="{{form.date}}" bindchange="pickDate"><view class="field">{{form.date}}</view></picker>
+      <picker class="time-cell" mode="time" value="{{form.time}}" bindchange="pickTime"><view class="field">{{form.time}}</view></picker>
+    </view>
+
+    <view class="form-label">标题</view>
+    <input class="field" placeholder="例如：续费提醒：Plus 会员" value="{{form.title}}" data-k="title" bindinput="input" maxlength="80" />
+    <view class="form-label">下一步<text class="opt">选填</text></view>
+    <textarea class="field area" placeholder="要做什么" value="{{form.nextAction}}" data-k="nextAction" bindinput="input" maxlength="500" auto-height />
+    <view class="form-label">反馈<text class="opt">选填</text></view>
+    <textarea class="field area" placeholder="客户怎么说" value="{{form.feedback}}" data-k="feedback" bindinput="input" maxlength="500" auto-height />
+    <view class="form-label">提醒</view>
+    <picker range="{{reminderLabels}}" value="{{reminderIndex}}" bindchange="pickReminder">
+      <view class="field row between"><text>{{reminderLabels[reminderIndex]}}</text><text class="muted">›</text></view>
+    </picker>
+  </view>
+  <view class="err" wx:if="{{error}}">{{error}}</view>
+  <view class="actions">
+    <view class="primary {{busy ? 'disabled' : ''}}" bindtap="save">{{busy ? '正在保存…' : '保存日程'}}</view>
+  </view>
+</view>
+<view class="screen" wx:else><view class="empty">{{error || '正在准备…'}}</view></view>

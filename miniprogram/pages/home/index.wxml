@@ -1,7 +1,95 @@
-<view class="wrap">
-  <view class="title">生意手账</view>
-  <view class="badge">个人私密账本</view>
-  <view class="card"><view>已进入（{{role}}{{name ? ' · ' + name : ''}}）。</view><view class="hint">看板、记一笔、销售明细、客户日程正在做，下一个体验版提供。</view></view>
-  <view class="error" wx:if="{{error}}">{{error}}</view>
-  <view class="link" bindtap="leave">退出这个微信的绑定</view>
+<privacy-popup />
+<view class="screen">
+  <view class="topbar">
+    <view>
+      <view class="eyebrow">个人私密账本</view>
+      <view class="large-title">生意看板</view>
+    </view>
+    <view class="bell" bindtap="openBell" aria-label="今日待办">
+      <view class="bell-icon">
+        <view class="bell-body"></view>
+        <view class="bell-clapper"></view>
+      </view>
+      <view class="badge-dot bell-badge" wx:if="{{bell}}">{{bell}}</view>
+    </view>
+  </view>
+
+  <view class="empty" wx:if="{{loading}}">正在读取账本…</view>
+  <view class="err" wx:if="{{error}}">{{error}}（下拉可重试）</view>
+
+  <block wx:if="{{view}}">
+    <view class="hero">
+      <view class="hero-label">{{view.monthTitle}}</view>
+      <view class="hero-value {{view.monthLoss ? 'loss' : ''}}">{{view.monthProfit}}</view>
+      <view class="hero-quick">
+        <view class="hero-q" wx:for="{{view.quick}}" wx:key="label">
+          <view class="muted small">{{item.label}}</view>
+          <view class="hero-q-v {{item.loss ? 'loss' : ''}}">{{item.value}}</view>
+        </view>
+      </view>
+    </view>
+
+    <view class="stats">
+      <view class="stat" wx:for="{{view.stats}}" wx:key="label">
+        <view class="muted small">{{item.label}}</view>
+        <view class="stat-v">{{item.value}}</view>
+      </view>
+    </view>
+
+    <view class="sheet">
+      <view class="sheet-head">
+        <view>
+          <view class="sheet-title">利润走势</view>
+          <view class="sheet-sub">{{period === 'day' ? '最近 7 天' : period === 'week' ? '最近 8 周' : '本月前后半年 · 虚线是目标'}} · 点柱形看金额</view>
+        </view>
+      </view>
+      <view class="segmented">
+        <view class="seg {{period === 'day' ? 'on' : ''}}" data-p="day" bindtap="setPeriod">每日</view>
+        <view class="seg {{period === 'week' ? 'on' : ''}}" data-p="week" bindtap="setPeriod">每周</view>
+        <view class="seg {{period === 'month' ? 'on' : ''}}" data-p="month" bindtap="setPeriod">每月</view>
+      </view>
+      <view class="summary" wx:if="{{summary}}">
+        <view class="muted small">{{summary.range}}</view>
+        <view class="summary-v">{{summary.profit}}</view>
+        <view class="muted small">{{summary.detail}}</view>
+        <view class="summary-open" wx:if="{{summary.from}}" bindtap="openRange">查看这段明细 ›</view>
+      </view>
+      <canvas type="2d" id="trend" class="trend-canvas" bindtouchend="tapTrend"></canvas>
+      <view class="trend-foot" wx:if="{{period === 'month'}}">
+        <view class="pager {{canPrev ? '' : 'off'}}" data-n="-1" bindtap="shift">‹ 往前</view>
+        <view class="muted small">{{note}}</view>
+        <view class="pager {{canNext ? '' : 'off'}}" data-n="1" bindtap="shift">往后 ›</view>
+      </view>
+    </view>
+
+    <view class="sheet">
+      <view class="sheet-head">
+        <view>
+          <view class="sheet-title">本月商品贡献</view>
+          <view class="sheet-sub">本月利润前 5 的商品 · 利润 = 销售额 − 成本</view>
+        </view>
+        <view class="coral small" bindtap="openMonth">本月明细 ›</view>
+      </view>
+      <canvas wx:if="{{view.hasProducts}}" type="2d" id="products" class="product-canvas" style="height: {{productHeight}}px"></canvas>
+      <view class="empty" wx:else>本月还没有记录 · <text class="coral" bindtap="newSale">记一笔销售 ›</text></view>
+    </view>
+
+    <view class="sheet" wx:if="{{view.ranking.length}}">
+      <view class="sheet-head">
+        <view>
+          <view class="sheet-title">客户排行</view>
+          <view class="sheet-sub">全部时间 · 按利润排前 5</view>
+        </view>
+      </view>
+      <view class="list-item" wx:for="{{view.ranking}}" wx:key="id">
+        <view class="rank-no">{{item.rank}}</view>
+        <view class="grow">
+          <view class="ellipsis">{{item.name}}</view>
+          <view class="muted small ellipsis">{{item.count}} 笔{{item.top ? ' · 常买 ' + item.top : ''}}{{item.pending ? ' · ' + item.pending + ' 条待跟进' : ''}}</view>
+        </view>
+        <view class="rank-v">{{item.profit}}</view>
+      </view>
+    </view>
+  </block>
 </view>
+<view class="fab" bindtap="newSale">＋ 记一笔</view>

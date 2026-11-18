@@ -1,0 +1,20 @@
+<view class="screen">
+  <view class="large-title">我的</view>
+  <view class="sheet row">
+    <view class="avatar">{{name ? name[0] : '我'}}</view>
+    <view class="grow">
+      <view class="sheet-title">{{name || '已登录'}}</view>
+      <view class="muted small">{{role}} · 个人私密账本</view>
+    </view>
+  </view>
+  <view class="sheet menu" wx:if="{{owner}}">
+    <view class="list-item" bindtap="applications">
+      <view class="grow">成员申请</view>
+      <view class="badge-dot" wx:if="{{pending}}">{{pending}}</view>
+      <view class="muted arrow">›</view>
+    </view>
+  </view>
+  <view class="sheet-sub tip">报销、开票、成员管理、账本设置等在后续版本补上；暂时请在网页版操作。</view>
+  <view class="err" wx:if="{{error}}">{{error}}</view>
+  <view class="ghost leave" bindtap="leave">退出这个微信的绑定</view>
+</view>

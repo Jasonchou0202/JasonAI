@@ -1,0 +1,27 @@
+<view class="screen">
+  <view class="large-title">成员申请</view>
+  <view class="sheet-sub">手机号只给你认人用，不发短信验证。不认识的人请拒绝或拉黑。</view>
+  <view class="err" wx:if="{{error}}">{{error}}</view>
+  <view class="sheet">
+    <view class="sheet-title">待处理<text class="muted small count">{{pending.length}} 条</text></view>
+    <view class="list-item" wx:for="{{pending}}" wx:key="id" data-id="{{item.id}}" bindtap="decide">
+      <view class="grow">
+        <view>{{item.name}}</view>
+        <view class="muted small">{{item.phone}} · 申请于 {{item.at}}</view>
+        <view class="coral small" wx:if="{{item.maybe}}">可能是已有成员：{{item.maybe}}</view>
+      </view>
+      <view class="pill on">处理</view>
+    </view>
+    <view class="empty" wx:if="{{!loading && !pending.length}}">没有待处理的申请</view>
+  </view>
+  <view class="sheet" wx:if="{{blocked.length}}">
+    <view class="sheet-title">已拉黑</view>
+    <view class="list-item" wx:for="{{blocked}}" wx:key="id">
+      <view class="grow">
+        <view>{{item.name}}</view>
+        <view class="muted small">{{item.phone}} · {{item.at}}</view>
+      </view>
+      <view class="coral small" data-id="{{item.id}}" bindtap="unblock">解除拉黑</view>
+    </view>
+  </view>
+</view>

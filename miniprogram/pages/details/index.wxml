@@ -1,0 +1,67 @@
+<view class="screen">
+  <view class="topbar">
+    <view>
+      <view class="eyebrow">个人私密账本</view>
+      <view class="large-title">销售明细</view>
+    </view>
+    <view class="coral small" bindtap="toggleFilters">{{showFilters ? '收起筛选' : '筛选'}}</view>
+  </view>
+
+  <scroll-view scroll-x class="preset-bar">
+    <view class="pill {{preset === item.key ? 'on' : ''}}" wx:for="{{presets}}" wx:key="key" data-key="{{item.key}}" bindtap="tapPreset">{{item.label}}</view>
+  </scroll-view>
+
+  <view class="search row">
+    <input class="field grow" confirm-type="search" placeholder="搜商品、客户、备注" value="{{search}}" bindinput="typeSearch" bindconfirm="doSearch" />
+    <view class="search-btn" bindtap="doSearch">搜索</view>
+  </view>
+
+  <view class="sheet filters" wx:if="{{showFilters}}">
+    <view class="row between filter-line">
+      <text class="muted">从</text>
+      <picker mode="date" value="{{from}}" bindchange="pickFrom"><view class="field small-field">{{from || '不限'}}</view></picker>
+      <text class="muted">到</text>
+      <picker mode="date" value="{{to}}" bindchange="pickTo"><view class="field small-field">{{to || '不限'}}</view></picker>
+    </view>
+    <picker range="{{productNames}}" value="{{productIndex}}" bindchange="pickProduct">
+      <view class="field row between"><text>{{productNames[productIndex]}}</text><text class="muted">›</text></view>
+    </picker>
+    <view class="row between filter-line">
+      <view class="pill {{deleted ? 'on' : ''}}" bindtap="toggleDeleted">{{deleted ? '正在看已删除' : '看已删除'}}</view>
+      <view class="coral small" bindtap="clearFilters">清除筛选</view>
+    </view>
+  </view>
+
+  <view class="totals" wx:if="{{totals}}">
+    <view class="tot"><view class="muted small">利润</view><view class="tot-v {{totals.loss ? 'loss' : ''}}">{{totals.profit}}</view></view>
+    <view class="tot"><view class="muted small">销售额</view><view class="tot-v">{{totals.revenue}}</view></view>
+    <view class="tot"><view class="muted small">成本</view><view class="tot-v">{{totals.cost}}</view></view>
+    <view class="tot"><view class="muted small">笔数</view><view class="tot-v">{{totals.count}}</view></view>
+  </view>
+
+  <view class="err" wx:if="{{error}}">{{error}}</view>
+
+  <view class="sheet list">
+    <view class="sale" wx:for="{{rows}}" wx:key="id" data-i="{{index}}" bindtap="openRow">
+      <view class="sale-date">{{item.date}}</view>
+      <view class="grow">
+        <view class="ellipsis sale-product">{{item.product}}</view>
+        <view class="muted small ellipsis">{{item.customer}}{{item.note ? ' · ' + item.note : ''}}</view>
+      </view>
+      <view class="sale-money">
+        <view class="sale-profit {{item.loss ? 'loss' : ''}}">{{item.profit}}</view>
+        <view class="muted small">售 {{item.revenue}}</view>
+      </view>
+    </view>
+    <view class="empty" wx:if="{{!loading && !rows.length}}">{{deleted ? '没有已删除的记录' : '这个时间段还没有记录'}}</view>
+    <view class="empty" wx:if="{{loading}}">正在读取…</view>
+  </view>
+
+  <view class="pagination row between" wx:if="{{info && info.pages > 1}}">
+    <view class="pager {{info.hasPrev ? '' : 'off'}}" bindtap="prev">‹ 上一页</view>
+    <view class="muted small">{{info.text}}</view>
+    <view class="pager {{info.hasNext ? '' : 'off'}}" bindtap="next">下一页 ›</view>
+  </view>
+  <view class="muted small center" wx:elif="{{info}}">{{info.text}}</view>
+</view>
+<view class="fab" bindtap="newSale">＋ 记一笔</view>

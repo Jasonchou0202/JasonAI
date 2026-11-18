@@ -1,0 +1,65 @@
+<view class="screen">
+  <view class="topbar">
+    <view>
+      <view class="eyebrow">个人私密账本</view>
+      <view class="large-title">客户日程</view>
+    </view>
+    <view class="coral small" bindtap="backToday">回到今天</view>
+  </view>
+
+  <view class="sheet cal" wx:if="{{grid}}">
+    <view class="row between cal-head">
+      <view class="cal-nav" data-n="-1" bindtap="shiftMonth">‹</view>
+      <view class="sheet-title">{{grid.title}}</view>
+      <view class="cal-nav" data-n="1" bindtap="shiftMonth">›</view>
+    </view>
+    <view class="cal-week">
+      <view class="cal-wd" wx:for="{{weekdays}}" wx:key="*this">{{item}}</view>
+    </view>
+    <view class="cal-week" wx:for="{{grid.weeks}}" wx:for-item="week" wx:key="index">
+      <view class="cal-day {{d.inMonth ? '' : 'out'}} {{d.today ? 'today' : ''}} {{d.selected ? 'sel' : ''}}" wx:for="{{week}}" wx:for-item="d" wx:key="date" data-date="{{d.date}}" bindtap="pickDay">
+        <view class="cal-num">{{d.num}}</view>
+        <view class="cal-dots">
+          <view class="dot open" wx:if="{{d.open}}"></view>
+          <view class="dot done" wx:if="{{d.done}}"></view>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <view class="segmented views">
+    <view class="seg {{view === 'day' ? 'on' : ''}}" data-v="day" bindtap="setView">{{selectedText || '当天'}}</view>
+    <view class="seg {{view === 'agenda' ? 'on' : ''}}" data-v="agenda" bindtap="setView">今日 / 明日 / 逾期</view>
+    <view class="seg {{view === 'deleted' ? 'on' : ''}}" data-v="deleted" bindtap="setView">已删除</view>
+  </view>
+
+  <view class="err" wx:if="{{error}}">{{error}}</view>
+
+  <view class="sheet" wx:if="{{view !== 'agenda'}}">
+    <view class="task" wx:for="{{rows}}" wx:key="id" data-id="{{item.id}}" bindtap="openTask">
+      <view class="task-time">{{view === 'deleted' ? item.short : item.time}}</view>
+      <view class="grow">
+        <view class="task-title ellipsis {{item.done ? 'done' : ''}}">{{item.title}}</view>
+        <view class="muted small ellipsis">{{item.customer}}{{item.nextAction ? ' · ' + item.nextAction : ''}}</view>
+      </view>
+      <view class="tag {{item.tone}}">{{item.status}}</view>
+    </view>
+    <view class="empty" wx:if="{{!loading && !rows.length}}">{{view === 'deleted' ? '没有已删除的日程' : '这天没有日程'}}</view>
+  </view>
+
+  <block wx:else>
+    <view class="sheet" wx:for="{{groups}}" wx:for-item="g" wx:key="key">
+      <view class="sheet-title group-title">{{g.title}}<text class="muted small count">{{g.rows.length}} 条</text></view>
+      <view class="task" wx:for="{{g.rows}}" wx:key="id" data-id="{{item.id}}" bindtap="openTask">
+        <view class="task-time">{{g.key === 'overdue' ? item.short : item.time}}</view>
+        <view class="grow">
+          <view class="task-title ellipsis {{item.done ? 'done' : ''}}">{{item.title}}</view>
+          <view class="muted small ellipsis">{{item.customer}}</view>
+        </view>
+        <view class="tag {{item.tone}}">{{item.status}}</view>
+      </view>
+      <view class="empty" wx:if="{{!g.rows.length}}">没有</view>
+    </view>
+  </block>
+</view>
+<view class="fab" bindtap="newTask">＋ 新建日程</view>

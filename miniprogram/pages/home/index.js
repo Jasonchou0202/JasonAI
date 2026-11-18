@@ -1,32 +1,147 @@
-// 第 1 批骨架：确认身份后的首页占位。看板、记一笔、明细、日程、铃铛在第 1 批后续补上。
+// 首页看板：本月汇总、利润走势（每日/每周/每月目标图）、本月商品贡献、客户排行前 5、铃铛角标
+// 数字全部由云端 dashboard / customers.ranking 算好，图表坐标复用 lib/domain（与网页同一套计算）
+const D = require("../../lib/domain");
 const { call } = require("../../utils/api");
+const session = require("../../utils/session");
+const { canvas } = require("../../utils/chart");
+
 Page({
-  data: { role: "", name: "", error: "" },
+  data: {
+    loading: true,
+    error: "",
+    view: null,
+    period: "month",
+    selected: "",
+    summary: null,
+    canPrev: false,
+    canNext: false,
+    bell: "",
+    isAdmin: false,
+    productHeight: 60,
+  },
   onShow() {
-    if (wx.setVisualEffectOnCapture) wx.setVisualEffectOnCapture({ visualEffect: "hidden" });
+    session.protect(true);
     this.load();
   },
   onHide() {
-    if (wx.setVisualEffectOnCapture) wx.setVisualEffectOnCapture({ visualEffect: "none" });
+    session.protect(false);
+  },
+  onUnload() {
+    session.protect(false);
   },
   onPullDownRefresh() {
-    this.load().then(() => wx.stopPullDownRefresh());
+    this.load(true).then(() => wx.stopPullDownRefresh());
   },
-  load() {
-    return call("miniapp.me")
-      .then((me) => {
-        if (me.status !== "owner" && me.status !== "member") return wx.reLaunch({ url: "/pages/gate/index" });
-        this.setData({ role: me.status === "owner" ? "管理员" : "成员", name: me.name || "", error: "" });
-      })
-      .catch((e) => this.setData({ error: e.message }));
+  load(force) {
+    const day = D.today();
+    return session
+      .load(force)
+      .then((me) =>
+        Promise.all([
+          call("dashboard"),
+          call("customers.ranking", { period: "all" }).catch(() => null),
+          call("tasks.list", { from: day, to: day }).catch(() => []),
+        ]).then(([dash, ranking, tasks]) => {
+          this.dash = dash;
+          this.start = undefined;
+          const b = D.bell(tasks, day);
+          this.setData({
+            loading: false,
+            error: "",
+            isAdmin: me.role === "admin",
+            view: D.homeView(dash, ranking, day),
+            bell: b.badge,
+            selected: "",
+          }, () => this.drawAll());
+        }),
+      )
+      .catch((e) => {
+        if (e.code !== "NOT_BOUND") this.setData({ loading: false, error: e.message });
+      });
   },
-  leave() {
-    wx.showModal({
-      title: "退出小程序账号",
-      content: "退出后这个微信要重新申请才能使用，确定吗？",
-      success: (r) =>
-        r.confirm &&
-        call("miniapp.bind.leave").then(() => wx.reLaunch({ url: "/pages/gate/index" })).catch((e) => this.setData({ error: e.message })),
+  buckets() {
+    const d = this.dash;
+    return this.data.period === "day" ? d.days : this.data.period === "week" ? d.weeks : d.months;
+  },
+  drawAll() {
+    this.drawTrend();
+    this.drawProducts();
+  },
+  drawTrend() {
+    if (!this.dash) return;
+    canvas(this, "#trend").then((c) => {
+      if (!c) return;
+      const d = this.dash;
+      const layout =
+        this.data.period === "month"
+          ? D.profitTargetLayout({
+              months: d.months,
+              current: D.today().slice(0, 7),
+              startProfit: d.profitTargetStart,
+              width: c.width,
+              height: c.height,
+              start: this.start,
+              selected: this.data.selected,
+            })
+          : D.bucketBarsLayout({ buckets: this.buckets(), width: c.width, height: c.height, selected: this.data.selected });
+      this.layout = layout;
+      if (!layout) return c.ctx.clearRect(0, 0, c.width, c.height);
+      this.start = layout.start;
+      D.drawChart(c.ctx, layout);
+      const shown = this.data.period === "month" ? this.buckets().filter((b) => layout.bars.some((x) => x.key === b.key.slice(0, 7))) : this.buckets();
+      this.setData({
+        canPrev: layout.canPrev,
+        canNext: layout.canNext,
+        summary: D.trendSummary(shown, this.data.selected),
+        note: layout.note,
+      });
     });
+  },
+  drawProducts() {
+    const products = (this.dash && this.dash.products) || [];
+    if (!products.length) return;
+    canvas(this, "#products").then((c) => {
+      if (!c) return;
+      const layout = D.productBarsLayout(products, c.width);
+      if (Math.abs(layout.height - this.data.productHeight) > 1) {
+        return this.setData({ productHeight: layout.height }, () => this.drawProducts());
+      }
+      D.drawProductBars(c.ctx, layout, D.money);
+    });
+  },
+  setPeriod(e) {
+    const period = e.currentTarget.dataset.p;
+    if (period === this.data.period) return;
+    this.start = undefined;
+    this.setData({ period, selected: "" }, () => this.drawTrend());
+  },
+  shift(e) {
+    if (!this.layout) return;
+    this.start = this.layout.start + Number(e.currentTarget.dataset.n);
+    this.drawTrend();
+  },
+  tapTrend(e) {
+    const t = (e.changedTouches && e.changedTouches[0]) || (e.touches && e.touches[0]) || e.detail || {};
+    if (!this.layout || typeof t.x !== "number") return;
+    const bar = D.hitBar(this.layout, t.x);
+    if (!bar) return;
+    this.setData({ selected: bar.key === this.data.selected ? "" : bar.key });
+    this.drawTrend();
+  },
+  openRange() {
+    const s = this.data.summary;
+    if (!s || !s.from) return;
+    getApp().globalData.detailFilters = { from: s.from, to: s.to };
+    wx.switchTab({ url: "/pages/details/index" });
+  },
+  openMonth() {
+    getApp().globalData.detailFilters = { preset: "month" };
+    wx.switchTab({ url: "/pages/details/index" });
+  },
+  openBell() {
+    wx.navigateTo({ url: "/pages/bell/index" });
+  },
+  newSale() {
+    wx.navigateTo({ url: "/pages/sale/index" });
   },
 });

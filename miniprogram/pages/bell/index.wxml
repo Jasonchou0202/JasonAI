@@ -1,0 +1,20 @@
+<view class="screen">
+  <view class="eyebrow">{{day}}</view>
+  <view class="large-title">今日待办</view>
+  <view class="sheet-sub">{{count ? '还有 ' + count + ' 条没完成，包括今天早些时候已过点的' : '今天的日程都处理完了'}}</view>
+  <view class="err" wx:if="{{error}}">{{error}}</view>
+  <view class="sheet">
+    <view class="item" wx:for="{{rows}}" wx:key="id">
+      <view class="check" data-id="{{item.id}}" bindtap="done" aria-label="标记完成"></view>
+      <view class="grow" data-id="{{item.id}}" bindtap="open">
+        <view class="row">
+          <text class="time {{item.tone}}">{{item.time}}</text>
+          <text class="title ellipsis grow">{{item.title}}</text>
+        </view>
+        <view class="muted small ellipsis">{{item.customer}}{{item.nextAction ? ' · ' + item.nextAction : ''}}</view>
+      </view>
+    </view>
+    <view class="empty" wx:if="{{!loading && !rows.length}}">今天没有待办 🎉</view>
+  </view>
+  <view class="ghost" bindtap="calendar">打开客户日程 ›</view>
+</view>

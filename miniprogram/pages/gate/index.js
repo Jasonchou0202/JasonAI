@@ -20,7 +20,8 @@ Page({
     return call("miniapp.me")
       .then((me) => {
         const url = ROUTES[me.status] || "/pages/denied/index";
-        wx.reLaunch({ url: url + "?status=" + encodeURIComponent(me.status) });
+        // 首页是 tabBar 页面，reLaunch 到 tabBar 页面不能带参数
+        wx.reLaunch({ url: url === ROUTES.owner ? url : url + "?status=" + encodeURIComponent(me.status) });
       })
       .catch((e) => {
         if (e.code === "NO_ACCESS" || e.code === "MINIAPP_OFF")

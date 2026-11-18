@@ -12,6 +12,7 @@
     "deploy:functions": "node scripts/deploy-functions.mjs",
     "typecheck": "tsc -b",
     "build:server": "node scripts/build-server.mjs",
+    "build:miniapp": "node scripts/build-miniapp.mjs",
     "check": "npm run test && npm run build && npm run build:server && node scripts/verify-sales-bundles.mjs"
   },
   "dependencies": {

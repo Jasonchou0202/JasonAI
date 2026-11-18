@@ -1,0 +1,5 @@
+.hints { background: #FFFFFF; border: 1rpx solid #F1EAE4; border-radius: 20rpx; margin-top: 10rpx; }
+.hint-item { padding: 20rpx 26rpx; border-bottom: 1rpx solid #F6F1EC; font-size: 28rpx; }
+.time-cell { width: 200rpx; margin-left: 20rpx; }
+.area { width: 100%; box-sizing: border-box; min-height: 96rpx; }
+.actions { margin-top: 40rpx; }
