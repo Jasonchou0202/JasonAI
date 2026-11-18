@@ -97,6 +97,33 @@ describe("小程序工程结构", () => {
       }
     }
   });
+  it("用到选头像/选图/选文件/剪贴板的页面都挂了隐私弹窗；组件在当前页显示时重新注册监听", () => {
+    const api = /chooseAvatar|chooseMedia|chooseImage|chooseMessageFile|getClipboardData|setClipboardData/;
+    const need = new Set<string>();
+    for (const file of allJs(ROOT)) {
+      if (file.includes("/lib/") || file.includes("pkg-demo")) continue;
+      const src = read(file);
+      if (!api.test(src) && !/ui\.choose(?:Files|Photos)\(/.test(src)) continue;
+      const wxml = file.replace(/\.js$/, ".wxml");
+      expect(existsSync(wxml), wxml).toBe(true);
+      need.add(wxml);
+    }
+    for (const page of app.pages) {
+      const wxml = join(ROOT, page + ".wxml");
+      if (api.test(read(wxml))) need.add(wxml);
+    }
+    expect([...need].length).toBeGreaterThan(0);
+    for (const wxml of need) {
+      expect(read(wxml), wxml + " 缺少 <privacy-popup />").toContain("<privacy-popup");
+    }
+    const comp = read(join(ROOT, "components/privacy/index.js"));
+    expect(comp).toContain("pageLifetimes");
+    expect(comp).toMatch(/show\(\)\s*\{\s*this\.bind\(\)/);
+    expect(comp).toContain("wx.onNeedPrivacyAuthorization(this.listen)");
+    const me = read(join(ROOT, "pages/me/index.wxml"));
+    expect(me).toContain('open-type="chooseAvatar"');
+    expect(me).not.toMatch(/<button[^>]*disabled/);
+  });
 });
 
 describe("domain 编译复用", () => {
