@@ -1,0 +1,90 @@
+<view class="screen" wx:if="{{form}}">
+  <view class="large-title">{{edit ? '编辑销售' : '记一笔'}}</view>
+
+  <view class="sheet">
+    <view class="form-label" style="margin-top:0">商品</view>
+    <view class="chips" wx:if="{{quick.length}}">
+      <view class="pill {{form.productId === item.id ? 'on' : ''}}" wx:for="{{quick}}" wx:key="id" data-id="{{item.id}}" bindtap="pickQuick">{{item.name}}</view>
+    </view>
+    <view class="row field-row">
+      <input class="field grow" placeholder="商品名称" value="{{form.productName}}" data-k="productName" bindinput="input" maxlength="80" />
+      <picker range="{{productNames}}" bindchange="pickProduct">
+        <view class="picker-btn">全部商品 ›</view>
+      </picker>
+    </view>
+
+    <view class="form-label">客户</view>
+    <input class="field" placeholder="客户名称" value="{{form.customer}}" data-k="customer" bindinput="input" maxlength="80" />
+    <view class="hints" wx:if="{{hints.length}}">
+      <view class="hint-item" wx:for="{{hints}}" wx:key="*this" data-name="{{item}}" bindtap="pickHint">{{item}}</view>
+    </view>
+
+    <view class="form-label">成交日期</view>
+    <picker mode="date" value="{{form.date}}" bindchange="pickDate">
+      <view class="field row between"><text>{{dateText}}</text><text class="muted">›</text></view>
+    </picker>
+  </view>
+
+  <view class="sheet">
+    <view class="money-grid">
+      <view class="money-cell">
+        <view class="form-label" style="margin-top:0">销售额</view>
+        <view class="field row"><text class="muted">¥</text><input class="grow money-input" type="number" placeholder="0" value="{{form.revenue}}" data-k="revenue" bindinput="input" /></view>
+      </view>
+      <view class="money-cell">
+        <view class="form-label" style="margin-top:0">成本</view>
+        <view class="field row"><text class="muted">¥</text><input class="grow money-input" type="number" placeholder="0" value="{{form.cost}}" data-k="cost" bindinput="input" /></view>
+      </view>
+    </view>
+    <view class="profit-preview row between">
+      <text class="muted">这笔预计利润</text>
+      <text class="profit-v">{{profit}}</text>
+    </view>
+    <block wx:if="{{payer}}">
+      <view class="form-label">谁付的进货</view>
+      <view class="chips">
+        <view class="pill {{paidBy === item.uid ? 'on' : ''}}" wx:for="{{payer}}" wx:key="uid" data-uid="{{item.uid}}" bindtap="pickPayer">{{item.name}}</view>
+      </view>
+    </block>
+    <view class="form-label">备注<text class="opt">选填</text></view>
+    <textarea class="field note" placeholder="例如：续费、优惠、特殊说明…" value="{{form.note}}" data-k="note" bindinput="input" maxlength="2000" auto-height />
+  </view>
+
+  <view class="sheet" wx:if="{{!edit}}">
+    <view class="row between">
+      <view>
+        <view class="sheet-title">顺手建跟进日程</view>
+        <view class="sheet-sub">默认下个月同一天 10:00</view>
+      </view>
+      <switch color="#D97757" checked="{{form.schedule}}" bindchange="toggleSchedule" />
+    </view>
+    <block wx:if="{{form.schedule}}">
+      <view class="money-grid" style="margin-top: 20rpx">
+        <picker class="money-cell" mode="date" value="{{form.scheduleDate}}" bindchange="pickScheduleDate">
+          <view class="field">{{form.scheduleDate}}</view>
+        </picker>
+        <picker class="money-cell" mode="time" value="{{form.scheduleTime}}" bindchange="pickScheduleTime">
+          <view class="field">{{form.scheduleTime}}</view>
+        </picker>
+      </view>
+      <view class="form-label">日程标题<text class="opt">不填就用「续费提醒：商品名」</text></view>
+      <input class="field" placeholder="续费提醒：{{form.productName || '商品名'}}" value="{{form.scheduleTitle}}" data-k="scheduleTitle" bindinput="input" maxlength="80" />
+      <view class="form-label">提醒</view>
+      <picker range="{{reminderLabels}}" value="{{reminderIndex}}" bindchange="pickReminder">
+        <view class="field row between"><text>{{reminderLabels[reminderIndex]}}</text><text class="muted">›</text></view>
+      </picker>
+    </block>
+  </view>
+
+  <view class="err" wx:if="{{error}}">{{error}}</view>
+  <view class="ghost" wx:if="{{pendingSchedule}}" bindtap="retrySchedule">重试建日程</view>
+
+  <view class="actions">
+    <view class="primary {{busy ? 'disabled' : ''}}" bindtap="saveLeave">{{busy ? '正在保存…' : '保存'}}</view>
+    <view class="ghost" wx:if="{{!edit}}" bindtap="saveStay">保存并再记一笔</view>
+    <view class="ghost muted" bindtap="discard">{{edit ? '撤销修改' : '清空草稿'}}</view>
+  </view>
+</view>
+<view class="screen" wx:else>
+  <view class="empty">{{error || '正在准备…'}}</view>
+</view>

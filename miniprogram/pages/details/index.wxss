@@ -1,0 +1,21 @@
+.preset-bar { white-space: nowrap; margin-bottom: 20rpx; }
+.preset-bar .pill { margin-right: 14rpx; padding: 12rpx 28rpx; }
+.search .field { margin-right: 16rpx; background: #FFFFFF; }
+.search-btn { color: #B4532F; font-size: 28rpx; }
+.filters .field { margin-top: 16rpx; }
+.filter-line { margin-top: 16rpx; }
+.small-field { min-width: 210rpx; text-align: center; margin-top: 0 !important; padding: 16rpx 20rpx; font-size: 26rpx; }
+.totals { display: flex; background: #FFFFFF; border-radius: 28rpx; padding: 24rpx 8rpx; margin-top: 24rpx; box-shadow: 0 2rpx 16rpx rgba(60, 40, 30, 0.05); }
+.tot { flex: 1; text-align: center; }
+.tot-v { font-size: 28rpx; font-weight: 600; margin-top: 6rpx; color: #1D1D1F; }
+.list { padding-top: 8rpx; padding-bottom: 8rpx; }
+.sale { display: flex; align-items: center; padding: 26rpx 0; border-bottom: 1rpx solid #F1EAE4; }
+.sale:last-child { border-bottom: none; }
+.sale-date { width: 92rpx; font-size: 24rpx; color: #8A7B70; }
+.sale-product { font-size: 30rpx; color: #1D1D1F; }
+.sale-money { text-align: right; margin-left: 16rpx; }
+.sale-profit { font-size: 30rpx; font-weight: 600; color: #1D1D1F; }
+.pagination { margin-top: 24rpx; }
+.pager { font-size: 26rpx; color: #B4532F; }
+.pager.off { color: #D8CDC5; }
+.center { text-align: center; margin-top: 20rpx; }

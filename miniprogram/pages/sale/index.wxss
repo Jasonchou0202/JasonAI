@@ -1,0 +1,14 @@
+.chips { display: flex; flex-wrap: wrap; margin-bottom: 16rpx; }
+.chips .pill { margin: 0 14rpx 14rpx 0; padding: 12rpx 26rpx; font-size: 26rpx; }
+.field-row .field { margin-right: 16rpx; }
+.picker-btn { color: #B4532F; font-size: 26rpx; white-space: nowrap; padding: 20rpx 0; }
+.hints { background: #FFFFFF; border: 1rpx solid #F1EAE4; border-radius: 20rpx; margin-top: 10rpx; }
+.hint-item { padding: 20rpx 26rpx; border-bottom: 1rpx solid #F6F1EC; font-size: 28rpx; }
+.money-grid { display: flex; }
+.money-cell { flex: 1; min-width: 0; }
+.money-cell + .money-cell { margin-left: 20rpx; }
+.money-input { margin-left: 10rpx; font-size: 34rpx; font-weight: 600; }
+.profit-preview { margin-top: 28rpx; padding: 24rpx 26rpx; background: #FBF1EC; border-radius: 20rpx; }
+.profit-v { font-size: 36rpx; font-weight: 700; color: #B4532F; }
+.note { width: 100%; box-sizing: border-box; min-height: 120rpx; }
+.actions { margin-top: 40rpx; }

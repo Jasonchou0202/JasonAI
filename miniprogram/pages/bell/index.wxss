@@ -1,0 +1,6 @@
+.item { display: flex; align-items: center; padding: 26rpx 0; border-bottom: 1rpx solid #F1EAE4; }
+.item:last-child { border-bottom: none; }
+.check { width: 40rpx; height: 40rpx; border-radius: 999rpx; border: 3rpx solid #D97757; margin-right: 24rpx; flex-shrink: 0; }
+.time { font-size: 26rpx; font-weight: 600; color: #B4532F; margin-right: 16rpx; }
+.time.late { color: #9E2A1E; }
+.title { font-size: 30rpx; color: #1D1D1F; }
