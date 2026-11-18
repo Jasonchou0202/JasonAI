@@ -124,7 +124,7 @@ export async function handleExtra(deps: ExtraDeps, who: ExtraWho, action: string
   const index = int(p.index, 0, 20);
   const offset = int(p.offset ?? 0, 0, 20 * 1024 * 1024);
   if (index === null || offset === null) throw new Error("请求格式无效");
-  // 先用原来的调用确认权限（成员只能看自己的报销凭证；开票附件按开票权限）
+  // 先用原来的调用确认权限（报销凭证：授权成员可看全量；开票附件按开票权限）
   const list = await biz<{ items: { name: string; type: string; size: number; url: string | null }[] }>(deps, who, via, { id: p.id });
   const item = list.items[index];
   if (!item) throw new Error("附件不存在");

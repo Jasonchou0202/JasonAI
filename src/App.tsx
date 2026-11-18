@@ -841,7 +841,7 @@ export default function App() {
                   onNew={newSale}
                   onEdit={editSale}
                   onCustomer={customer}
-                  expensesEnabled={!!knownMe.expensesEnabled && knownMe.role === "admin"}
+                  expensesEnabled={!!knownMe.expensesEnabled}
                   onOpenExpenses={() => go("expenses")}
                   onFilter={(f) => {
                     setFilters(f);

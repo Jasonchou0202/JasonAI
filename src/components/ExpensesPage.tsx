@@ -1,7 +1,7 @@
 import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
 import type { Api } from "../domain/model";
 import type { DecadeSettlement, MonthCompare, Expense, MonthSettlement } from "../domain/expenses";
-import { EXPENSE_STATUS_LABEL, PROFIT_SHARE_BEFORE_HINT, PROFIT_SHARE_BEFORE_REFUND_HINT, PROFIT_SHARE_START_DATE, formatCnDate, receiptSummary, shareLabel, shiftMonth } from "../domain/expenses";
+import { EXPENSE_STATUS_LABEL, PROFIT_SHARE_BEFORE_REFUND_HINT, PROFIT_SHARE_START_DATE, formatCnDate, receiptSummary, shareLabel, shiftMonth } from "../domain/expenses";
 import { ReceiptLinks } from "./ReceiptLinks";
 import { RenewButton } from "./ExpenseRenew";
 import type { ExpenseRenew } from "../domain/renew";
@@ -35,7 +35,7 @@ function yenOrDash(value: number, upcoming: boolean) {
   return upcoming ? "—" : `¥${money(value)}`;
 }
 
-function DecadeCard({ row, admin }: { row: DecadeSettlement; admin: boolean }) {
+function DecadeCard({ row }: { row: DecadeSettlement }) {
   const upcoming = row.phase === "upcoming";
   const hideShares = upcoming;
   const phaseLabel = row.phase === "closed" ? "已出账" : row.phase === "current" ? "进行中" : "待出账 · 示意";
@@ -86,16 +86,12 @@ function DecadeCard({ row, admin }: { row: DecadeSettlement; admin: boolean }) {
       </div>
       {upcoming ? (
         <div className="exp-hint upcoming">本段未出账，不做结算</div>
-      ) : admin ? (
+      ) : (
         <div className="exp-hint">
           <em>结算提示</em>
           <span>{row.partner.name}应收回 ¥{money(row.partnerReceive)}</span>
           {!row.sharesOpen && <small>{PROFIT_SHARE_BEFORE_REFUND_HINT}</small>}
         </div>
-      ) : !row.sharesOpen ? (
-        <div className="exp-hint upcoming">{PROFIT_SHARE_BEFORE_HINT}</div>
-      ) : (
-        <div className="exp-hint upcoming">成员只看自己的报销，结算以管理员账本为准</div>
       )}
     </article>
   );
@@ -204,27 +200,24 @@ export function ExpensesPage({
               <p>
                 <span>{row.owner.name} {shareLabel(row.owner.share)} {yenOrDash(row.owner.amount, upcoming)}</span>
                 <span>{row.partner.name} {shareLabel(row.partner.share)} {yenOrDash(row.partner.amount, upcoming)}</span>
-                {admin && (row.sharesOpen || !upcoming) && <span>{row.partner.name}应收回 {yenOrDash(row.partnerReceive, upcoming)}</span>}
+                {(row.sharesOpen || !upcoming) && <span>{row.partner.name}应收回 {yenOrDash(row.partnerReceive, upcoming)}</span>}
               </p>
             </article>
           );
         })}
-        {admin && (
-          <div className="exp-overview-total">
-            <strong>已出账合计</strong>
-            <span>实际利润 ¥{money(data.posted.profit)}</span>
-            <span>{data.people.partner.name}应收回 ¥{money(data.posted.partnerReceive)}</span>
-          </div>
-        )}
+        <div className="exp-overview-total">
+          <strong>已出账合计</strong>
+          <span>实际利润 ¥{money(data.posted.profit)}</span>
+          <span>{data.people.partner.name}应收回 ¥{money(data.posted.partnerReceive)}</span>
+        </div>
       </section>
       <p className="exp-details-jump">下滑查看各段明细与报销清单</p>
       <div className="exp-decades">
         {data.decades.map((row) => (
-          <DecadeCard key={row.decade.from} row={row} admin={admin} />
+          <DecadeCard key={row.decade.from} row={row} />
         ))}
       </div>
-      {admin && (
-        <section className="exp-posted" aria-label="已出账合计">
+      <section className="exp-posted" aria-label="已出账合计">
           <div className="exp-posted-title">
             <small>
               {y} 年 {Number(m)} 月
@@ -258,7 +251,6 @@ export function ExpensesPage({
             </small>
           </div>
         </section>
-      )}
       <div className={`exp-lower ${renewOn ? "renew-on" : ""}`}>
         <section className="exp-panel">
           <h2>利润对照</h2>

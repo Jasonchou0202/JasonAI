@@ -121,7 +121,7 @@ describe("报销记账（开关开）", () => {
     expect(settled.data.details.find((d: { id: string }) => d.id === "e-rej").status).toBe("rejected");
   });
 
-  it("成员只能看自己的报销；不能改已入账；可添加分类，不能删除分类", async () => {
+  it("成员能看全量已入账报销；不能改已入账；可添加分类，不能删除分类", async () => {
     const s = await seed();
     const call = caller(s, ON);
     await call(OWNER, "expenses.create", {
@@ -133,8 +133,8 @@ describe("报销记账（开关开）", () => {
       expense: { date: "2026-11-15", amount: 20_000, categoryId: "cat-phone", categoryName: "话费", paidBy: ZHOU, hasInvoice: true, note: "", status: "pending_confirm" },
     });
     const list = await call(ZHOU, "expenses.list");
-    expect(list.data.items.map((r: { id: string }) => r.id)).toEqual(["e-zhou"]);
-    expect(await call(ZHOU, "expenses.get", { id: "e-admin" })).toMatchObject({ ok: false, code: "NOT_OWNER_OF_RECORD" });
+    expect(list.data.items.map((r: { id: string }) => r.id).sort()).toEqual(["e-admin", "e-zhou"]);
+    expect((await call(ZHOU, "expenses.get", { id: "e-admin" })).ok).toBe(true);
 
     await call(OWNER, "expenses.confirm", { id: "e-zhou", requestId: "c1", revision: 1 });
     expect(await call(ZHOU, "expenses.update", {
@@ -149,6 +149,46 @@ describe("报销记账（开关开）", () => {
     expect(await call(OWNER, "expenses.categories.archive", { id: "cat-treat" })).toMatchObject({ ok: true });
     const meta = await call(OWNER, "expenses.meta");
     expect(meta.data.categories.map((c: { name: string }) => c.name)).not.toContain("招待");
+  });
+
+  it("成员看到的合账与管理员一致（全量已入账）；仍不能确认或删除别人的记录", async () => {
+    const s = await seed();
+    const call = caller(s, ON);
+    await call(OWNER, "expenses.create", {
+      requestId: "e-admin",
+      expense: { date: "2026-11-14", amount: 60_000, categoryId: "cat-phone", categoryName: "话费", paidBy: OWNER, hasInvoice: false, note: "", status: "pending_reimburse" },
+    });
+    await call(ZHOU, "expenses.create", {
+      requestId: "e-zhou",
+      expense: { date: "2026-11-15", amount: 20_000, categoryId: "cat-phone", categoryName: "话费", paidBy: ZHOU, hasInvoice: true, note: "", status: "pending_confirm" },
+    });
+    const beforeAdmin = await call(OWNER, "expenses.settlement", { month: "2026-11" });
+    const beforeMember = await call(ZHOU, "expenses.settlement", { month: "2026-11" });
+    expect(beforeMember.data.posted).toEqual(beforeAdmin.data.posted);
+    expect(beforeMember.data.decades).toEqual(beforeAdmin.data.decades);
+    expect(beforeMember.data.details.map((d: { id: string }) => d.id).sort()).toEqual(
+      beforeAdmin.data.details.map((d: { id: string }) => d.id).sort(),
+    );
+    expect(beforeMember.data.details.some((d: { id: string; status: string }) => d.id === "e-zhou" && d.status === "pending_confirm")).toBe(true);
+
+    expect(await call(ZHOU, "expenses.confirm", { id: "e-zhou", requestId: "c1", revision: 1 })).toMatchObject({
+      ok: false, code: "ADMIN_ONLY",
+    });
+    const adminRow = await call(OWNER, "expenses.get", { id: "e-admin" });
+    expect(await call(ZHOU, "expenses.delete", {
+      id: "e-admin", requestId: "d1", revision: adminRow.data.revision,
+    })).toMatchObject({ ok: false, code: "NOT_OWNER_OF_RECORD" });
+
+    await call(OWNER, "expenses.confirm", { id: "e-zhou", requestId: "c1", revision: 1 });
+    const afterAdmin = await call(OWNER, "expenses.settlement", { month: "2026-11" });
+    const afterMember = await call(ZHOU, "expenses.settlement", { month: "2026-11" });
+    expect(afterMember.data.posted).toEqual(afterAdmin.data.posted);
+    expect(afterMember.data.decades.map((d: { expense: number; profit: number }) => ({ expense: d.expense, profit: d.profit }))).toEqual(
+      afterAdmin.data.decades.map((d: { expense: number; profit: number }) => ({ expense: d.expense, profit: d.profit })),
+    );
+    const sharesAdmin = await call(OWNER, "expenses.shares", {});
+    const sharesMember = await call(ZHOU, "expenses.shares", {});
+    expect(sharesMember.data.items).toEqual(sharesAdmin.data.items);
   });
 
   it("外人不能写入；开关开时未登录被拒", async () => {
@@ -243,7 +283,7 @@ describe("报销凭证（EXPENSE_RECEIPTS_ENABLED）", () => {
     expect(await call(OWNER, "expenses.create", { requestId: "x2", expense: { ...base, paidBy: OWNER, hasInvoice: true } })).toMatchObject({ ok: true });
   });
 
-  it("中转上传查文件头；存 expenses/<自己 uid>/；保存后 hasInvoice 由凭证推导；临时链接只给本人和管理员", async () => {
+  it("中转上传查文件头；存 expenses/<自己 uid>/；保存后 hasInvoice 由凭证推导；临时链接给管理员和授权成员", async () => {
     const { s, storage, call } = await rig();
     expect((await call(OWNER, "expenses.meta")).data.receiptsEnabled).toBe(true);
     expect(await call(ZHOU, "expenses.receipts.upload", { data: Buffer.from("GIF89a....").toString("base64") })).toMatchObject({ ok: false, error: expect.stringMatching(/PDF/) });
@@ -276,7 +316,7 @@ describe("报销凭证（EXPENSE_RECEIPTS_ENABLED）", () => {
     expect(storage.files.size).toBe(2);
   });
 
-  it("不能附上别人上传的文件；成员不能看别人的凭证；放弃只删自己没挂上的", async () => {
+  it("不能附上别人上传的文件；授权成员可以看别人的凭证；放弃只删自己没挂上的", async () => {
     const { storage, call } = await rig();
     const mine = await call(OWNER, "expenses.receipts.upload", { data: PDF });
     expect(await call(ZHOU, "expenses.create", {
@@ -287,7 +327,10 @@ describe("报销凭证（EXPENSE_RECEIPTS_ENABLED）", () => {
       requestId: "r3",
       expense: { ...base, paidBy: OWNER, hasInvoice: false, receipts: [{ fileID: mine.data.fileID, name: "a.pdf", type: "application/pdf", size: 10, kind: "invoice" }] },
     });
-    expect(await call(ZHOU, "expenses.receipts.urls", { id: "r3" })).toMatchObject({ ok: false, code: "NOT_OWNER_OF_RECORD" });
+    const seen = await call(ZHOU, "expenses.receipts.urls", { id: "r3" });
+    expect(seen).toMatchObject({ ok: true });
+    expect(seen.data.items).toHaveLength(1);
+    expect(seen.data.items[0].url).toBeTruthy();
     // 已挂在记录上的不删；别人的不删
     expect((await call(ZHOU, "expenses.receipts.discard", { fileIDs: [mine.data.fileID] })).data.removed).toBe(0);
     expect((await call(OWNER, "expenses.receipts.discard", { fileIDs: [mine.data.fileID] })).data.removed).toBe(0);

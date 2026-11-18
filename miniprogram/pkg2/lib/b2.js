@@ -713,7 +713,7 @@ function sizeLabel(bytes) {
 }
 var SPLIT_FROM = formatCnDate(PROFIT_SHARE_START_DATE);
 var PHASE = { closed: "已出账", current: "进行中", upcoming: "待出账 · 示意" };
-function decadeView(row, admin) {
+function decadeView(row) {
   const upcoming = row.phase === "upcoming";
   const n = (v) => upcoming ? "—" : yuan(v);
   return {
@@ -740,10 +740,10 @@ function decadeView(row, admin) {
     ownerAdvance: row.sharesOpen ? n(row.owner.advance) : upcoming ? n(0) : "不用退",
     partnerAdvanceLine: row.sharesOpen ? `${row.partner.name}垫付` : `${row.partner.name}垫付的报销`,
     partnerAdvance: n(row.partner.advance),
-    receiveLine: admin && (row.sharesOpen || !upcoming) ? `${row.partner.name}应收回 ${n(row.partnerReceive)}` : "",
-    hint: upcoming ? "本段未出账，不做结算" : admin ? `${row.partner.name}应收回 ${yuan(row.partnerReceive)}` : !row.sharesOpen ? PROFIT_SHARE_BEFORE_HINT : "成员只看自己的报销，结算以管理员账本为准",
-    hintSmall: !upcoming && admin && !row.sharesOpen ? PROFIT_SHARE_BEFORE_REFUND_HINT : "",
-    hintStrong: !upcoming && admin
+    receiveLine: row.sharesOpen || !upcoming ? `${row.partner.name}应收回 ${n(row.partnerReceive)}` : "",
+    hint: upcoming ? "本段未出账，不做结算" : `${row.partner.name}应收回 ${yuan(row.partnerReceive)}`,
+    hintSmall: !upcoming && !row.sharesOpen ? PROFIT_SHARE_BEFORE_REFUND_HINT : "",
+    hintStrong: !upcoming
   };
 }
 function compareBars(rows) {
@@ -764,8 +764,8 @@ function expensesView(data, admin, month) {
   return {
     title: monthLabel(month),
     lead: `十天合账。${SPLIT_FROM}起按${data.people.owner.name} 60%、${data.people.partner.name} 40% 分；之前${data.people.partner.name}为 0。`,
-    decades: data.decades.map((d) => decadeView(d, admin)),
-    posted: admin ? {
+    decades: data.decades.map((d) => decadeView(d)),
+    posted: {
       range: postedFrom && postedTo ? `${slashDate(postedFrom)}–${slashDate(postedTo)}` : "",
       metrics: [
         { k: "销售收入", v: yuan(p.revenue) },
@@ -780,7 +780,7 @@ function expensesView(data, admin, month) {
       receive: `${data.people.partner.name}应收回 ${yuan(p.partnerReceive)}`,
       receiveNote: (p.partner.share === 0 ? `垫付的报销 ${yuan(p.partner.advance)} + 分成 ¥0 · ${PROFIT_SHARE_BEFORE_REFUND_HINT}` : `垫付 ${yuan(p.partner.advance)} + 四成利润 ${yuan(p.partner.amount)}${p.partner.share < 0 ? `（${SPLIT_FROM}起；此前只退垫付的报销）` : ""}`) + (anyUpcoming ? " · 未出账段未计入" : ""),
       profit: yuan(p.profit)
-    } : null,
+    },
     compare: compareBars(data.compare),
     compareLead: `近 ${data.compare.length} 个月对照。${month === data.today.slice(0, 7) && data.compare.some((c) => c.partial) ? `${m} 月只记已出账或进行中的段。` : ""}`,
     compareNote: `${m} 月${(cur == null ? void 0 : cur.partial) ? "按已记账的段合计" : "整月合计"}（只算销售 ${yuan(p.salesProfit)}，扣成本后 ${yuan(p.profit)}）${anyUpcoming ? "；未出账段未计入。" : "。"}`,

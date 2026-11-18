@@ -128,14 +128,9 @@ function peopleOf(ctx: Context, settings: ExpenseSettings): People {
   };
 }
 
-function visibleTo(actor: Actor, rows: Expense[], ownerUid: string): Expense[] {
-  if (actor.role === "admin") return rows;
-  return rows.filter((r) => recordOwner(r, ownerUid) === actor.uid);
-}
-
 function ensureOwn(actor: Actor, row: Expense, ownerUid: string) {
   if (actor.role !== "admin" && recordOwner(row, ownerUid) !== actor.uid)
-    throw new DeniedError("NOT_OWNER_OF_RECORD", "只能查看或修改自己录入的记录", actor);
+    throw new DeniedError("NOT_OWNER_OF_RECORD", "只能修改或删除自己录入的记录", actor);
 }
 
 function monthOf(value: unknown, fallback: string): string {
@@ -237,7 +232,6 @@ export async function executeExpenses(
     const id = recordId(p.id);
     const row = await store.get<Expense>(EXPENSES_COLLECTION, id);
     if (!row || !isExpenseRecord(row) || (row.deletedAt && !admin)) throw new Error("记录不存在");
-    ensureOwn(actor, row, ctx.ownerUid);
     const list = row.receipts || [];
     let urls = new Map<string, string>();
     if (list.length) {
@@ -311,7 +305,6 @@ export async function executeExpenses(
     if (typeof p.from === "string" && p.from) rows = rows.filter((r) => r.date >= p.from);
     if (typeof p.to === "string" && p.to) rows = rows.filter((r) => r.date <= p.to);
     if (typeof p.status === "string" && p.status) rows = rows.filter((r) => r.status === p.status);
-    rows = visibleTo(actor, rows, ctx.ownerUid);
     rows.sort(
       (a, b) =>
         b.date.localeCompare(a.date) ||
@@ -335,7 +328,6 @@ export async function executeExpenses(
     const id = recordId(p.id);
     const row = await store.get<Expense>(EXPENSES_COLLECTION, id);
     if (!row || !isExpenseRecord(row) || (row.deletedAt && !admin)) throw new Error("记录不存在");
-    ensureOwn(actor, row, ctx.ownerUid);
     return { data: row, target: { type: "expenses", id } };
   }
 
@@ -527,11 +519,10 @@ export async function executeExpenses(
       listExpenses(store),
     ]);
     const activeSales = sales.filter((s) => !s.deletedAt);
-    // 成员看合账时，报销只计入自己已入账的（不泄露别人的报销明细与金额）
-    const visibleExpenses = admin ? expenses : visibleTo(actor, expenses, ctx.ownerUid);
+    // 合账/分成按全量已入账计算（待确认不计入，与管理员同一套 settleMonth）
     if (action === "expenses.shares") {
       const decades = upcomingDecades(today).map((d) =>
-        settleMonth(d.month, today, activeSales, visibleExpenses, people, payerEnabled).decades[d.index],
+        settleMonth(d.month, today, activeSales, expenses, people, payerEnabled).decades[d.index],
       );
       return {
         data: {
@@ -542,10 +533,10 @@ export async function executeExpenses(
       };
     }
     const month = monthOf(p.month, today);
-    const settled = settleMonth(month, today, activeSales, visibleExpenses, people, payerEnabled);
-    const compare = compareMonths(today, activeSales, visibleExpenses, people, payerEnabled, 5);
-    // 明细：成员只看自己的；管理员看全部（含待确认）
-    const details = visibleTo(actor, expenses, ctx.ownerUid)
+    const settled = settleMonth(month, today, activeSales, expenses, people, payerEnabled);
+    const compare = compareMonths(today, activeSales, expenses, people, payerEnabled, 5);
+    // 明细：管理员和授权成员都看全量（含待确认；待确认不计入合账）
+    const details = expenses
       .filter((e) => !e.deletedAt && e.date.startsWith(month) && countsAsExpense(e.date))
       .sort(
         (a, b) =>

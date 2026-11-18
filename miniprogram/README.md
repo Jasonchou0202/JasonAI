@@ -17,3 +17,4 @@
   `http://127.0.0.1:5180/JasonAI/tools/miniapp-preview/index.html?page=pages/home/index`；
   `node scripts/miniapp-preview-shots.mjs` 出 iPhone 宽度预览图（默认到 /workspace/review/miniapp-batch1）。真机效果以体验版为准。
 - 环境转换、部署 `miniapp`、上传体验版都要 Jason 本人说「上」。
+- 下一版上传版本号准备为 1.0.1（报销合账改为授权成员可看全量；待确认审核仍只管理员）。

@@ -13,8 +13,16 @@ Page({
   },
   load() {
     return ui
-      .call("expenses.list", { status: "pending_confirm" })
-      .then((d) => this.setData({ loading: false, error: "", rows: d.items.map((r) => b2.pendingRow(r, d.people)) }))
+      .me()
+      .then((me) => {
+        if (!me.admin) {
+          wx.navigateBack({ fail: () => wx.redirectTo({ url: "/pkg2/expenses/index" }) });
+          return;
+        }
+        return ui.call("expenses.list", { status: "pending_confirm" }).then((d) =>
+          this.setData({ loading: false, error: "", rows: d.items.map((r) => b2.pendingRow(r, d.people)) }),
+        );
+      })
       .catch((e) => this.setData({ loading: false, error: e.message }));
   },
   act(e) {
