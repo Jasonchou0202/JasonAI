@@ -326,6 +326,28 @@ function inLunchBreak(wall) {
 function defaultFollowUp(saleDate) {
   return `${addMonthsClamp(saleDate, 1)}T10:00`;
 }
+function topProfitProducts(sales, products, today2, n = 5, months = 3) {
+  var _a, _b;
+  const from = addMonthsClamp(today2, -months);
+  const usable = products.filter((p) => p.active && !p.archivedAt);
+  const byId = new Map(usable.map((p) => [p.id, p]));
+  const byName = new Map(usable.map((p) => [p.name, p]));
+  const profit = /* @__PURE__ */ new Map();
+  for (const s of sales) {
+    if (s.deletedAt || s.date < from || s.date > today2) continue;
+    const p = (_a = byId.get(s.productId)) != null ? _a : byName.get(s.productName);
+    if (!p) continue;
+    profit.set(p.id, ((_b = profit.get(p.id)) != null ? _b : 0) + s.revenue - s.cost);
+  }
+  return usable.filter((p) => profit.has(p.id)).map((p, i) => ({ p, i, v: profit.get(p.id) })).sort((a, b) => b.v - a.v || a.i - b.i).slice(0, n).map((x) => x.p);
+}
+function quickProducts(sales, products, today2, n = 5, months = 3) {
+  const active = groupProducts(
+    products.filter((p) => p.active && !p.archivedAt)
+  ).reduce((all, g) => all.concat(g.items), []);
+  const ranked = topProfitProducts(sales, active, today2, n, months);
+  return [...ranked, ...active.filter((p) => !ranked.includes(p))].slice(0, n);
+}
 function scheduleText(customTitle, productName, actionLines) {
   const custom = customTitle.trim();
   const fallback = productName.trim() ? `续费提醒：${productName.trim()}` : "客户回访";
@@ -696,11 +718,6 @@ function draftProfit(d, edit) {
   } catch (e) {
     return "¥ —";
   }
-}
-function quickProducts(products, dashboardTop, n = 5) {
-  const active = products.filter((p) => p.active && !p.archivedAt);
-  const ranked = dashboardTop.map((t) => active.find((p) => p.name === t.name)).filter((p) => !!p);
-  return [...ranked, ...active.filter((p) => !ranked.includes(p))].slice(0, n);
 }
 function productGroups(products) {
   return groupProducts(products.filter((p) => p.active && !p.archivedAt));

@@ -7,7 +7,7 @@ import type { Store } from "../server/service";
 import type { Member, TeamConfig } from "../server/team";
 import { customerId } from "../src/domain/customers";
 import { handleMiniapp, maskPhone, normalizeCode, WEB_ACTIONS, type MiniappDeps } from "../server/miniapp/gate";
-import { looksLikeHttp, resolveSource, type PlatformIdentity } from "../server/miniapp/source";
+import { looksLikeHttp, resolveSource, SourceError, type PlatformIdentity } from "../server/miniapp/source";
 import { CODE_ALPHABET, MINIAPP_COLLECTIONS, type MiniStore, type MiniTx } from "../server/miniapp/types";
 
 /** 通用内存库：集合按需建（业务集合 + 小程序集合） */
@@ -87,22 +87,47 @@ async function pendingId(t: ReturnType<typeof setup>) {
   return (await t.call(WEB_OWNER, "miniapp.apply.list")).data.pending[0].id as string;
 }
 
+function sourceCode(fn: () => unknown) {
+  try {
+    fn();
+  } catch (e) {
+    if (e instanceof SourceError) return e.code;
+    throw e;
+  }
+  throw new Error("expected SourceError");
+}
+
 describe("来源校验（工单第 5 点：防身份串用）", () => {
-  it("平台上下文有 openid+appid 才算小程序；只有 uid 算网页；都没有拒绝", () => {
+  it("openid 和 appid 都合法才认作小程序；只有 appid 加 uid 认作网页", () => {
     expect(resolveSource({}, JASON_WX)).toEqual({ kind: "miniapp", ...JASON_WX });
     expect(resolveSource({}, { uid: OWNER })).toEqual({ kind: "web", uid: OWNER });
-    expect(() => resolveSource({}, {})).toThrow();
-    expect(() => resolveSource({}, { openid: "o-x-000001" })).toThrow();
-    expect(() => resolveSource({}, { openid: "bad id!", appid: APPID })).toThrow();
+    expect(resolveSource({}, { appid: APPID, uid: OWNER })).toEqual({ kind: "web", uid: OWNER });
+    expect(resolveSource({}, { openid: "", appid: APPID, uid: OWNER })).toEqual({ kind: "web", uid: OWNER });
+    // 合法 openid 优先，即便同时带了网页 uid 也仍是小程序来源
+    expect(resolveSource({}, { ...JASON_WX, uid: OWNER })).toEqual({ kind: "miniapp", ...JASON_WX });
+  });
+  it("什么都没有就 NOT_SIGNED_IN；有 openid 但格式非法仍然拒绝", () => {
+    expect(sourceCode(() => resolveSource({}, {}))).toBe("NOT_SIGNED_IN");
+    expect(sourceCode(() => resolveSource({}, { appid: APPID }))).toBe("NOT_SIGNED_IN");
+    expect(sourceCode(() => resolveSource({}, { openid: "o-x-000001" }))).toBe("SOURCE_INVALID");
+    expect(sourceCode(() => resolveSource({}, { openid: "bad id!", appid: APPID }))).toBe("SOURCE_INVALID");
+    expect(sourceCode(() => resolveSource({}, { openid: "bad id!", appid: APPID, uid: OWNER }))).toBe("SOURCE_INVALID");
   });
   it("配了 MINIAPP_APPID 时别的小程序进不来", () => {
+    expect(sourceCode(() => resolveSource({}, { ...JASON_WX, appid: "wxffffffffffffffff" }, APPID))).toBe("APPID_MISMATCH");
     expect(() => resolveSource({}, { ...JASON_WX, appid: "wxffffffffffffffff" }, APPID)).toThrow(/不是生意手账小程序/);
   });
   it("HTTP 形态的请求一律拒绝", async () => {
     expect(looksLikeHttp({ httpMethod: "POST", body: "{}" })).toBe(true);
+    expect(sourceCode(() => resolveSource({ httpMethod: "POST", headers: {} }, { appid: APPID, uid: OWNER }))).toBe("HTTP_NOT_ALLOWED");
     const t = setup();
     const r = await handleMiniapp(t.deps, WEB_OWNER, { httpMethod: "POST", headers: {}, action: "miniapp.flags" });
     expect(r).toMatchObject({ ok: false, code: "HTTP_NOT_ALLOWED" });
+  });
+  it("网页调用即使带了关联小程序的 appid，管理员也能查 flags", async () => {
+    const t = setup();
+    const r = await t.call({ appid: APPID, uid: OWNER }, "miniapp.flags");
+    expect(r).toMatchObject({ ok: true, data: { miniappEnabled: true } });
   });
   it("请求里带的 userInfo/openid/uid 不当身份用", async () => {
     const t = setup();

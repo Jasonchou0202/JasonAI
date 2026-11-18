@@ -521,6 +521,8 @@ describe("操作日志大白话（开关开时前端用）", () => {
     expect(actionText(del)).toBe("删除日程（别人的）");
     expect(actionText({ action: "members.avatar.set" })).toBe("换头像");
     expect(actionText({ action: "customers.autoCreate" })).toBe("自动补建客户");
+    expect(actionText({ action: "expenses.create" })).toBe("记一笔报销");
+    expect(actionText({ action: "invoices.update" })).toBe("更新开票状态");
     expect(targetText(del, names)).toBe("示例客户 · 小林 · 续费回访");
     expect(diffText(del, names)).toEqual(["删除：未删除 → 已删除", "修改人：林小雅", "归属人：宋阿木"]);
     expect(targetText({ action: "customers.autoCreate", targetType: "customers", targetId: "c1", after: { count: 1, ids: ["c1"] } }, names)).toBe("示例客户 · 小林");

@@ -1,0 +1,10 @@
+@import "../common.wxss";
+.coral { color: #B4532F; }
+.add-row { display: flex; align-items: center; margin-top: 12rpx; }
+.grow { flex: 1; min-width: 0; margin-right: 16rpx; }
+.pick-row { display: flex; margin-top: 16rpx; }
+.file { display: flex; align-items: center; margin-top: 16rpx; background: #FBF3E4; border-radius: 20rpx; padding: 16rpx; }
+.thumb { width: 88rpx; height: 88rpx; border-radius: 14rpx; margin-right: 20rpx; background: #F4E6D4; flex-shrink: 0; }
+.thumb.doc { display: flex; align-items: center; justify-content: center; font-size: 22rpx; color: #9C4526; font-weight: 700; }
+.fname { font-size: 26rpx; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.x { color: #9E2A1E; font-size: 24rpx; }

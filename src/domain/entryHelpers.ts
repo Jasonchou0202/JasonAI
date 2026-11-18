@@ -1,5 +1,6 @@
 // 记一笔用到的纯函数（只在前端使用，不进云函数包）
 import type { Product, Sale } from "./model";
+import { groupProducts } from "./catalog";
 
 /** n 个月后的同一天；目标月没有这一天时取该月最后一天（例：01-31 + 1 个月 = 02-28/29） */
 export function addMonthsClamp(date: string, n: number): string {
@@ -50,6 +51,25 @@ export function topProfitProducts(
     .sort((a, b) => b.v - a.v || a.i - b.i)
     .slice(0, n)
     .map((x) => x.p);
+}
+
+/**
+ * 记一笔「快捷 / 常用商品」：近 3 个月利润从高到低排前面，不足 n 个时按商品清单顺序补齐
+ *（类目顺序 + 组内按名称，与 products.list / 设置页相同）。停用、归档的不出现。
+ * 网页和小程序共用这一份，同一份销售和商品数据排出来的顺序必须一样。
+ */
+export function quickProducts(
+  sales: readonly Sale[],
+  products: readonly Product[],
+  today: string,
+  n = 5,
+  months = 3,
+): Product[] {
+  const active = groupProducts(
+    products.filter((p) => p.active && !p.archivedAt),
+  ).reduce<Product[]>((all, g) => all.concat(g.items), []);
+  const ranked = topProfitProducts(sales, active, today, n, months);
+  return [...ranked, ...active.filter((p) => !ranked.includes(p))].slice(0, n);
 }
 
 /**

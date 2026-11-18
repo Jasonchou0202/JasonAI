@@ -20,7 +20,7 @@ import {
   findCustomerByName,
   inLunchBreak,
   scheduleText,
-  topProfitProducts,
+  quickProducts as listQuickProducts,
 } from "../domain/entryHelpers";
 import { QUADRANT_INFO } from "../domain/insights";
 import type { EffectiveAction } from "../domain/actions";
@@ -174,14 +174,7 @@ export function SaleForm({
       };
     });
   }
-  const activeProducts = (products || []).filter(
-    (p) => p.active && !p.archivedAt,
-  );
-  const ranked = topProfitProducts(allSales, activeProducts, today());
-  const quickProducts = [
-    ...ranked,
-    ...activeProducts.filter((p) => !ranked.includes(p)),
-  ].slice(0, 5);
+  const quickProducts = listQuickProducts(allSales, products || [], today());
   const [editingDate, setEditingDate] = useState(false);
   const isToday = form.date === today();
   const dateText = isToday ? "今天" : form.date.replaceAll("-", " / ");

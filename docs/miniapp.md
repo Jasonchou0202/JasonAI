@@ -5,7 +5,7 @@
 ## 入口和身份
 - 入口 `server/miniapp-cloud.ts`，`npm run build:server` 产出 `cloudfunctions/miniapp/`（index.js 不进仓库）和 `artifacts/customer-miniapp-function.zip`。
 - 小程序用 `wx.cloud.callFunction({ name: "miniapp" })`。openid/appid **只取本次调用的** `parseContext(context).environment`，不读 `process.env.WX_OPENID`、`event.userInfo` 或 payload 里的身份字段。
-- 网页来源（js-sdk）的 uid 和 `sales` 一样取 `getAuthContext(context)`；网页只能调 `miniapp.owner.code / apply.* / bind.list / bind.revoke / flags`，而且只给 OWNER_UID。
+- 网页来源（js-sdk）的 uid 和 `sales` 一样取 `getAuthContext(context)`。环境已关联小程序时，网页调用也可能带上 `WX_APPID`：只有 openid 合法才认作小程序来源；只有 appid、没有合法 openid 时按网页来源处理。有 openid 但格式非法的仍然拒绝。网页只能调 `miniapp.owner.code / apply.* / bind.list / bind.revoke / flags`，而且只给 OWNER_UID。
 - HTTP 形态的请求一律拒绝；**不要给 miniapp 开 HTTP 路由**。
 - 业务调用原样交给 `server/handler.ts` 的 `handle()`，权限、数据归属、日志和网页一致。`sales` 函数一行不改（`scripts/verify-sales-bundles.mjs` 核对逐字节一致）。
 

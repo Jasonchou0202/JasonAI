@@ -1,0 +1,23 @@
+<view class="page">
+  <view class="hero">
+    <view class="hero-title">看示例数据</view>
+    <view class="hero-sub">和网页演示同一份虚构账本：示例客户、示例商品、90 天的销售。随便点，不会发到云端，也不会动真实账本。</view>
+  </view>
+  <block wx:if="{{!active}}">
+    <view class="panel">
+      <view class="panel-title">选一个视角</view>
+      <view class="seg">
+        <view class="seg-item {{role === 'admin' ? 'on' : ''}}" bindtap="setRole" data-role="admin">管理员</view>
+        <view class="seg-item {{role === 'member' ? 'on' : ''}}" bindtap="setRole" data-role="member">成员</view>
+      </view>
+      <view class="note">{{role === 'admin' ? '管理员能看到全部功能：看板、明细、日程、回收站、成员和日志。' : '成员只能看、只能改自己录入的，和真实成员权限一样。'}}</view>
+      <button class="primary" disabled="{{!allowed}}" bindtap="enter">进入示例数据</button>
+    </view>
+  </block>
+  <view class="panel" wx:else>
+    <view class="panel-title">正在看示例数据（{{active === 'admin' ? '管理员' : '成员'}}视角）</view>
+    <view class="panel-desc">退出后回到你的真实账本。示例里改过的东西不会保留。</view>
+    <button class="primary" bindtap="exit">退出示例，回到真实账本</button>
+  </view>
+  <view class="err" wx:if="{{error}}">{{error}}</view>
+</view>

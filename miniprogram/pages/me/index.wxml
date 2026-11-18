@@ -7,14 +7,23 @@
       <view class="muted small">{{role}} · 个人私密账本</view>
     </view>
   </view>
-  <view class="sheet menu" wx:if="{{owner}}">
-    <view class="list-item" bindtap="applications">
+  <view class="sheet menu">
+    <view class="list-item" bindtap="hub">
+      <view class="grow">更多</view>
+      <view class="muted small">报销、开票、成员、日志</view>
+      <view class="muted arrow">›</view>
+    </view>
+    <view class="list-item" bindtap="settings">
+      <view class="grow">账本设置</view>
+      <view class="muted small">导入、备份、头像、订阅</view>
+      <view class="muted arrow">›</view>
+    </view>
+    <view class="list-item" bindtap="applications" wx:if="{{owner}}">
       <view class="grow">成员申请</view>
       <view class="badge-dot" wx:if="{{pending}}">{{pending}}</view>
       <view class="muted arrow">›</view>
     </view>
   </view>
-  <view class="sheet-sub tip">报销、开票、成员管理、账本设置等在后续版本补上；暂时请在网页版操作。</view>
   <view class="err" wx:if="{{error}}">{{error}}</view>
   <view class="ghost leave" bindtap="leave">退出这个微信的绑定</view>
 </view>

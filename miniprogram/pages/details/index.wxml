@@ -46,11 +46,16 @@
       <view class="sale-date">{{item.date}}</view>
       <view class="grow">
         <view class="ellipsis sale-product">{{item.product}}</view>
-        <view class="muted small ellipsis">{{item.customer}}{{item.note ? ' · ' + item.note : ''}}</view>
+        <view class="muted small ellipsis">
+          <text wx:if="{{item.customerId}}" class="link" catchtap="openCustomer" data-id="{{item.customerId}}">{{item.customer}}</text>
+          <text wx:else>{{item.customer}}</text>
+          <text wx:if="{{item.note}}"> · {{item.note}}</text>
+        </view>
       </view>
       <view class="sale-money">
         <view class="sale-profit {{item.loss ? 'loss' : ''}}">{{item.profit}}</view>
         <view class="muted small">售 {{item.revenue}}</view>
+        <view class="link small" wx:if="{{invoices && !item.deleted}}" catchtap="openInvoice" data-id="{{item.id}}">开票</view>
       </view>
     </view>
     <view class="empty" wx:if="{{!loading && !rows.length}}">{{deleted ? '没有已删除的记录' : '这个时间段还没有记录'}}</view>

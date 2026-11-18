@@ -1,0 +1,41 @@
+<privacy-popup />
+<view class="page">
+  <view class="hero">
+    <view class="hero-title">导入历史 Excel</view>
+    <view class="hero-sub">和网页同一套检查：必须有「商品名称、日期、销售额、出资」四列。同一个文件导过一次，再导不会重复。</view>
+  </view>
+
+  <view class="panel" wx:if="{{!preview && !done}}">
+    <view class="panel-title">第 1 步 · 选表格</view>
+    <view class="panel-desc">先把飞书导出的 .xlsx 发到「文件传输助手」，再在这里从聊天里选。10MB 以内。</view>
+    <button class="primary" disabled="{{busy}}" bindtap="pick">{{busy ? status || '正在检查表格…' : '从聊天里选 Excel'}}</button>
+  </view>
+
+  <block wx:if="{{preview}}">
+    <view class="panel">
+      <view class="panel-title">第 2 步 · 核对预检结果</view>
+      <view class="panel-desc">{{preview.fileName}}</view>
+      <view class="stats">
+        <view class="stat"><view class="stat-in"><view class="stat-label">可导入</view><view class="stat-value">{{preview.rows}} 条</view></view></view>
+        <view class="stat"><view class="stat-in"><view class="stat-label">已在账本里</view><view class="stat-value">{{preview.duplicates}} 条</view><view class="stat-note">按日期、商品、客户、金额比对</view></view></view>
+        <view class="stat"><view class="stat-in"><view class="stat-label">销售额</view><view class="stat-value">{{preview.revenueText}}</view></view></view>
+        <view class="stat"><view class="stat-in"><view class="stat-label">纯利</view><view class="stat-value coral">{{preview.profitText}}</view></view></view>
+      </view>
+      <view class="note" wx:if="{{preview.months.length}}">按月：<text wx:for="{{preview.months}}" wx:key="key">{{item.label}} {{item.count}} 条　</text></view>
+      <view class="err" wx:if="{{preview.errors}}">有 {{preview.errors}} 处错误，改好表格再导入：</view>
+      <view class="note" wx:if="{{preview.warnings && !preview.errors}}">有 {{preview.warnings}} 处提醒，不影响导入：</view>
+      <view class="list-line" wx:for="{{preview.issues}}" wx:key="*this">{{item}}</view>
+      <view class="note" wx:if="{{preview.already}}">这个文件之前已经导入过，再点也不会重复添加。</view>
+      <button class="primary" disabled="{{busy || preview.errors || !preview.rows}}" bindtap="commit">{{busy ? status : '确认导入 ' + preview.rows + ' 条'}}</button>
+      <view class="progress" wx:if="{{busy && total}}"><view class="progress-bar" style="width: {{percent}}%"></view></view>
+      <button class="ghost" disabled="{{busy}}" bindtap="reset">换一个文件</button>
+    </view>
+  </block>
+
+  <view class="panel" wx:if="{{done}}">
+    <view class="panel-title">导入完成</view>
+    <view class="ok">{{done}}</view>
+    <button class="ghost" bindtap="reset">再导一个</button>
+  </view>
+  <view class="err" wx:if="{{error}}">{{error}}</view>
+</view>

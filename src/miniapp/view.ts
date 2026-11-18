@@ -7,6 +7,7 @@ import type { Customer, CustomerRankingResult, CustomerTask, Dashboard, Product,
 import { money, moneyInput, parseYuan } from "../domain/finance";
 import { addDays, today } from "../domain/dates";
 import { defaultFollowUp, findCustomerByName, inLunchBreak, scheduleText } from "../domain/entryHelpers";
+export { quickProducts } from "../domain/entryHelpers";
 import { dailyPendingTasks, sortTasksTodayFirst } from "../domain/tasks";
 import { displayCustomerName } from "../domain/customers";
 import { groupProducts } from "../domain/catalog";
@@ -147,12 +148,6 @@ export function draftProfit(d: SaleDraft, edit?: Sale): string {
   } catch {
     return "¥ —";
   }
-}
-/** 快捷商品：本月利润前 5 的商品排前面（数据来自看板），其余按商品顺序补满 5 个 */
-export function quickProducts(products: Product[], dashboardTop: { name: string }[], n = 5): Product[] {
-  const active = products.filter((p) => p.active && !p.archivedAt);
-  const ranked = dashboardTop.map((t) => active.find((p) => p.name === t.name)).filter((p): p is Product => !!p);
-  return [...ranked, ...active.filter((p) => !ranked.includes(p))].slice(0, n);
 }
 export function productGroups(products: Product[]) {
   return groupProducts(products.filter((p) => p.active && !p.archivedAt));

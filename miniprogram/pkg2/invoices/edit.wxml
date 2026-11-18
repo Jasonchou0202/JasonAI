@@ -1,0 +1,62 @@
+<view class="pg">
+  <view class="eyebrow">开票 · 增值税普通发票</view>
+  <view class="h1">{{rec ? rec.customer : '需要开票'}}</view>
+  <view class="lead" wx:if="{{rec}}">{{head}}</view>
+  <view class="loading" wx:if="{{loading}}">正在读取…</view>
+  <block wx:if="{{!loading && !rec}}">
+    <view class="card"><view>这笔销售还没有开票记录。</view><view class="sub-line">打开后进入「待开票」；客户开票资料不齐时先进「待收资料」。</view></view>
+    <view class="btn" bindtap="turnOn">需要开票</view>
+  </block>
+  <block wx:if="{{rec}}">
+    <view class="card">
+      <view class="label">状态</view>
+      <view class="steps">
+        <view wx:for="{{steps}}" wx:key="id" data-id="{{item.id}}" bindtap="pickStatus" class="step {{status === item.id ? 'on' : ''}}"
+          style="{{status === item.id ? 'background:' + item.color.bg + ';color:' + item.color.fg + ';box-shadow:inset 0 0 0 2rpx ' + item.color.line : ''}}">{{item.label}}</view>
+      </view>
+      <view class="note" wx:if="{{locked}}">已作废或红冲的发票不能再改。</view>
+      <view class="field">
+        <view class="label">开票金额（元，可带两位小数）</view>
+        <input class="input" type="digit" value="{{amount}}" data-k="amount" bindinput="input" disabled="{{locked}}" />
+      </view>
+      <view class="field">
+        <view class="label">抬头</view>
+        <input class="input" maxlength="60" value="{{title}}" placeholder="打开时自动带上客户资料里的抬头" data-k="title" bindinput="input" disabled="{{locked}}" />
+        <view class="sub-line"><text class="prof {{rec.profileComplete ? 'ok' : 'miss'}}">{{rec.profileText}}</text></view>
+      </view>
+      <block wx:if="{{issued}}">
+        <view class="field">
+          <view class="label">发票号码</view>
+          <input class="input" maxlength="30" value="{{invoiceNo}}" placeholder="6～30 位数字或字母" data-k="invoiceNo" bindinput="input" disabled="{{locked}}" />
+        </view>
+        <view class="field">
+          <view class="label">开票日期</view>
+          <picker mode="date" value="{{issuedOn}}" end="{{today}}" data-k="issuedOn" bindchange="input" disabled="{{locked}}"><view class="input">{{issuedOn}}</view></picker>
+        </view>
+      </block>
+      <view class="field" wx:if="{{status === 'sent'}}">
+        <view class="label">寄到哪（邮箱或快递单号）</view>
+        <input class="input" maxlength="80" value="{{sentTo}}" data-k="sentTo" bindinput="input" disabled="{{locked}}" />
+      </view>
+      <view class="field" wx:if="{{filesOn}}">
+        <view class="row"><view class="label">发票原件（PDF、PNG、JPG，≤4MB）</view></view>
+        <view class="file" wx:for="{{files}}" wx:key="fileID">
+          <view class="grow" data-i="{{index}}" bindtap="openFile"><view class="fname">{{item.name}}</view><view class="sub-line">{{item.sizeText}}{{item.fresh ? ' · 新上传' : ' · 点开预览'}}</view></view>
+          <text class="x" wx:if="{{!locked}}" data-i="{{index}}" bindtap="removeFile">移除</text>
+        </view>
+        <view class="pick-row" wx:if="{{!locked}}">
+          <view class="mini" bindtap="addFiles">从聊天选文件</view>
+          <view class="mini plain" bindtap="photo">拍照</view>
+        </view>
+      </view>
+      <view class="field">
+        <view class="label">备注</view>
+        <textarea class="textarea" maxlength="200" value="{{note}}" data-k="note" bindinput="input" disabled="{{locked}}"></textarea>
+      </view>
+    </view>
+    <view class="error" wx:if="{{error}}">{{error}}</view>
+    <view class="btn {{busy ? 'dis' : ''}}" wx:if="{{!locked}}" bindtap="save">{{busy ? '正在保存…' : '保存'}}</view>
+    <view class="btn danger" wx:if="{{rec.open}}" bindtap="turnOff">取消开票</view>
+  </block>
+  <view class="error" wx:if="{{error && !rec}}">{{error}}</view>
+</view>

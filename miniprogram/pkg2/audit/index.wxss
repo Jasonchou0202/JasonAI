@@ -1,0 +1,6 @@
+@import "../common.wxss";
+.res { font-size: 22rpx; padding: 4rpx 14rpx; border-radius: 999rpx; }
+.res-denied { background: #F8DAD4; color: #9E2A1E; }
+.res-failed { background: #F9ECD6; color: #7A5320; }
+.diff { font-size: 23rpx; color: #4F4038; background: #FBF3E4; border-radius: 12rpx; padding: 12rpx 16rpx; margin-top: 10rpx; word-break: break-all; }
+.more { margin-top: 20rpx; }

@@ -1,0 +1,27 @@
+<view class="pg">
+  <view class="eyebrow">管理员</view>
+  <view class="h1">回收站</view>
+  <view class="lead">删掉的记录先放在这里，可以恢复；彻底删除后找不回来。</view>
+  <view class="seg">
+    <view class="it {{kind === item.id ? 'on' : ''}}" wx:for="{{tabs}}" wx:key="id" data-k="{{item.id}}" bindtap="pick">{{item.label}}</view>
+  </view>
+  <view class="loading" wx:if="{{loading}}">正在读取…</view>
+  <view class="error" wx:if="{{error}}">{{error}}</view>
+  <view class="card" wx:if="{{!loading && !error}}">
+    <view class="empty" wx:if="{{!rows.length}}">回收站是空的。</view>
+    <view class="list-item" wx:for="{{rows}}" wx:key="id">
+      <view class="row"><text class="title-line">{{item.title}}</text><text class="num" wx:if="{{item.amount}}">{{item.amount}}</text></view>
+      <view class="sub-line">{{item.sub}}</view>
+      <view class="sub-line" wx:if="{{item.deletedAt}}">删除于 {{item.deletedAt}}</view>
+      <view class="actions">
+        <view class="mini dark" data-id="{{item.id}}" bindtap="restore">恢复</view>
+        <view class="mini danger" data-id="{{item.id}}" bindtap="purge">彻底删除</view>
+      </view>
+    </view>
+    <view class="pager" wx:if="{{kind === 'sales' && total > 30}}">
+      <view class="mini plain" wx:if="{{page > 1}}" data-d="-1" bindtap="turn">上一页</view>
+      <text class="small muted">第 {{page}} 页 · 共 {{total}} 条</text>
+      <view class="mini plain" wx:if="{{total > page * 30}}" data-d="1" bindtap="turn">下一页</view>
+    </view>
+  </view>
+</view>

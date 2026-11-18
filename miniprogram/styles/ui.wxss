@@ -30,7 +30,7 @@
 .list-item:last-child { border-bottom: none; }
 .form-label { font-size: 26rpx; color: #5A4A40; margin: 28rpx 0 14rpx; font-weight: 500; }
 .form-label .opt { color: #A4958A; font-weight: 400; margin-left: 8rpx; }
-.field { background: #FAF7F4; border-radius: 20rpx; padding: 22rpx 26rpx; font-size: 30rpx; color: #1D1D1F; min-height: 44rpx; }
+.field { background: #FBF3E4; border-radius: 20rpx; padding: 22rpx 26rpx; font-size: 30rpx; color: #1D1D1F; min-height: 44rpx; }
 .field.placeholder { color: #B4A89E; }
 .badge-dot { min-width: 32rpx; height: 32rpx; line-height: 32rpx; padding: 0 8rpx; border-radius: 999rpx; background: #D97757; color: #FFFFFF; font-size: 20rpx; text-align: center; box-sizing: border-box; }
 .private-tag { display: inline-block; font-size: 20rpx; color: #8A7B70; border: 1rpx solid #E5DED8; border-radius: 999rpx; padding: 2rpx 14rpx; margin-left: 12rpx; vertical-align: middle; }

@@ -1,0 +1,34 @@
+<view class="pg">
+  <view class="eyebrow">管理员</view>
+  <view class="h1">导出销售明细</view>
+  <view class="lead">生成 CSV 后发到聊天（发给自己或文件传输助手），在电脑上用 Excel 打开。格式和网页导出一样。</view>
+  <view class="card" wx:if="{{admin}}">
+    <view class="chips">
+      <view class="chip" data-r="month" bindtap="quick">本月</view>
+      <view class="chip" data-r="90" bindtap="quick">近 90 天</view>
+      <view class="chip" data-r="year" bindtap="quick">今年</view>
+      <view class="chip" data-r="all" bindtap="quick">全部</view>
+    </view>
+    <view class="two">
+      <view class="field half">
+        <view class="label">开始</view>
+        <picker mode="date" value="{{from}}" end="{{today}}" data-k="from" bindchange="set"><view class="input">{{from || '不限'}}</view></picker>
+      </view>
+      <view class="field half">
+        <view class="label">结束</view>
+        <picker mode="date" value="{{to}}" end="{{today}}" data-k="to" bindchange="set"><view class="input">{{to || '不限'}}</view></picker>
+      </view>
+    </view>
+    <view class="field">
+      <view class="label">搜索（商品、客户或备注，可不填）</view>
+      <input class="input" value="{{search}}" data-k="search" bindinput="set" />
+    </view>
+  </view>
+  <view class="error" wx:if="{{error}}">{{error}}</view>
+  <view class="btn {{busy ? 'dis' : ''}}" wx:if="{{admin}}" bindtap="build">{{busy ? '正在生成 ' + progress + '%…' : '生成 CSV'}}</view>
+  <view class="card ready" wx:if="{{file}}">
+    <view class="title-line">{{file.name}}</view>
+    <view class="sub-line">共 {{file.rows}} 笔 · 只存在这台手机的小程序临时目录</view>
+    <view class="btn" bindtap="send">发送到聊天</view>
+  </view>
+</view>

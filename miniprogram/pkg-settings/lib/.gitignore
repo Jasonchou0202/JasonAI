@@ -1,0 +1,2 @@
+# 构建产物：npm run build:server 生成（scripts/build-miniapp-b3.mjs）
+*.js

@@ -27,12 +27,40 @@
   },
   "window": {
     "navigationBarTitleText": "生意手账",
-    "navigationBarBackgroundColor": "#FAF7F4",
+    "navigationBarBackgroundColor": "#FBF3E4",
     "navigationBarTextStyle": "black",
-    "backgroundColor": "#FAF7F4"
+    "backgroundColor": "#FBF3E4"
   },
   "__usePrivacyCheck__": true,
-  "usingComponents": { "privacy-popup": "/components/privacy/index" },
+  "usingComponents": {
+    "privacy-popup": "/components/privacy/index"
+  },
   "style": "v2",
-  "sitemapLocation": "sitemap.json"
+  "sitemapLocation": "sitemap.json",
+  "subpackages": [
+    {
+      "root": "pkg2",
+      "name": "b2",
+      "pages": [
+        "hub/index",
+        "expenses/index",
+        "expenses/form",
+        "expenses/pending",
+        "expenses/categories",
+        "invoices/index",
+        "invoices/edit",
+        "invoices/profile",
+        "customer/detail",
+        "customer/merge",
+        "trash/index",
+        "export/index",
+        "members/index",
+        "audit/index",
+        "charts/index"
+      ]
+    },
+    { "root": "pkg-settings", "name": "settings", "pages": ["index/index", "import/index", "backup/index", "notify/index", "avatar/index"] },
+    { "root": "pkg-content", "name": "content", "pages": ["entry/index", "board/index"] },
+    { "root": "pkg-demo", "name": "demo", "pages": ["index/index"] }
+  ]
 }
