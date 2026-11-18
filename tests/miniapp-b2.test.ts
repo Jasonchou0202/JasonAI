@@ -280,7 +280,7 @@ describe("文件中转上传 / 分块下载（权限都走原来的调用）", (
     expect(await t.call(JASON_WX, "miniapp.files.chunk", { via: "sales.list", id: "e1", index: 0 })).toMatchObject({ ok: false });
     expect(await t.call(JASON_WX, "miniapp.files.chunk", { via: "expenses.receipts.urls", id: "e1", index: 5 })).toMatchObject({ ok: false, error: "附件不存在" });
   });
-  it("成员不能下载别人的凭证（被原来的 receipts.urls 拒绝，CDN 不会被读）", async () => {
+  it("授权成员可以下载别人的报销凭证", async () => {
     const t = withReceipts();
     await bindJason(t);
     await bindAlice(t);
@@ -290,9 +290,11 @@ describe("文件中转上传 / 分块下载（权限都走原来的调用）", (
       requestId: "e2",
       expense: { date: "2026-11-14", categoryId: "cat-phone", categoryName: "话费", amount: 1000, note: "", paidBy: OWNER, hasInvoice: false, status: "pending_reimburse", receipts: [{ fileID: up.data.fileID, name: "a.pdf", type: "application/pdf", size: up.data.size, kind: "invoice" }] },
     });
-    const reads = t.cdn.reads.length;
-    expect((await t.call(ALICE_WX, "miniapp.files.chunk", { via: "expenses.receipts.urls", id: "e2", index: 0 })).ok).toBe(false);
-    expect(t.cdn.reads.length).toBe(reads);
+    const urls = await t.call(ALICE_WX, "expenses.receipts.urls", { id: "e2" });
+    expect(urls.ok).toBe(true);
+    t.cdn.files.set(urls.data.items[0].url, new Uint8Array(PDF));
+    const chunk = await t.call(ALICE_WX, "miniapp.files.chunk", { via: "expenses.receipts.urls", id: "e2", index: 0, offset: 0 });
+    expect(chunk.ok).toBe(true);
   });
 });
 
