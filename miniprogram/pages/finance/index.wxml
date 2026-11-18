@@ -1,0 +1,51 @@
+<view class="screen">
+  <view class="eyebrow">个人私密账本</view>
+  <view class="large-title">财务</view>
+  <view class="muted small intro">报销、开票和经营图表 · 只有授权的人能看</view>
+  <view class="empty" wx:if="{{loading}}">正在打开财务…</view>
+  <view class="err" wx:if="{{error}}">{{error}}（下拉可重试）</view>
+  <block wx:if="{{!loading}}">
+    <view class="sheet card-link" wx:if="{{expenses}}" bindtap="openExpenses">
+      <view class="card-top">
+        <view class="icon-tile">报</view>
+        <view class="grow">
+          <view class="sheet-title">报销记账</view>
+          <view class="sheet-sub">十天合账、利润对照、本月明细</view>
+        </view>
+        <view class="muted arrow">›</view>
+      </view>
+      <view class="metrics" wx:if="{{expenseMetrics.length}}">
+        <view class="metric" wx:for="{{expenseMetrics}}" wx:key="k">
+          <view class="muted small">{{item.k}}</view>
+          <view class="metric-v">{{item.v}}</view>
+        </view>
+      </view>
+    </view>
+    <view class="sheet card-link" wx:if="{{invoices}}" bindtap="openInvoices">
+      <view class="card-top">
+        <view class="icon-tile">票</view>
+        <view class="grow">
+          <view class="sheet-title">开票</view>
+          <view class="sheet-sub">待开票、已开票、客户开票资料</view>
+        </view>
+        <view class="muted arrow">›</view>
+      </view>
+      <view class="metrics" wx:if="{{invoiceMetrics.length}}">
+        <view class="metric" wx:for="{{invoiceMetrics}}" wx:key="k">
+          <view class="muted small">{{item.k}}</view>
+          <view class="metric-v">{{item.v}}</view>
+        </view>
+      </view>
+    </view>
+    <view class="sheet card-link" bindtap="openCharts">
+      <view class="card-top">
+        <view class="icon-tile">图</view>
+        <view class="grow">
+          <view class="sheet-title">经营图表</view>
+          <view class="sheet-sub">近十天利润、新增客户、四色块、矩阵</view>
+        </view>
+        <view class="muted arrow">›</view>
+      </view>
+    </view>
+  </block>
+</view>

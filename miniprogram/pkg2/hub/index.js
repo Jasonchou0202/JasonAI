@@ -1,4 +1,4 @@
-// 第 2 批入口「更多」：按身份和开关列出报销、开票、图表、回收站、导出、成员、日志。
+// 第 2 批入口「更多」：管理组（回收站、导出、成员、日志）。财务已移到底部「财务」标签。
 // 管理员才有的入口对成员不显示（云端同样会拒）。
 const ui = require("../lib/ui");
 Page({
@@ -17,14 +17,6 @@ Page({
       .then((me) => {
         const item = (title, sub, url, show) => (show ? [{ title, sub, url }] : []);
         const groups = [
-          {
-            name: "账务",
-            items: [
-              ...item("报销记账", "十天合账、利润对照、本月明细", "/pkg2/expenses/index", me.expenses),
-              ...item("开票", "待开票、已开票、客户开票资料", "/pkg2/invoices/index", me.invoices),
-              ...item("经营图表", "新增客户、四色块、需求占比、矩阵、十天分成", "/pkg2/charts/index", true),
-            ],
-          },
           {
             name: "管理",
             items: [

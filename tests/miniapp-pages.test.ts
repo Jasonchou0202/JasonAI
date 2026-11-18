@@ -10,7 +10,7 @@ import { bundleMiniappDomain, OUT } from "../scripts/build-miniapp.mjs";
 const ROOT = "miniprogram";
 const app = JSON.parse(readFileSync(join(ROOT, "app.json"), "utf8")) as {
   pages: string[];
-  tabBar: { list: { pagePath: string; iconPath: string; selectedIconPath: string }[] };
+  tabBar: { list: { pagePath: string; iconPath: string; selectedIconPath: string; text: string }[] };
 };
 const read = (p: string) => readFileSync(p, "utf8");
 function allJs(dir: string): string[] {
@@ -71,8 +71,31 @@ describe("小程序工程结构", () => {
     }
   });
   it("数据页都开了截屏遮盖（个人私密账本）", () => {
-    for (const page of ["home", "details", "calendar", "sale", "task", "bell", "applications"])
+    for (const page of ["home", "finance", "details", "calendar", "sale", "task", "bell", "applications"])
       expect(read(join(ROOT, `pages/${page}/index.js`)), page).toContain("session.protect(true)");
+  });
+  it("底部 5 个标签按 看板、财务、明细、日程、我的 排列，图标都在；申请角标打在「我的」", () => {
+    expect(app.tabBar.list.map((x) => x.text)).toEqual(["看板", "财务", "明细", "日程", "我的"]);
+    const me = app.tabBar.list.findIndex((x) => x.text === "我的");
+    expect(read(join(ROOT, "pages/me/index.js"))).toContain("ME_TAB = " + me);
+  });
+  it("「更多」不再列出已迁到财务标签的账务入口；记一笔有全部客户下拉", () => {
+    const hub = read(join(ROOT, "pkg2/hub/index.js"));
+    expect(hub).not.toContain('name: "账务"');
+    expect(hub).not.toMatch(/item\("报销记账"/);
+    const sale = read(join(ROOT, "pages/sale/index.wxml")) + read(join(ROOT, "pages/sale/index.js"));
+    expect(sale).toContain("全部客户");
+    expect(sale).toContain("pickCustomer");
+  });
+  it("navigateTo 不指向 tabBar 页（应使用 switchTab）", () => {
+    const tabs = new Set(app.tabBar.list.map((x) => "/" + x.pagePath));
+    for (const file of allJs(ROOT)) {
+      if (file.includes("lib/domain.js") || file.includes("pkg-demo")) continue;
+      for (const m of read(file).matchAll(/navigateTo\(\{ url: [`"]([^`"]+)/g)) {
+        const path = m[1].split("?")[0];
+        expect(tabs.has(path), `${file} navigateTo ${path}`).toBe(false);
+      }
+    }
   });
 });
 

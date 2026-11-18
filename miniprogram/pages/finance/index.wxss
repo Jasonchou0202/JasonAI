@@ -1,0 +1,8 @@
+.intro { margin: 8rpx 0 8rpx; line-height: 1.5; }
+.card-link { padding: 32rpx; }
+.card-top { display: flex; align-items: flex-start; }
+.icon-tile { width: 72rpx; height: 72rpx; border-radius: 20rpx; background: #FBE9E2; color: #B4532F; font-size: 28rpx; font-weight: 700; display: flex; align-items: center; justify-content: center; margin-right: 24rpx; flex-shrink: 0; }
+.arrow { font-size: 44rpx; line-height: 72rpx; margin-left: 8rpx; color: #C9B8AC; }
+.metrics { display: flex; margin-top: 28rpx; padding-top: 24rpx; border-top: 1rpx solid #F1EAE4; }
+.metric { flex: 1; min-width: 0; padding-right: 16rpx; }
+.metric-v { font-size: 32rpx; font-weight: 650; margin-top: 6rpx; color: #1D1D1F; font-variant-numeric: tabular-nums; word-break: break-all; }

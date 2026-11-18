@@ -17,9 +17,6 @@
 .slider-wrap { margin-top: 20rpx; }
 .ink { color: #2B211C; }
 .coral-t { color: #B4532F; }
-.need + .need { margin-top: 20rpx; }
-.bar { height: 16rpx; background: #F4E6D4; border-radius: 8rpx; margin-top: 8rpx; overflow: hidden; }
-.bar-in { height: 100%; background: #D97757; border-radius: 8rpx; }
 .mx { display: flex; margin-top: 20rpx; }
 .mx-grid { flex: 1; display: flex; flex-wrap: wrap; }
 .mx-cell { width: calc(50% - 12rpx); margin: 6rpx; box-sizing: border-box; min-height: 220rpx; background: #fff; border-radius: 22rpx; padding: 20rpx; border: 3rpx dashed #F0DCC8; }

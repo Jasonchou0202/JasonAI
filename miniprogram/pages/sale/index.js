@@ -4,6 +4,7 @@ const D = require("../../lib/domain");
 const { call } = require("../../utils/api");
 const session = require("../../utils/session");
 const draft = require("../../utils/draft");
+const { offerTask } = require("../../utils/subscribe");
 
 const NEW_KEY = "draft-sale-new";
 const REMINDER_LABELS = D.REMINDERS.map((r) => r.label);
@@ -14,6 +15,7 @@ Page({
     form: null,
     quick: [],
     productNames: [],
+    customerNames: [],
     hints: [],
     profit: "¥ —",
     dateText: "今天",
@@ -72,6 +74,7 @@ Page({
           edit: edit ? { id: edit.id } : null,
           quick: D.quickProducts(sales || [], this.products, day).map((p) => ({ id: p.id, name: p.name })),
           productNames: this.picker.map((p) => (p.category ? p.category + " · " : "") + p.name),
+          customerNames: recentCustomerNames(this.customers, sales || []),
           payer,
           error: "",
         });
@@ -109,6 +112,12 @@ Page({
   },
   pickHint(e) {
     this.patch({ customer: e.currentTarget.dataset.name });
+    this.setData({ hints: [] });
+  },
+  pickCustomer(e) {
+    const name = this.data.customerNames[Number(e.detail.value)];
+    if (!name) return;
+    this.patch({ customer: name });
     this.setData({ hints: [] });
   },
   pickQuick(e) {
@@ -160,6 +169,7 @@ Page({
       return this.setData({ error: e.message });
     }
     this.setData({ busy: true, error: "" });
+    if (plan.schedule) offerTask();
     const saved = this.edit
       ? call("sales.update", { id: this.edit.id, revision: this.edit.revision, requestId: form.requestId, sale: plan.sale })
       : call("sales.create", { requestId: form.requestId, sale: plan.sale });
@@ -221,3 +231,19 @@ Page({
     });
   },
 });
+
+/** 客户下拉：有成交的按最近一次排前，其余按名字；手工输入新客户仍可用 */
+function recentCustomerNames(names, sales) {
+  const last = {};
+  (sales || []).forEach((s) => {
+    if (!s || s.deletedAt || !s.customer) return;
+    const t = String(s.date || "") + "T" + String(s.createdAt || "");
+    if (!last[s.customer] || t > last[s.customer]) last[s.customer] = t;
+  });
+  return (names || []).slice().sort((a, b) => {
+    const da = last[a] || "";
+    const db = last[b] || "";
+    if (da !== db) return da < db ? 1 : -1;
+    return a.localeCompare(b, "zh");
+  });
+}

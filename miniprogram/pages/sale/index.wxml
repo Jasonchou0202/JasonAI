@@ -14,7 +14,12 @@
     </view>
 
     <view class="form-label">客户</view>
-    <input class="field" placeholder="客户名称" value="{{form.customer}}" data-k="customer" bindinput="input" maxlength="80" />
+    <view class="row field-row">
+      <input class="field grow" placeholder="客户名称" value="{{form.customer}}" data-k="customer" bindinput="input" maxlength="80" />
+      <picker range="{{customerNames}}" bindchange="pickCustomer">
+        <view class="picker-btn">全部客户 ›</view>
+      </picker>
+    </view>
     <view class="hints" wx:if="{{hints.length}}">
       <view class="hint-item" wx:for="{{hints}}" wx:key="*this" data-name="{{item}}" bindtap="pickHint">{{item}}</view>
     </view>

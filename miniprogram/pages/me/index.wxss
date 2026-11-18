@@ -1,5 +1,10 @@
-.avatar { width: 96rpx; height: 96rpx; border-radius: 999rpx; background: #FBE9E2; color: #B4532F; font-size: 40rpx; font-weight: 600; display: flex; align-items: center; justify-content: center; margin-right: 24rpx; }
+.avatar { width: 96rpx; height: 96rpx; border-radius: 999rpx; background: #FBE9E2; color: #B4532F; font-size: 40rpx; font-weight: 600; display: flex; align-items: center; justify-content: center; }
+.avatar-btn { width: 96rpx; height: 96rpx; padding: 0; margin-right: 24rpx; margin-left: 0; background: transparent; border-radius: 999rpx; overflow: hidden; flex-shrink: 0; line-height: 0; }
+.avatar-btn::after { border: none; }
+.avatar-img { width: 96rpx; height: 96rpx; border-radius: 999rpx; display: block; background: #FBE9E2; }
+.hint { margin-top: 6rpx; }
 .menu { padding-top: 8rpx; padding-bottom: 8rpx; }
 .arrow { margin-left: 12rpx; }
 .tip { margin: 28rpx 8rpx 0; }
 .leave { color: #9E2A1E; margin-top: 60rpx; }
+.avatar-canvas { width: 128px; height: 128px; position: fixed; left: -9999px; top: 0; }
