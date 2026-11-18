@@ -58,6 +58,9 @@
         "audit/index",
         "charts/index"
       ]
-    }
+    },
+    { "root": "pkg-settings", "name": "settings", "pages": ["index/index", "import/index", "backup/index", "notify/index", "avatar/index"] },
+    { "root": "pkg-content", "name": "content", "pages": ["entry/index", "board/index"] },
+    { "root": "pkg-demo", "name": "demo", "pages": ["index/index"] }
   ]
 }

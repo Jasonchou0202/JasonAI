@@ -1,0 +1,23 @@
+<privacy-popup />
+<view class="page">
+  <view class="hero">
+    <view class="hero-title">头像</view>
+    <view class="hero-sub">在本机裁成正方形、压到 128×128 再上传，不留原图，也会去掉照片里的拍摄地点。</view>
+  </view>
+  <view class="panel" wx:if="{{!enabled}}">
+    <view class="panel-title">头像功能还没打开</view>
+    <view class="panel-desc">管理员在网页打开「成员头像」后，这里就能换头像。</view>
+  </view>
+  <view class="panel" wx:else>
+    <view class="avatar-big">
+      <image wx:if="{{preview || current}}" src="{{preview || current}}" mode="aspectFill" />
+      <text wx:else>{{initial}}</text>
+    </view>
+    <view class="note" style="text-align:center">{{preview ? '新头像预览' : current ? '当前头像' : '还没设置头像，现在显示名字首字'}}</view>
+    <button class="ghost" disabled="{{busy}}" bindtap="choose">拍照或从相册选</button>
+    <button class="primary" wx:if="{{preview}}" disabled="{{busy}}" bindtap="save">{{busy ? '正在上传…' : '用这张'}}</button>
+    <view class="link" wx:if="{{current && !preview}}" bindtap="clear"><text class="danger-text">换回默认头像</text></view>
+  </view>
+  <canvas type="2d" id="avatarCanvas" style="width:128px;height:128px;position:fixed;left:-9999px;top:0"></canvas>
+  <view class="err" wx:if="{{error}}">{{error}}</view>
+</view>

@@ -8,6 +8,7 @@ import { colorKeyAt, isColorKey, type ColorKey } from "../../src/domain/members"
 import type { Member, TeamConfig } from "../team";
 import { resolveSource, SourceError, type PlatformIdentity } from "./source";
 import { EXTRA_ACTIONS, handleExtra, type FileFetcher } from "./extras";
+import { handleBatch3, type Batch3Deps } from "./batch3";
 import {
   CODE_ALPHABET,
   LIMITS,
@@ -59,6 +60,8 @@ export interface MiniappDeps {
   diagnose?: (code: string) => void;
   /** 第 2 批：凭证/附件的中转上传和分块下载 */
   files?: FileFetcher;
+  /** 第 3 批：账本设置、内容、订阅消息（不配就和第 1 批完全一样） */
+  batch3?: Batch3Deps;
 }
 
 export class MiniappError extends Error {
@@ -196,6 +199,11 @@ export async function handleMiniapp(deps: MiniappDeps, platform: PlatformIdentit
     if (action === "miniapp.apply") return { ok: true, data: await apply(deps, store, who, payload) };
     if (action === "miniapp.owner.redeem") return { ok: true, data: await redeem(deps, store, who, payload) };
     if (who.role === "none") throw NO_ACCESS();
+    if (deps.batch3) {
+      const openid = who.source.kind === "miniapp" ? who.source.openid : undefined;
+      const b3 = await handleBatch3(deps.batch3, store, { role: who.role, uid: who.uid, ...(openid ? { openid } : {}), ...(who.key ? { bindId: who.key.bindId } : {}) }, action, payload);
+      if (b3) return { ok: true, data: b3.data };
+    }
     if (action === "miniapp.bind.leave") return { ok: true, data: await leave(deps, store, who) };
     // 第 2 批附加调用：先交给原来的 handle() 判权限，再做小程序需要的搬运（见 ./extras.ts）
     if (EXTRA_ACTIONS.has(action) && (who.role === "owner" || who.role === "member")) {

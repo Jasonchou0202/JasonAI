@@ -1,0 +1,59 @@
+<privacy-popup />
+<view class="page">
+  <view class="demo-bar" wx:if="{{demo}}"><text>正在看示例数据（{{demo.role === 'admin' ? '管理员' : '成员'}}视角），不会动真实账本</text><text class="exit" bindtap="exitDemo">退出示例</text></view>
+  <view class="hero">
+    <view class="hero-title">设置与更多</view>
+    <view class="hero-sub">账本备份、历史导入、内容生产和提醒，都在这里。</view>
+    <view class="pill">个人私密账本 · {{admin ? '管理员' : '成员'}}</view>
+  </view>
+
+  <block wx:if="{{admin}}">
+    <view class="section-title">账本（只有管理员能看到）</view>
+    <view class="group">
+      <view class="row" hover-class="row-hover" bindtap="go" data-url="/pkg-settings/import/index">
+        <view class="icon">表</view>
+        <view class="row-main"><view class="row-title">导入飞书历史 Excel</view><view class="row-desc">从聊天里选表格，先预检，确认后再导入</view></view>
+        <text class="chev">›</text>
+      </view>
+      <view class="row" hover-class="row-hover" bindtap="go" data-url="/pkg-settings/backup/index">
+        <view class="icon">存</view>
+        <view class="row-main"><view class="row-title">备份与恢复</view><view class="row-desc">完整备份发到聊天；从备份恢复到空账本</view></view>
+        <text class="chev">›</text>
+      </view>
+    </view>
+
+    <view class="section-title">内容生产（只有管理员能看到）</view>
+    <view class="group">
+      <view class="row" hover-class="row-hover" bindtap="go" data-url="/pkg-content/entry/index">
+        <view class="icon soft">录</view>
+        <view class="row-main"><view class="row-title">今日获客录入</view><view class="row-desc">微信新增好友，以及分别从哪个平台来</view></view>
+        <text class="chev">›</text>
+      </view>
+      <view class="row" hover-class="row-hover" bindtap="go" data-url="/pkg-content/board/index">
+        <view class="icon soft">看</view>
+        <view class="row-main"><view class="row-title">内容闭环看板</view><view class="row-desc">只读版：本周数字、七段流水线、选题进度</view></view>
+        <text class="chev">›</text>
+      </view>
+    </view>
+  </block>
+
+  <view class="section-title">我的</view>
+  <view class="group">
+    <view class="row" hover-class="row-hover" bindtap="go" data-url="/pkg-settings/avatar/index">
+      <view class="icon soft">像</view>
+      <view class="row-main"><view class="row-title">头像</view><view class="row-desc">拍照或从相册选，本机裁成小图再上传</view></view>
+      <text class="chev">›</text>
+    </view>
+    <view class="row" hover-class="row-hover" bindtap="go" data-url="/pkg-settings/notify/index">
+      <view class="icon soft">铃</view>
+      <view class="row-main"><view class="row-title">微信服务通知</view><view class="row-desc">日程到点{{admin ? '、新的成员申请' : ''}}发到微信</view></view>
+      <text class="chev">›</text>
+    </view>
+    <view class="row" hover-class="row-hover" bindtap="go" data-url="/pkg-demo/index/index" wx:if="{{!demo}}">
+      <view class="icon soft">例</view>
+      <view class="row-main"><view class="row-title">看示例数据</view><view class="row-desc">虚构的示例账本，随便点，不影响真实数据</view></view>
+      <text class="chev">›</text>
+    </view>
+  </view>
+  <view class="err" wx:if="{{error}}">{{error}}</view>
+</view>

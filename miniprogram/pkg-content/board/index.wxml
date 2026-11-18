@@ -1,0 +1,70 @@
+<privacy-popup />
+<view class="page">
+  <view class="hero">
+    <view class="hero-title">内容闭环看板</view>
+    <view class="hero-sub">{{b.week || '本周'}} · 只读版</view>
+    <view class="pill gray">数据时间 {{b.updatedAt || '—'}}</view>
+  </view>
+  <view class="panel" wx:if="{{b.summary}}"><view class="panel-desc" style="margin-top:0">{{b.summary}}</view></view>
+
+  <view class="section-title">本周数字</view>
+  <view class="stats on-page" style="margin-top:0">
+    <view class="stat" wx:for="{{b.kpis}}" wx:key="key">
+      <view class="stat-in">
+        <view class="stat-label">{{item.title}}{{item.real ? '' : ' · 待核'}}</view>
+        <view class="stat-value {{index === 0 ? 'coral' : ''}}">{{item.value === null ? '—' : item.value}}<text style="font-size:22rpx;font-weight:400;color:#8C7B70"> {{item.unit}}</text></view>
+        <view class="stat-note">{{item.note}}</view>
+      </view>
+    </view>
+  </view>
+
+  <view class="section-title">七段流水线</view>
+  <view class="panel" style="margin-top:0">
+    <view class="stage-bar" wx:for="{{b.stages}}" wx:key="id">
+      <text class="stage-name">{{item.id}} {{item.name}}</text>
+      <view class="stage-track"><view class="stage-fill" style="width: {{item.pct}}%"></view></view>
+      <text class="stage-count">{{item.count}}</text>
+    </view>
+  </view>
+
+  <view class="section-title">选题进度（最近 {{b.topics.length}} 个）</view>
+  <view class="group">
+    <view class="row plain" wx:for="{{b.topics}}" wx:key="id">
+      <view class="row-main">
+        <view class="row-title">{{item.title}}</view>
+        <view class="row-desc">{{item.date}} · 第 {{item.stage}} 段 {{item.stageName}}</view>
+        <view><text class="tag {{p.status === 'published' ? 'done' : 'wait'}}" wx:for="{{item.platforms}}" wx:for-item="p" wx:key="name">{{p.name}} {{p.status === 'published' ? '已发' : '未发'}}</text></view>
+      </view>
+    </view>
+  </view>
+
+  <block wx:if="{{b.decisions.length}}">
+    <view class="section-title">等拍板</view>
+    <view class="group">
+      <view class="row plain" wx:for="{{b.decisions}}" wx:key="title">
+        <view class="row-main"><view class="row-title">{{item.title}}</view><view class="row-desc">{{item.why}} · 自 {{item.since}}</view></view>
+      </view>
+    </view>
+  </block>
+
+  <block wx:if="{{b.risks.length}}">
+    <view class="section-title">风险</view>
+    <view class="panel" style="margin-top:0">
+      <view class="risk" wx:for="{{b.risks}}" wx:key="text"><view class="dot {{item.level}}"></view><view>{{item.text}}</view></view>
+    </view>
+  </block>
+
+  <block wx:if="{{b.mechanisms.length}}">
+    <view class="section-title">机制验证</view>
+    <view class="group">
+      <view class="row plain" wx:for="{{b.mechanisms}}" wx:key="no">
+        <view class="row-main"><view class="row-title">{{item.no}}. {{item.title}}</view></view>
+        <view class="row-value">{{item.status}}</view>
+      </view>
+    </view>
+  </block>
+
+  <button class="ghost" bindtap="copy">复制网页链接，到浏览器看完整版</button>
+  <view class="note">小程序不能直接打开网页，这里是只读摘要。数据跟着小程序后台更新，以「数据时间」为准。</view>
+  <view class="err" wx:if="{{error}}">{{error}}</view>
+</view>
