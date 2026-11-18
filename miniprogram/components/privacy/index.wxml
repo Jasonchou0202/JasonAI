@@ -1,0 +1,8 @@
+<view wx:if="{{show}}" class="mask">
+  <view class="sheet">
+    <view class="title">隐私说明</view>
+    <view class="hint">使用前请阅读<text class="link-inline" bindtap="openContract">《生意手账小程序隐私保护指引》</text>。成员申请时填写的姓名和手机号只用于管理员识别申请人，不做短信验证，不对外提供。</view>
+    <button id="privacy-agree" class="btn" open-type="agreePrivacyAuthorization" bindagreeprivacyauthorization="agree">同意</button>
+    <view class="link" bindtap="disagree">不同意</view>
+  </view>
+</view>

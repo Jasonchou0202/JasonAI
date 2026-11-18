@@ -1,0 +1,18 @@
+<privacy-popup />
+<view class="wrap">
+  <view class="title">申请使用</view>
+  <block wx:if="{{status === 'pending'}}">
+    <view class="card"><view>已提交，等待管理员批准。</view><view class="hint">批准后重新打开小程序就能直接进入。</view></view>
+  </block>
+  <block wx:else>
+    <view class="card" wx:if="{{status === 'rejected'}}"><view>申请未通过。</view><view class="hint" wx:if="{{retryAt}}">{{retryAt}} 以后可以重新申请。</view></view>
+    <view class="card">
+      <view class="field"><view class="label">姓名</view><input class="input" maxlength="20" placeholder="1～20 个字" value="{{name}}" bindinput="onName" /></view>
+      <view class="field"><view class="label">手机号</view><input class="input" type="number" maxlength="11" placeholder="11 位手机号" value="{{phone}}" bindinput="onPhone" /></view>
+      <checkbox-group bindchange="onAgree"><label class="hint"><checkbox value="ok" checked="{{agree}}" />我知道手机号只用于管理员识别，不发短信验证</label></checkbox-group>
+      <view class="error" wx:if="{{error}}">{{error}}</view>
+      <button class="btn" disabled="{{busy}}" bindtap="submit">申请使用</button>
+    </view>
+  </block>
+  <view class="link" bindtap="toRedeem">我是管理员 · 输入绑定码</view>
+</view>

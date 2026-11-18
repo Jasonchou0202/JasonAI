@@ -1,0 +1,7 @@
+<view class="wrap">
+  <view class="title">生意手账</view>
+  <view class="badge">个人私密账本</view>
+  <view class="card"><view>已进入（{{role}}{{name ? ' · ' + name : ''}}）。</view><view class="hint">看板、记一笔、销售明细、客户日程正在做，下一个体验版提供。</view></view>
+  <view class="error" wx:if="{{error}}">{{error}}</view>
+  <view class="link" bindtap="leave">退出这个微信的绑定</view>
+</view>
