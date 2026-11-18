@@ -16,7 +16,7 @@
           <view class="title-line">给「{{created.name}}」的邀请链接</view>
           <view class="sub-line">只显示这一次，{{created.until}} 前有效。对方用 GitHub 登录网页后打开链接，你再点「批准」。</view>
           <view class="code">{{created.link}}</view>
-          <view class="mini" bindtap="copy">复制链接</view>
+          <view class="mini dark" bindtap="copy">复制链接</view>
         </view>
         <view class="note">小程序成员不用邀请码：对方在小程序里填姓名和手机号申请，你在「我的 → 成员申请」批准。</view>
       </view>
@@ -25,13 +25,13 @@
       <view class="row"><view class="h2">成员</view><view class="mini plain" wx:if="{{v.needFill}}" bindtap="fill">给已有成员补色</view></view>
       <view class="card">
         <view class="list-item" wx:if="{{colors}}">
-          <view class="row"><view><text class="dot" style="background:{{v.owner.color}}"></text><text class="title-line">{{v.owner.name}}</text> <text class="pill coral">管理员</text></view></view>
+          <view class="row"><view><text class="dot" style="background:{{v.owner.color}}"></text><text class="title-line">{{v.owner.name}}</text> <text class="pill coral tag">管理员</text></view></view>
           <view class="sub-line">{{v.owner.colorName}}</view>
         </view>
         <view class="empty" wx:if="{{!v.rows.length}}">还没有成员。</view>
         <view class="list-item" wx:for="{{v.rows}}" wx:key="uid">
           <view class="row">
-            <view><text class="dot" wx:if="{{colors && item.color}}" style="background:{{item.color}}"></text><text class="title-line">{{item.name}}</text> <text class="pill" wx:if="{{item.miniapp}}">小程序</text></view>
+            <view><text class="dot" wx:if="{{colors && item.color}}" style="background:{{item.color}}"></text><text class="title-line">{{item.name}}</text> <text class="pill tag" wx:if="{{item.miniapp}}">小程序</text></view>
             <text class="ms ms-{{item.status}}">{{item.statusText}}</text>
           </view>
           <view class="sub-line">加入 {{item.joined}}{{colors ? ' · ' + item.colorName : ''}}</view>

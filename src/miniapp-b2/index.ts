@@ -368,14 +368,34 @@ export interface AuditRow extends AuditRowLike {
   result: string;
   reason?: string;
 }
+/** 网页 audit-text 还没收录的报销、开票动作（只在小程序这边补中文，不改网页） */
+const EXTRA_ACTION_TEXT: Record<string, string> = {
+  "expenses.create": "记一笔报销",
+  "expenses.update": "修改报销",
+  "expenses.delete": "删除报销",
+  "expenses.restore": "恢复报销",
+  "expenses.purge": "彻底删除报销",
+  "expenses.confirm": "确认报销",
+  "expenses.reject": "驳回报销",
+  "expenses.categories.create": "新增报销分类",
+  "expenses.categories.archive": "停用报销分类",
+  "invoices.profile.save": "保存开票资料",
+  "invoices.toggle": "切换要不要开票",
+  "invoices.update": "更新开票状态",
+};
+export const auditActionText = (r: AuditRowLike) => {
+  const t = actionText(r);
+  return t === r.action ? EXTRA_ACTION_TEXT[r.action] ?? t : t;
+};
 export function auditView(rows: AuditRow[], person: (uid: string) => string, customer: (id: string) => string | undefined) {
   const n = { person, customer };
   return rows.map((r, i) => ({
     key: r.id || `${r.at}-${i}`,
+    // 网页用「—」占位；小程序里没有对象就不显示这一行
     at: bjShort(r.at),
     who: r.actorName || person(r.actorUid) || "不详",
-    action: actionText(r),
-    target: targetText(r, n),
+    action: auditActionText(r),
+    target: targetText(r, n) === "—" ? "" : targetText(r, n),
     diff: diffText(r, n).join("；"),
     result: r.result,
     resultText: r.result === "ok" ? "" : r.result === "denied" ? "被拒" : "失败",

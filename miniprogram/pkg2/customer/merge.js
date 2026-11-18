@@ -16,7 +16,10 @@ Page({
     return Promise.all([ui.call("customers.list", {}), ui.call("customers.suggestions", {}).catch(() => [])])
       .then(([list, groups]) => {
         this.list = list;
-        const self = list.find((c) => c.id === this.data.id);
+        // 打开的是已并入别人的名称时，转到它最终并入的那位客户
+        let self = list.find((c) => c.id === this.data.id);
+        for (let i = 0; self && self.mergedInto && i < 10; i++) self = list.find((c) => c.id === self.mergedInto) || self;
+        if (self && self.id !== this.data.id) this.setData({ id: self.id });
         this.groups = groups || [];
         this.setData({
           loading: false,

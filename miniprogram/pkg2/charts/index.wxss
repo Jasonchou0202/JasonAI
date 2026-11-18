@@ -1,6 +1,7 @@
 @import "../common.wxss";
 .line { width: 100%; height: 400rpx; }
-.readout .num { font-size: 32rpx; color: #B4532F; }
+.readout .num { font-size: 32rpx; color: #B4532F; margin-left: 10rpx; }
+.mx-hint { margin-top: 12rpx; }
 .legend { display: flex; flex-wrap: wrap; margin-top: 12rpx; }
 .lg { font-size: 22rpx; color: #4F4038; margin: 0 20rpx 8rpx 0; }
 .tm { position: relative; width: 100%; height: 360rpx; margin-top: 16rpx; border-radius: 16rpx; overflow: hidden; background: #FBF3E4; }
@@ -20,11 +21,9 @@
 .bar { height: 16rpx; background: #F4E6D4; border-radius: 8rpx; margin-top: 8rpx; overflow: hidden; }
 .bar-in { height: 100%; background: #D97757; border-radius: 8rpx; }
 .mx { display: flex; margin-top: 20rpx; }
-.mx-axis-y { width: 44rpx; display: flex; flex-direction: column; justify-content: space-around; font-size: 21rpx; color: #6B5A50; writing-mode: vertical-rl; align-items: center; }
 .mx-grid { flex: 1; display: flex; flex-wrap: wrap; }
 .mx-cell { width: calc(50% - 12rpx); margin: 6rpx; box-sizing: border-box; min-height: 220rpx; background: #fff; border-radius: 22rpx; padding: 20rpx; border: 3rpx dashed #F0DCC8; }
 .mx-cell.on { border-style: solid; }
 .mx-name { font-size: 23rpx; font-weight: 600; }
 .mx-count { font-size: 44rpx; font-weight: 700; margin-top: 8rpx; font-variant-numeric: tabular-nums; }
 .mx-todo { color: #6B5A50; font-size: 26rpx; margin-top: 40rpx; }
-.mx-axis-x { display: flex; justify-content: space-around; margin-left: 44rpx; font-size: 21rpx; color: #6B5A50; margin-top: 8rpx; }

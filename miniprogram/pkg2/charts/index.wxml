@@ -49,7 +49,6 @@
       <view class="h2">客户 × 产品矩阵</view>
       <view class="seg"><view class="it {{range === item.id ? 'on' : ''}}" wx:for="{{ranges}}" wx:key="id" data-id="{{item.id}}" bindtap="pickRange">{{item.label}}</view></view>
       <view class="mx">
-        <view class="mx-axis-y"><text>新客户</text><text>老客户</text></view>
         <view class="mx-grid">
           <view wx:for="{{matrix}}" wx:key="q" class="mx-cell {{item.on ? 'on' : ''}}" style="{{item.on ? 'border-color:' + item.color : ''}}">
             <view class="mx-name"><text class="dot" style="background:{{item.color}}"></text>{{item.label}}</view>
@@ -62,7 +61,7 @@
           </view>
         </view>
       </view>
-      <view class="mx-axis-x"><text>老产品</text><text>新产品</text></view>
+      <view class="sub-line mx-hint">上排新客户、下排老客户；左列老产品、右列新产品。笔数 = 该格销售笔数。</view>
     </view>
 
     <view class="sec" wx:if="{{shares.length}}">

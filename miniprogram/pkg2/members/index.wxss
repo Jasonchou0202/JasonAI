@@ -7,3 +7,4 @@
 .ms-active { background: #F4E6D4; color: #4F4038; }
 .ms-pending { background: #F9ECD6; color: #7A5320; }
 .ms-disabled { background: #F8DAD4; color: #9E2A1E; }
+.tag { margin-left: 12rpx; vertical-align: middle; }

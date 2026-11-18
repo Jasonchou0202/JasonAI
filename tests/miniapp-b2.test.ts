@@ -351,6 +351,10 @@ describe("分包共用计算 b2.js", () => {
   it("回收站和日志文案", () => {
     const rows = B.auditView([{ id: "a1", at: "2026-11-18T02:00:00.000Z", actorUid: "u1", action: "sales.create", result: "denied", targetType: "sales", targetId: "s1" } as any], () => "甲", () => undefined);
     expect(rows[0]).toMatchObject({ who: "甲", resultText: "被拒", at: expect.stringContaining("10:00") });
+    // 网页还没收录的报销、开票动作也有中文
+    expect(B.auditActionText({ action: "expenses.delete" } as any)).toBe("删除报销");
+    expect(B.auditActionText({ action: "invoices.update" } as any)).toBe("更新开票状态");
+    expect(B.auditActionText({ action: "made.up" } as any)).toBe("made.up");
   });
 });
 

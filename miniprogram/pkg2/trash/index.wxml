@@ -21,7 +21,7 @@
     <view class="pager" wx:if="{{kind === 'sales' && total > 30}}">
       <view class="mini plain" wx:if="{{page > 1}}" data-d="-1" bindtap="turn">上一页</view>
       <text class="small muted">第 {{page}} 页 · 共 {{total}} 条</text>
-      <view class="mini plain" wx:if="{{page * 30 < total}}" data-d="1" bindtap="turn">下一页</view>
+      <view class="mini plain" wx:if="{{total > page * 30}}" data-d="1" bindtap="turn">下一页</view>
     </view>
   </view>
 </view>
