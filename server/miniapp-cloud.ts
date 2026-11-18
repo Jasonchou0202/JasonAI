@@ -16,6 +16,11 @@ import { handleMiniapp, miniappConfigFromEnv } from "./miniapp/gate";
 import { cloudAvatarStorage, cloudReceiptStorage } from "./miniapp/cloud-storage";
 import type { PlatformIdentity } from "./miniapp/source";
 import type { MiniStore } from "./miniapp/types";
+import { batch3ConfigFromEnv, fetchCdnText } from "./miniapp/batch3";
+import { boardSummary } from "./miniapp/board";
+import { handleContent } from "./content/handler";
+import { contentOnly } from "./content/guard";
+import { ContentCloudStore } from "./content/cloud-store";
 
 const sha256 = async (value: string) => createHash("sha256").update(value).digest("hex");
 
@@ -70,6 +75,17 @@ export async function main(event: unknown, context: any) {
           undefined,
           team,
         ),
+      // 第 3 批：账本设置大数据搬运、内容录入（同一套 content 逻辑，content 函数不动）、看板只读、订阅消息额度
+      batch3: {
+        config: batch3ConfigFromEnv(process.env),
+        now,
+        business: (bound, e) =>
+          handle(() => new CloudStore(app.database()), { uid: bound, ownerUid, hash: sha256 }, e, (code) => console.warn("miniapp request failed", code), undefined, team),
+        content: (bound, e) =>
+          handleContent(() => contentOnly(new ContentCloudStore(app.database())), { uid: bound, ownerUid, hash: sha256 }, e, (code) => console.warn("miniapp content failed", code)),
+        board: () => boardSummary(),
+        fetchText: fetchCdnText,
+      },
       audit: (note) => appendOnly(store() as unknown as Store, now, warn).append(note),
       diagnose: warn,
     },

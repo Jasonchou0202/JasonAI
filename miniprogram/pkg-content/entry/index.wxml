@@ -1,0 +1,44 @@
+<privacy-popup />
+<view class="page">
+  <view class="hero">
+    <view class="hero-title">今日获客录入</view>
+    <view class="hero-sub">和网页「内容生产」同一份数据：每天一条，记微信新增好友，以及他们分别从哪个平台来。</view>
+    <view class="pill gray">只有管理员能看到</view>
+  </view>
+
+  <view class="panel">
+    <view class="field">
+      <view class="field-label">日期（北京时间）</view>
+      <picker mode="date" value="{{date}}" end="{{today}}" bindchange="onDate"><view class="input">{{date}}{{date === today ? '（今天）' : ''}}</view></picker>
+    </view>
+    <view class="field">
+      <view class="field-label">微信新增好友</view>
+      <input class="input" type="number" maxlength="6" value="{{wechat}}" data-key="wechat" bindinput="onNum" placeholder="0" />
+    </view>
+    <view class="grid2">
+      <view class="field" wx:for="{{sources}}" wx:key="*this">
+        <view class="field-label">来自{{item}}</view>
+        <input class="input" type="number" maxlength="6" value="{{leads[item]}}" data-src="{{item}}" bindinput="onLead" placeholder="0" />
+      </view>
+    </view>
+    <view class="note {{sum === wechatNum ? '' : 'danger-text'}}">四个来源合计 {{sum}} 人{{sum === wechatNum ? '，和新增好友对得上' : '，要等于新增好友 ' + wechatNum + ' 人'}}</view>
+    <view class="field">
+      <view class="field-label">备注（{{note.length}}/60）</view>
+      <input class="input" maxlength="60" value="{{note}}" bindinput="onNote" placeholder="只写来源情况，不写人名、微信号、手机号" />
+    </view>
+    <view class="note" wx:if="{{revision}}">这一天已经录过（第 {{revision}} 版），保存会覆盖成新的数字。</view>
+    <button class="primary" disabled="{{busy}}" bindtap="save">{{busy ? '正在保存…' : revision ? '保存修改' : '保存'}}</button>
+    <view class="ok" wx:if="{{ok}}">{{ok}}</view>
+    <view class="err" wx:if="{{error}}">{{error}}</view>
+  </view>
+
+  <view class="section-title">最近 7 天</view>
+  <view class="group">
+    <view class="row plain" wx:for="{{recent}}" wx:key="date" bindtap="pickDay" data-date="{{item.date}}" hover-class="row-hover">
+      <view class="row-main"><view class="row-title">{{item.date}}</view><view class="row-desc">{{item.detail}}</view></view>
+      <view class="row-value">+{{item.wechat_adds}}</view>
+      <text class="chev">›</text>
+    </view>
+    <view class="row plain" wx:if="{{!recent.length}}"><view class="row-desc">最近 7 天还没有录入</view></view>
+  </view>
+</view>

@@ -175,3 +175,5 @@ await writeFile(
     ),
   }),
 );
+// 小程序第 3 批：reminders 小程序版入口 + 小程序分包库（独立脚本，原有各包不受影响）
+await import("./build-miniapp-b3.mjs");
