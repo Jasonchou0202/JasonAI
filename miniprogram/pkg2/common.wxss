@@ -39,7 +39,7 @@ page { background: #FBF3E4; color: #2B211C; font-size: 28rpx; line-height: 1.5; 
 .field { margin-top: 24rpx; }
 .label { font-size: 24rpx; color: #6B5A50; margin-bottom: 10rpx; }
 .input { background: #fff; border-radius: 20rpx; padding: 22rpx 24rpx; font-size: 30rpx; box-shadow: inset 0 0 0 1rpx #F0DCC8; min-height: 44rpx; }
-.textarea { background: #fff; border-radius: 20rpx; padding: 22rpx 24rpx; font-size: 28rpx; box-shadow: inset 0 0 0 1rpx #F0DCC8; width: auto; min-height: 160rpx; }
+.textarea { background: #fff; border-radius: 20rpx; padding: 22rpx 24rpx; font-size: 28rpx; box-shadow: inset 0 0 0 1rpx #F0DCC8; width: 100%; box-sizing: border-box; min-height: 160rpx; }
 .error { color: #9E2A1E; font-size: 25rpx; margin-top: 16rpx; background: #FBEDEA; border-radius: 16rpx; padding: 16rpx 20rpx; }
 .note { font-size: 24rpx; color: #6B5A50; background: #F4E6D4; border-radius: 16rpx; padding: 16rpx 20rpx; margin-top: 16rpx; line-height: 1.6; }
 .empty { text-align: center; color: #6B5A50; padding: 60rpx 0; font-size: 26rpx; }
