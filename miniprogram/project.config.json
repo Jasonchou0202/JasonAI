@@ -1,0 +1,16 @@
+{
+  "description": "生意手账小程序（第 1 批骨架）。AppID 只填在本机 project.private.config.json，不进仓库。",
+  "appid": "REPLACE_WITH_APPID",
+  "projectname": "shouzhang-miniapp",
+  "compileType": "miniprogram",
+  "miniprogramRoot": "./",
+  "libVersion": "3.6.0",
+  "setting": {
+    "es6": true,
+    "enhance": true,
+    "minified": true,
+    "postcss": true,
+    "urlCheck": true
+  },
+  "packOptions": { "ignore": [{ "type": "file", "value": "README.md" }, { "type": "file", "value": "config.example.js" }] }
+}

@@ -223,7 +223,7 @@ describe("源码隔离", () => {
 });
 
 describe("销售那边一个字节都不变", () => {
-  it("数据库规则清单：原有 7 条原样不动，只在末尾追加 3 条 content_ 规则、同步日志 taskSyncLog 和团队 members/invites/audit_logs/redeem_attempts、开票 invoices", () => {
+  it("数据库规则清单：原有 7 条原样不动，只在末尾追加 3 条 content_ 规则、同步日志 taskSyncLog 和团队 members/invites/audit_logs/redeem_attempts、开票 invoices、小程序 5 个 miniapp_ 集合", () => {
     const lines = readFileSync("database.rules.json", "utf8").split("\n");
     expect(lines.slice(0, 8)).toEqual([
       "{",
@@ -250,6 +250,12 @@ describe("销售那边一个字节都不变", () => {
       "redeem_attempts",
       // 普票开票（同样全关，只能经云函数访问）
       "invoices",
+      // 小程序 miniapp 函数的 5 个新集合（同样全关，只能经云函数访问）
+      "miniapp_bindings",
+      "miniapp_bind_codes",
+      "miniapp_applications",
+      "miniapp_attempts",
+      "miniapp_subs",
     ]);
     for (const v of Object.values(rules))
       expect(v).toEqual({ read: false, write: false });

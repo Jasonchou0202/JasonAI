@@ -28,6 +28,7 @@ import { CatalogSettings } from "./CatalogSettings";
 import { groupProducts } from "../domain/catalog";
 import { ProductEditor } from "./ProductEditor";
 import { ExpenseCategorySettings } from "./ExpenseCategorySettings";
+import { MiniappBindSettings } from "./MiniappBindSettings";
 type CommitResult = {
   count: number;
   repeated?: boolean;
@@ -185,6 +186,7 @@ export function Settings({
           个人私密账本
         </span>
       </div>
+      <MiniappBindSettings />
       <PushSettings api={api} demo={demo} />
       <CatalogSettings
         api={api}

@@ -27,6 +27,12 @@ output/playwright/
 cloudfunctions/content/index.js
 cloudfunctions/content/node_modules/
 cloudfunctions/content/package-lock.json
+cloudfunctions/miniapp/index.js
+cloudfunctions/miniapp/node_modules/
+cloudfunctions/miniapp/package-lock.json
+# 小程序本机配置（环境 ID、AppID 只放本机，仓库只留 example）
+miniprogram/config.js
+miniprogram/project.private.config.json
 __pycache__/
 
 # 日程归属开发期：本机评审材料和真人头像一律不进仓库（仓库公开）

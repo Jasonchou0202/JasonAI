@@ -5,6 +5,8 @@ import { ErrorNote, Loading, message, useQuery } from "./ui";
 import "../team.css";
 import { MemberAvatar, useDirectory, zhDateText } from "../lib/members-ui";
 import { AvatarEditor } from "./MemberProfile";
+import { MiniappApplications } from "./MiniappApplications";
+import { isMiniappMember } from "../lib/miniapp-api";
 
 interface Member {
   uid: string;
@@ -12,6 +14,7 @@ interface Member {
   status: "pending" | "active" | "disabled";
   createdAt: string;
   color?: string;
+  inviteId?: string;
 }
 interface Invite {
   id: string;
@@ -106,6 +109,7 @@ export function Members({ api }: { api: Api }) {
         )}
         {note && <ErrorNote>{note}</ErrorNote>}
       </section>
+      <MiniappApplications />
       <section className="panel team-panel">
         <h2>成员</h2>
         {loading && <Loading />}
@@ -176,7 +180,10 @@ export function Members({ api }: { api: Api }) {
                       )}
                     </td>
                   )}
-                  <td>{m.name}</td>
+                  <td>
+                    {m.name}
+                    {isMiniappMember(m) && <span className="miniapp-pill">小程序</span>}
+                  </td>
                   <td>
                     <span className={`team-status ${m.status}`}>{STATUS[m.status]}</span>
                   </td>

@@ -1,0 +1,8 @@
+<view class="wrap">
+  <view class="title">生意手账</view>
+  <view class="hint" wx:if="{{loading}}">正在确认身份…</view>
+  <view wx:else>
+    <view class="error">{{error}}</view>
+    <button class="btn" bindtap="route">重试</button>
+  </view>
+</view>

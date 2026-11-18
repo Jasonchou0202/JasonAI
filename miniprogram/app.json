@@ -1,0 +1,19 @@
+{
+  "pages": [
+    "pages/gate/index",
+    "pages/apply/index",
+    "pages/redeem/index",
+    "pages/home/index",
+    "pages/denied/index"
+  ],
+  "window": {
+    "navigationBarTitleText": "生意手账",
+    "navigationBarBackgroundColor": "#FAF7F4",
+    "navigationBarTextStyle": "black",
+    "backgroundColor": "#FAF7F4"
+  },
+  "__usePrivacyCheck__": true,
+  "usingComponents": { "privacy-popup": "/components/privacy/index" },
+  "style": "v2",
+  "sitemapLocation": "sitemap.json"
+}

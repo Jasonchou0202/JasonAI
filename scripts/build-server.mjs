@@ -137,3 +137,41 @@ await writeFile(
     ),
   }),
 );
+// 小程序 miniapp 云函数（第 1 批）：独立入口、独立打包；sales / reminders / sales-stats 的包不受影响
+await mkdir("cloudfunctions/miniapp", { recursive: true });
+await build({
+  entryPoints: ["server/miniapp-cloud.ts"],
+  outfile: "cloudfunctions/miniapp/index.js",
+  bundle: true,
+  platform: "node",
+  format: "cjs",
+  target: "node18",
+  sourcemap: false,
+  logLevel: "info",
+  alias: {
+    "lodash.set": resolve("vendor/lodash-set/index.cjs"),
+    "lodash.unset": resolve("vendor/lodash-unset/index.cjs"),
+  },
+});
+await writeFile(
+  "cloudfunctions/miniapp/package.json",
+  JSON.stringify(
+    {
+      name: "zhangyuge-miniapp-function",
+      version: "1.0.0",
+      private: true,
+      main: "index.js",
+    },
+    null,
+    2,
+  ) + "\n",
+);
+await writeFile(
+  "artifacts/customer-miniapp-function.zip",
+  zipSync({
+    "index.js": new Uint8Array(await readFile("cloudfunctions/miniapp/index.js")),
+    "package.json": new Uint8Array(
+      await readFile("cloudfunctions/miniapp/package.json"),
+    ),
+  }),
+);

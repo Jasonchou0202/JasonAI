@@ -14,5 +14,10 @@
   "invites": { "read": false, "write": false },
   "audit_logs": { "read": false, "write": false },
   "redeem_attempts": { "read": false, "write": false },
-  "invoices": { "read": false, "write": false }
+  "invoices": { "read": false, "write": false },
+  "miniapp_bindings": { "read": false, "write": false },
+  "miniapp_bind_codes": { "read": false, "write": false },
+  "miniapp_applications": { "read": false, "write": false },
+  "miniapp_attempts": { "read": false, "write": false },
+  "miniapp_subs": { "read": false, "write": false }
 }

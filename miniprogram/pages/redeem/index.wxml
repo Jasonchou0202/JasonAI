@@ -1,0 +1,9 @@
+<view class="wrap">
+  <view class="title">输入绑定码</view>
+  <view class="hint">在网页「账本设置 → 绑定小程序」生成，10 分钟内有效，只能用一次。</view>
+  <view class="card">
+    <input class="input" maxlength="9" placeholder="8 位绑定码" value="{{code}}" bindinput="onCode" />
+    <view class="error" wx:if="{{error}}">{{error}}</view>
+    <button class="btn" disabled="{{busy}}" bindtap="submit">绑定</button>
+  </view>
+</view>
