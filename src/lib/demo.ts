@@ -9,6 +9,7 @@ import { MemoryAvatarStorage } from "../../server/avatar";
 import { customerId } from "../domain/customers";
 import type { CustomerTask } from "../domain/model";
 import { seedExpenseDemo, expenseDemoTeam, EXPENSE_DEMO_PARTNER } from "./expense-demo";
+import { demoMiniappPreview } from "./miniapp-demo";
 export async function sha256(value: string | ArrayBuffer): Promise<string> {
   const buffer =
     typeof value === "string" ? new TextEncoder().encode(value) : value;
@@ -20,6 +21,8 @@ const key = "zhangyuge-demo-v1";
 /** 演示「团队预览」：sessionStorage 里 zhangyuge-demo-role 为 admin/member 时，演示账本走团队权限和操作日志 */
 export const DEMO_ROLE_KEY = "zhangyuge-demo-role";
 export function demoRole(): "admin" | "member" | null {
+  // 绑定小程序预览会把演示角色设成管理员，须在读角色之前生效
+  demoMiniappPreview();
   // 打开 …/JasonAI/?team-preview=admin（或 member）进入演示团队预览；默认演示不变
   const fromUrl = new URLSearchParams(location.search).get("team-preview");
   if (fromUrl === "admin" || fromUrl === "member") sessionStorage.setItem(DEMO_ROLE_KEY, fromUrl);
@@ -256,9 +259,16 @@ export function createDemo(role: "admin" | "member" | null = null): Api {
       if (roleNow) {
         if (!expensePreview && !store.data.members["demo-member"])
           store.data.members["demo-member"] = {
-            uid: "demo-member", name: "演示成员", status: "active", inviteId: "demo",
+            uid: "demo-member", name: demoMiniappPreview() ? "林小雅" : "演示成员", status: "active", inviteId: "demo",
             createdAt: "2026-11-12T00:00:00.000Z", updatedAt: "2026-11-12T00:00:00.000Z", revision: 1,
           };
+        if (demoMiniappPreview() && !store.data.members["wx_0123456789abcdef0123456789abcdef"])
+          store.data.members["wx_0123456789abcdef0123456789abcdef"] = {
+            uid: "wx_0123456789abcdef0123456789abcdef", name: "示例成员 · 阿远", status: "active", inviteId: "miniapp",
+            createdAt: "2026-11-06T00:00:00.000Z", updatedAt: "2026-11-06T00:00:00.000Z", revision: 1,
+          };
+        if (demoMiniappPreview() && store.data.members["demo-member"])
+          store.data.members["demo-member"] = { ...store.data.members["demo-member"], name: "林小雅" };
         if (ownerPreview && !store.data.members["demo-song"]) await seedOwnerPreview();
         const uid = roleNow === "member" ? (expensePreview ? EXPENSE_DEMO_PARTNER : "demo-member") : "demo";
         const team = expensePreview

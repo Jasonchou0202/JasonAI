@@ -37,6 +37,7 @@ import { EdgeFade } from "./components/EdgeFade";
 import type { Filters, Sale } from "./domain/model";
 import { cloudApi, configured, session, login, logout } from "./lib/cloud";
 import { createDemo, demoRole, DEMO_ROLE_KEY, demoExpensePreview } from "./lib/demo";
+import { demoMiniappPreview } from "./lib/miniapp-demo";
 import { LEGACY_ME, ME_AUTO_RETRY_MS, TeamProvider, visibleMe, whoAmI, type Me } from "./lib/team-ui";
 import { DirectoryProvider } from "./lib/members-ui";
 import { AvatarEditor, MeBadge } from "./components/MemberProfile";
@@ -303,8 +304,9 @@ export default function App() {
             sessionStorage.removeItem("zhangyuge-return-route");
           }
         } else if (alive) {
-          const preview = new URLSearchParams(location.search).get("expense-preview");
-          if (preview && preview !== "0") {
+          const q = new URLSearchParams(location.search);
+          const expense = q.get("expense-preview");
+          if ((expense && expense !== "0") || q.get("miniapp-preview") === "1") {
             sessionStorage.setItem("zhangyuge-demo", "true");
             setMode("demo");
           } else
