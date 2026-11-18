@@ -7,6 +7,7 @@
 import { colorKeyAt, isColorKey, type ColorKey } from "../../src/domain/members";
 import type { Member, TeamConfig } from "../team";
 import { resolveSource, SourceError, type PlatformIdentity } from "./source";
+import { EXTRA_ACTIONS, handleExtra, type FileFetcher } from "./extras";
 import {
   CODE_ALPHABET,
   LIMITS,
@@ -56,6 +57,8 @@ export interface MiniappDeps {
   /** AUDIT_ENABLED 开时写操作日志（不含手机号） */
   audit?: (note: AuditNote) => Promise<void>;
   diagnose?: (code: string) => void;
+  /** 第 2 批：凭证/附件的中转上传和分块下载 */
+  files?: FileFetcher;
 }
 
 export class MiniappError extends Error {
@@ -194,6 +197,11 @@ export async function handleMiniapp(deps: MiniappDeps, platform: PlatformIdentit
     if (action === "miniapp.owner.redeem") return { ok: true, data: await redeem(deps, store, who, payload) };
     if (who.role === "none") throw NO_ACCESS();
     if (action === "miniapp.bind.leave") return { ok: true, data: await leave(deps, store, who) };
+    // 第 2 批附加调用：先交给原来的 handle() 判权限，再做小程序需要的搬运（见 ./extras.ts）
+    if (EXTRA_ACTIONS.has(action) && (who.role === "owner" || who.role === "member")) {
+      await touch(deps, store, who);
+      return { ok: true, data: await handleExtra(deps, { role: who.role, uid: who.uid }, action, payload) };
+    }
     if (action.startsWith("miniapp.")) {
       if (who.role !== "owner" || !OWNER_MINIAPP_ACTIONS.has(action))
         throw deny(action === "miniapp.owner.code" ? "WEB_ONLY" : "ADMIN_ONLY", action === "miniapp.owner.code" ? "绑定码只能在网页上生成" : "这个操作只有管理员可以进行");

@@ -1,0 +1,22 @@
+@import "../common.wxss";
+.stats { display: flex; margin: 24rpx -8rpx 0; }
+.stat { flex: 1; margin: 0 8rpx; background: #fff; border-radius: 24rpx; padding: 22rpx 20rpx; }
+.stat .k { font-size: 22rpx; color: #6B5A50; }
+.stat .v { font-size: 34rpx; font-weight: 700; margin-top: 6rpx; font-variant-numeric: tabular-nums; }
+.stat .s { font-size: 21rpx; color: #6B5A50; margin-top: 4rpx; }
+.stat-pending .v { color: #9E2A1E; }
+.stat-issued .v { color: #1B6B40; }
+.stat-warn .v { color: #9E2A1E; }
+.center { justify-content: center; }
+.filter-scroll { white-space: nowrap; margin-top: 8rpx; }
+.filters { display: inline-flex; padding: 4rpx 0 12rpx; }
+.fchip { display: inline-block; font-size: 25rpx; padding: 12rpx 26rpx; border-radius: 999rpx; background: #fff; box-shadow: inset 0 0 0 1rpx #F0DCC8; margin-right: 12rpx; color: #4F4038; }
+.fchip.on { background: #2B211C; color: #fff; }
+.picker-line { margin-top: 8rpx; }
+.schip { font-size: 22rpx; padding: 6rpx 18rpx; border-radius: 999rpx; font-weight: 600; }
+.ink { color: #2B211C; }
+.prof { font-size: 23rpx; padding: 4rpx 14rpx; border-radius: 10rpx; line-height: 48rpx; }
+.prof.ok { background: #F4E6D4; color: #4F4038; }
+.prof.miss { background: #F8DAD4; color: #9E2A1E; }
+.grow { flex: 1; }
+.actions { align-items: center; }

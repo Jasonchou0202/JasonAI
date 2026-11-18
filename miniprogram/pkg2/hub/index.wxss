@@ -1,0 +1,5 @@
+@import "../common.wxss";
+.menu { padding: 0 28rpx; }
+.menu-item { display: flex; align-items: center; justify-content: space-between; padding: 28rpx 0; border-bottom: 1rpx solid #F6E9DA; }
+.menu-item:last-child { border-bottom: 0; }
+.chev { font-size: 44rpx; color: #C9B8AC; }

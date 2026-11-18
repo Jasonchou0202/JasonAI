@@ -1,0 +1,3 @@
+@import "../common.wxss";
+.add-row { display: flex; align-items: center; }
+.grow { flex: 1; margin-right: 16rpx; }

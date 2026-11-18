@@ -1,0 +1,12 @@
+@import "../common.wxss";
+.coral-t { color: #B4532F; }
+.group-label { font-size: 23rpx; color: #6B5A50; font-weight: 600; margin-top: 16rpx; }
+.more { margin-top: 20rpx; }
+.sp { margin-top: 24rpx; }
+.add-row { display: flex; align-items: center; margin-top: 8rpx; }
+.grow { flex: 1; margin-right: 16rpx; }
+.menu { padding: 0 28rpx; margin-top: 36rpx; }
+.menu-item { display: flex; justify-content: space-between; align-items: center; padding: 28rpx 0; border-bottom: 1rpx solid #F6E9DA; }
+.menu-item:last-child { border-bottom: 0; }
+.chev { font-size: 40rpx; color: #C9B8AC; }
+.chips .pill { margin: 0 10rpx 10rpx 0; }

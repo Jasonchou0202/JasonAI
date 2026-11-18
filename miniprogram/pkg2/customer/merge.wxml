@@ -1,0 +1,42 @@
+<view class="pg">
+  <view class="eyebrow">客户 · 管理员</view>
+  <view class="h1">名称合并</view>
+  <view class="lead">同一位客户用过的不同名字合成一个，统计只算一次。合并不改销售记录，随时可以拆开。</view>
+  <view class="loading" wx:if="{{loading}}">正在读取…</view>
+  <view class="error" wx:if="{{error}}">{{error}}</view>
+  <block wx:if="{{!loading}}">
+    <view class="sec">
+      <view class="h2">「{{name}}」已并入的名称</view>
+      <view class="card">
+        <view class="empty" wx:if="{{!merged.length}}">还没有并入别的名称。</view>
+        <view class="list-item row" wx:for="{{merged}}" wx:key="id">
+          <text>{{item.name}}</text>
+          <view class="mini danger" data-id="{{item.id}}" bindtap="split">拆开</view>
+        </view>
+      </view>
+    </view>
+    <view class="sec">
+      <view class="h2">把别的名称并进来</view>
+      <input class="input" placeholder="搜客户名" value="{{query}}" bindinput="onQuery" />
+      <view class="card">
+        <view class="empty" wx:if="{{!candidates.length}}">没有可合并的客户。</view>
+        <view class="list-item row" wx:for="{{candidates}}" wx:key="id">
+          <text>{{item.name}}</text>
+          <view class="mini" data-id="{{item.id}}" bindtap="absorb">并入</view>
+        </view>
+      </view>
+    </view>
+    <view class="sec" wx:if="{{groups.length}}">
+      <view class="h2">系统建议合并</view>
+      <view class="lead">名字只差符号、空格或大小写的，可能是同一位客户。</view>
+      <view class="card">
+        <view class="list-item" wx:for="{{groups}}" wx:key="id">
+          <view class="title-line">合成「{{item.target}}」</view>
+          <view class="sub-line">{{item.names}}</view>
+          <view class="sub-line">{{item.sub}}</view>
+          <view class="actions"><view class="mini dark" data-id="{{item.id}}" bindtap="mergeGroup">合并这组</view></view>
+        </view>
+      </view>
+    </view>
+  </block>
+</view>

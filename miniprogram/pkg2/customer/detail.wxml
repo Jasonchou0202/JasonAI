@@ -1,0 +1,77 @@
+<view class="pg">
+  <view class="eyebrow">客户</view>
+  <view class="h1">{{name || '客户详情'}}</view>
+  <view class="sub-line" wx:if="{{aliases.length}}">也叫：{{aliasText}}</view>
+  <view class="loading" wx:if="{{loading}}">正在读取…</view>
+  <view class="error" wx:if="{{error}}">{{error}}</view>
+  <block wx:if="{{v}}">
+    <view class="chips" wx:if="{{profile.occupation || profile.payment || profile.needs.length}}">
+      <text class="pill" wx:if="{{profile.occupation}}">{{profile.occupation}}</text>
+      <text class="pill" wx:if="{{profile.payment}}">{{profile.payment}}</text>
+      <text class="pill coral" wx:for="{{profile.needs}}" wx:key="*this">{{item}}</text>
+    </view>
+    <view class="seg">
+      <view class="it {{view === 'month' ? 'on' : ''}}" data-v="month" bindtap="pickView">按月</view>
+      <view class="it {{view === 'recent' ? 'on' : ''}}" data-v="recent" bindtap="pickView">近 3 个月</view>
+      <view class="it {{view === 'all' ? 'on' : ''}}" data-v="all" bindtap="pickView">全部</view>
+    </view>
+    <view class="month-nav" wx:if="{{view === 'month'}}">
+      <view class="arrow" bindtap="prev">‹</view><view class="m">{{monthText}}</view><view class="arrow" bindtap="next">›</view>
+    </view>
+    <view class="note" wx:if="{{hint}}">{{hint}}</view>
+    <view class="card">
+      <view class="small muted">{{v.period}}</view>
+      <view class="grid2">
+        <view class="cell"><view class="k">销售额</view><view class="v">{{v.totals.revenue}}</view></view>
+        <view class="cell"><view class="k">纯利</view><view class="v coral-t">{{v.totals.profit}}</view></view>
+        <view class="cell"><view class="k">出资</view><view class="v">{{v.totals.cost}}</view></view>
+        <view class="cell"><view class="k">笔数</view><view class="v">{{v.totals.count}}</view></view>
+      </view>
+      <block wx:if="{{v.products.length}}">
+        <view class="hr"></view>
+        <view class="small muted">买过的商品</view>
+        <view class="row" wx:for="{{v.products}}" wx:key="name"><text>{{item.name}} <text class="muted small">×{{item.count}}</text></text><text class="num">纯利 {{item.profit}}</text></view>
+      </block>
+    </view>
+    <view class="sec">
+      <view class="h2">成交记录</view>
+      <view class="card">
+        <view class="empty" wx:if="{{v.empty}}">这个范围里没有成交。</view>
+        <block wx:for="{{v.groups}}" wx:for-item="g" wx:key="month">
+          <view class="group-label">{{g.label}}</view>
+          <view class="list-item" wx:for="{{g.items}}" wx:key="id">
+            <view class="row"><text class="title-line">{{item.product}}</text><text class="num">{{item.revenue}}</text></view>
+            <view class="sub-line">{{item.date}} · 纯利 {{item.profit}}{{item.note ? ' · ' + item.note : ''}}</view>
+          </view>
+        </block>
+        <view class="mini plain more" wx:if="{{v.remaining}}" bindtap="more">再看 {{v.remaining > 20 ? 20 : v.remaining}} 笔（还有 {{v.remaining}} 笔）</view>
+      </view>
+    </view>
+    <view class="sec">
+      <view class="row"><view class="h2">客户信息和需求</view><view class="mini" wx:if="{{!editing}}" bindtap="edit">编辑</view></view>
+      <view class="card" wx:if="{{!editing}}">
+        <view class="row"><text class="muted">职业</text><text>{{profile.occupation || '未填'}}</text></view>
+        <view class="row"><text class="muted">付款方式</text><text>{{profile.payment || '未填'}}</text></view>
+        <view class="row"><text class="muted">需求</text><text>{{needsText || '未填'}}</text></view>
+        <view class="note" wx:if="{{profile.needNote}}">{{profile.needNote}}</view>
+      </view>
+      <view class="card" wx:if="{{editing}}">
+        <view class="label">职业</view>
+        <view class="chips"><view class="chip {{form.occupation === item ? 'on' : ''}}" wx:for="{{options.occupations}}" wx:key="*this" data-v="{{item}}" bindtap="pickOcc">{{item}}</view></view>
+        <input class="input" placeholder="或自己填" maxlength="40" value="{{form.occupation}}" data-k="occupation" bindinput="fset" />
+        <view class="label sp">需求（可多选）</view>
+        <view class="chips"><view class="chip {{item.on ? 'on' : ''}}" wx:for="{{form.needs}}" wx:key="n" data-i="{{index}}" bindtap="toggleNeed">{{item.n}}</view></view>
+        <view class="add-row"><input class="input grow" placeholder="新增需求" maxlength="40" value="{{form.newNeed}}" data-k="newNeed" bindinput="fset" /><view class="mini dark" bindtap="addNeed">添加</view></view>
+        <view class="label sp">需求记录</view>
+        <textarea class="textarea" maxlength="2000" value="{{form.needNote}}" data-k="needNote" bindinput="fset"></textarea>
+        <view class="label sp">偏好付款方式</view>
+        <view class="chips"><view class="chip {{form.payment === item ? 'on' : ''}}" wx:for="{{options.payments}}" wx:key="*this" data-v="{{item}}" bindtap="pickPay">{{item}}</view></view>
+        <view class="actions"><view class="mini dark" bindtap="saveProfile">保存</view><view class="mini plain" bindtap="cancel">取消</view></view>
+      </view>
+    </view>
+    <view class="card menu">
+      <view class="menu-item" wx:if="{{invoices}}" bindtap="invoiceProfile"><text>开票信息</text><text class="chev">›</text></view>
+      <view class="menu-item" wx:if="{{admin}}" bindtap="merge"><text>名称合并 / 拆分</text><text class="chev">›</text></view>
+    </view>
+  </block>
+</view>

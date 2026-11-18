@@ -1,0 +1,19 @@
+<view class="pg">
+  <view class="eyebrow">生意手账</view>
+  <view class="h1">更多</view>
+  <view class="private">个人私密账本 · 只有授权的人能看</view>
+  <view class="loading" wx:if="{{loading}}">正在打开…</view>
+  <view class="error" wx:if="{{error}}">{{error}}</view>
+  <view class="sec" wx:for="{{groups}}" wx:for-item="g" wx:key="name">
+    <view class="label">{{g.name}}</view>
+    <view class="card menu">
+      <view class="menu-item" wx:for="{{g.items}}" wx:key="url" data-url="{{item.url}}" bindtap="open">
+        <view>
+          <view class="title-line">{{item.title}}</view>
+          <view class="sub-line">{{item.sub}}</view>
+        </view>
+        <text class="chev">›</text>
+      </view>
+    </view>
+  </view>
+</view>
