@@ -1,0 +1,103 @@
+<view class="pg">
+  <view class="eyebrow">报销记账</view>
+  <view class="h1">十天合账</view>
+  <view class="lead" wx:if="{{v}}">{{v.lead}}</view>
+  <view class="month-nav">
+    <view class="arrow" bindtap="prev">‹</view>
+    <view class="m">{{v ? v.title : ''}}</view>
+    <view class="arrow" bindtap="next">›</view>
+  </view>
+  <view class="btn" bindtap="add">＋ 记一笔报销</view>
+  <view class="loading" wx:if="{{loading}}">正在打开报销记账…</view>
+  <view class="error" wx:if="{{error}}">{{error}}</view>
+  <block wx:if="{{v}}">
+    <view class="card overview">
+      <view class="ov-row" wx:for="{{v.decades}}" wx:key="key">
+        <view class="row">
+          <view><text class="ov-label">{{item.label}}</text> <text class="pill {{item.phase}}">{{item.phaseText}}</text></view>
+          <text class="num {{item.upcoming ? 'muted' : ''}}">{{item.overviewProfit}}</text>
+        </view>
+        <view class="sub-line">{{item.ownerLine}} {{item.ownerAmount}} · {{item.partnerLine}} {{item.partnerAmount}}</view>
+        <view class="sub-line coral-t" wx:if="{{item.receiveLine}}">{{item.receiveLine}}</view>
+      </view>
+      <view class="ov-total" wx:if="{{v.posted}}">
+        <text>已出账合计</text>
+        <text class="num">实际利润 {{v.posted.profit}}</text>
+      </view>
+    </view>
+
+    <view class="card dec {{item.phase === 'current' ? 'hl' : ''}}" wx:for="{{v.decades}}" wx:key="key">
+      <view class="row">
+        <view>
+          <view class="h2">{{item.shortLabel}}</view>
+          <view class="sub-line">实际利润</view>
+        </view>
+        <text class="pill {{item.phase}}">{{item.phaseText}}</text>
+      </view>
+      <view class="big {{item.upcoming ? 'muted' : ''}}">{{item.profitText}}</view>
+      <view class="grid2">
+        <view class="cell" wx:for="{{item.grid}}" wx:for-item="g" wx:key="k">
+          <view class="k">{{g.k}}</view>
+          <view class="v">{{g.v}}</view>
+          <view class="k" wx:if="{{g.sub}}">{{g.sub}}</view>
+        </view>
+      </view>
+      <view class="hr"></view>
+      <view class="row small muted"><text>{{item.splitTitle}}</text></view>
+      <view class="row"><text>{{item.ownerLine}}</text><text class="num">{{item.ownerAmount}}</text></view>
+      <view class="row"><text>{{item.partnerLine}}</text><text class="num">{{item.partnerAmount}}</text></view>
+      <view class="hr"></view>
+      <view class="row small muted"><text>本段垫付</text></view>
+      <view class="row"><text>{{item.ownerAdvanceLine}}</text><text class="num">{{item.ownerAdvance}}</text></view>
+      <view class="row"><text>{{item.partnerAdvanceLine}}</text><text class="num">{{item.partnerAdvance}}</text></view>
+      <view class="note {{item.hintStrong ? 'strong' : ''}}">
+        <view wx:if="{{item.hintStrong}}" class="small coral-t">结算提示</view>
+        <view>{{item.hint}}</view>
+        <view class="small" wx:if="{{item.hintSmall}}">{{item.hintSmall}}</view>
+      </view>
+    </view>
+
+    <view class="card" wx:if="{{v.posted}}">
+      <view class="small muted">{{v.title}}{{v.posted.range ? ' · ' + v.posted.range : ''}}</view>
+      <view class="h2">已出账合计</view>
+      <view class="grid2">
+        <view class="cell" wx:for="{{v.posted.metrics}}" wx:key="k"><view class="k">{{item.k}}</view><view class="v">{{item.v}}</view></view>
+        <view class="cell"><view class="k">{{v.posted.splitTitle}}</view><view class="small num">{{v.posted.ownerSplit}}</view><view class="small num">{{v.posted.partnerSplit}}</view></view>
+      </view>
+      <view class="note strong"><view class="coral-t">{{v.posted.receive}}</view><view class="small">{{v.posted.receiveNote}}</view></view>
+    </view>
+
+    <view class="sec">
+      <view class="h2">利润对照</view>
+      <view class="lead">{{v.compareLead}}</view>
+      <view class="card">
+        <canvas type="2d" id="compare" class="compare"></canvas>
+        <view class="legend"><text><text class="dot" style="background:#E8C4B6"></text>只算销售的利润</text><text><text class="dot" style="background:#D97757"></text>扣成本后的实际利润</text></view>
+        <view class="sub-line">{{v.compareNote}}</view>
+      </view>
+    </view>
+
+    <view class="sec">
+      <view class="row">
+        <view class="h2">本月报销明细</view>
+        <view class="mini" wx:if="{{v.pendingCount}}" bindtap="pending">待你确认 {{v.pendingCount}} 笔</view>
+      </view>
+      <view class="lead">{{v.detailLead}}</view>
+      <view class="card">
+        <view class="empty" wx:if="{{!v.details.length}}">这个月还没有报销记录。</view>
+        <view class="list-item" wx:for="{{v.details}}" wx:key="id">
+          <view class="row"><text class="title-line">{{item.category}}</text><text class="num">{{item.amount}}</text></view>
+          <view class="sub-line">{{item.date}} · {{item.payer}} · {{item.receipt}}</view>
+          <view class="note" wx:if="{{item.note}}">{{item.note}}</view>
+          <view class="actions">
+            <text class="st st-{{item.status}}">{{item.statusText}}</text>
+            <view class="mini plain" wx:if="{{item.receiptCount}}" data-id="{{item.id}}" data-n="{{item.receiptCount}}" bindtap="receipts">看凭证</view>
+            <view class="mini" wx:if="{{v.renewOn && item.renewable}}" data-id="{{item.id}}" bindtap="renew">续费提醒</view>
+            <text class="small muted renew-done" wx:if="{{v.renewOn && item.renewText}}">✓ {{item.renewText}}</text>
+          </view>
+        </view>
+      </view>
+    </view>
+    <view class="link-row" wx:if="{{admin}}" bindtap="categories">报销分类设置 ›</view>
+  </block>
+</view>

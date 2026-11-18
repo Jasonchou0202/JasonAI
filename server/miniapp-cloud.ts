@@ -16,6 +16,42 @@ import { handleMiniapp, miniappConfigFromEnv } from "./miniapp/gate";
 import { cloudAvatarStorage, cloudReceiptStorage } from "./miniapp/cloud-storage";
 import type { PlatformIdentity } from "./miniapp/source";
 import type { MiniStore } from "./miniapp/types";
+import { cdnHostsFromEnv, type FileFetcher } from "./miniapp/extras";
+
+/** 第 2 批：按字节区间取文件（临时链接或白名单 CDN 地址）；超过 max 立即停止读取 */
+const fileFetcher = (hosts: string[]): FileFetcher => ({
+  cdnHosts: hosts,
+  async fetch(url, { start, end, max }) {
+    const headers: Record<string, string> = {};
+    if (start !== undefined && end !== undefined) headers.range = `bytes=${start}-${end}`;
+    const res = await fetch(url, { headers, redirect: "error" });
+    if (!res.ok || !res.body) throw new Error("文件读取失败，请稍后重试");
+    const range = /\/(\d+)$/.exec(res.headers.get("content-range") || "");
+    const chunks: Uint8Array[] = [];
+    let n = 0;
+    const reader = res.body.getReader();
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      chunks.push(value);
+      n += value.length;
+      if (max !== undefined && n >= max) {
+        await reader.cancel();
+        break;
+      }
+    }
+    const all = new Uint8Array(n);
+    let at = 0;
+    for (const c of chunks) {
+      all.set(c, at);
+      at += c.length;
+    }
+    // 服务器不认 Range（回 200 整个文件）时在这里截取
+    const whole = res.status === 200 && start !== undefined && end !== undefined;
+    const bytes = whole ? all.subarray(start, end + 1) : all;
+    return { bytes, total: range ? Number(range[1]) : whole ? all.length : 0 };
+  },
+});
 
 const sha256 = async (value: string) => createHash("sha256").update(value).digest("hex");
 
@@ -72,6 +108,7 @@ export async function main(event: unknown, context: any) {
         ),
       audit: (note) => appendOnly(store() as unknown as Store, now, warn).append(note),
       diagnose: warn,
+      files: fileFetcher(cdnHostsFromEnv(process.env)),
     },
     platform,
     event,

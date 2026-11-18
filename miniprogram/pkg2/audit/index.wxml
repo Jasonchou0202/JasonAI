@@ -1,0 +1,23 @@
+<view class="pg">
+  <view class="eyebrow">只追加 · 不能修改或删除</view>
+  <view class="h1">{{admin ? '操作日志' : '我的操作记录'}}</view>
+  <view class="lead">{{admin ? '所有人的写操作和被拒的越权尝试，时间均为北京时间。' : '只显示你自己的操作，时间为北京时间。'}}</view>
+  <view class="chips">
+    <view class="chip {{range === item.id ? 'on' : ''}}" wx:for="{{ranges}}" wx:key="id" data-id="{{item.id}}" bindtap="pick">{{item.label}}</view>
+  </view>
+  <view class="error" wx:if="{{error}}">{{error}}</view>
+  <view class="loading" wx:if="{{loading}}">正在读取…</view>
+  <view class="card" wx:if="{{!loading}}">
+    <view class="empty" wx:if="{{!rows.length}}">这段时间没有记录。</view>
+    <view class="list-item" wx:for="{{rows}}" wx:key="key">
+      <view class="row">
+        <text class="title-line">{{item.action}}</text>
+        <text class="res res-{{item.result}}" wx:if="{{item.resultText}}">{{item.resultText}}</text>
+      </view>
+      <view class="sub-line">{{item.at}} · {{item.who}}{{item.via ? ' · ' + item.via : ''}}</view>
+      <view class="sub-line" wx:if="{{item.target}}">{{item.target}}</view>
+      <view class="diff" wx:if="{{item.diff}}">{{item.diff}}</view>
+    </view>
+    <view class="mini plain more" wx:if="{{next}}" bindtap="more">{{busy ? '正在读取…' : '再看 50 条'}}</view>
+  </view>
+</view>

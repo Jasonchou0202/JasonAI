@@ -13,7 +13,32 @@
     "backgroundColor": "#FAF7F4"
   },
   "__usePrivacyCheck__": true,
-  "usingComponents": { "privacy-popup": "/components/privacy/index" },
+  "usingComponents": {
+    "privacy-popup": "/components/privacy/index"
+  },
   "style": "v2",
-  "sitemapLocation": "sitemap.json"
+  "sitemapLocation": "sitemap.json",
+  "subpackages": [
+    {
+      "root": "pkg2",
+      "name": "b2",
+      "pages": [
+        "hub/index",
+        "expenses/index",
+        "expenses/form",
+        "expenses/pending",
+        "expenses/categories",
+        "invoices/index",
+        "invoices/edit",
+        "invoices/profile",
+        "customer/detail",
+        "customer/merge",
+        "trash/index",
+        "export/index",
+        "members/index",
+        "audit/index",
+        "charts/index"
+      ]
+    }
+  ]
 }

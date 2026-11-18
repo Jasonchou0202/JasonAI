@@ -1,0 +1,47 @@
+<view class="pg">
+  <view class="eyebrow">开票 · 增值税普通发票</view>
+  <view class="h1">开票</view>
+  <view class="lead">在销售明细里打开「需要开票」，这里跟进资料、开票和寄出。</view>
+  <view class="stats">
+    <view class="stat stat-{{item.tone}}" wx:for="{{stats}}" wx:key="k">
+      <view class="k">{{item.k}}</view>
+      <view class="v">{{item.v}}</view>
+      <view class="s">{{item.sub}}</view>
+    </view>
+  </view>
+  <view class="month-nav">
+    <view class="arrow" bindtap="prev">‹</view>
+    <view class="m">{{all ? '全部月份' : monthText}}</view>
+    <view class="arrow" bindtap="next">›</view>
+  </view>
+  <view class="chips center"><view class="chip {{all ? 'on' : ''}}" bindtap="toggleAll">{{all ? '只看本月' : '看全部月份'}}</view></view>
+  <scroll-view scroll-x class="filter-scroll">
+    <view class="filters">
+      <view wx:for="{{filters}}" wx:key="id" data-id="{{item.id}}" bindtap="pickStatus"
+        class="fchip {{status === item.id ? 'on' : ''}}"
+        style="{{status === item.id && colors[item.id] ? 'background:' + colors[item.id].bg + ';color:' + colors[item.id].fg + ';box-shadow:inset 0 0 0 1rpx ' + colors[item.id].line : (colors[item.id] ? 'color:' + colors[item.id].fg : '')}}">{{item.label}}</view>
+    </view>
+  </scroll-view>
+  <picker range="{{customers}}" range-key="name" value="{{customerIndex}}" bindchange="pickCustomer">
+    <view class="input picker-line">{{customers[customerIndex] ? customers[customerIndex].name : '全部客户'}} <text class="muted">▾</text></view>
+  </picker>
+  <view class="loading" wx:if="{{loading}}">正在读取…</view>
+  <view class="error" wx:if="{{error}}">{{error}}</view>
+  <view class="card" wx:if="{{!loading}}">
+    <view class="empty" wx:if="{{!rows.length}}">这个范围里没有开票记录。</view>
+    <view class="list-item" wx:for="{{rows}}" wx:key="id">
+      <view class="row">
+        <text class="title-line">{{item.customer}}</text>
+        <text class="schip" style="background:{{colors[item.status].bg}};color:{{colors[item.status].fg}}">{{item.statusText}}</text>
+      </view>
+      <view class="sub-line">{{item.product}} · {{item.saleDate}} · 开票 <text class="num ink">{{item.amount}}</text></view>
+      <view class="sub-line" wx:if="{{item.invoiceNo}}">发票号 {{item.invoiceNo}} · {{item.issuedOn}}{{item.sentTo ? ' · 寄至 ' + item.sentTo : ''}}</view>
+      <view class="actions">
+        <text class="prof {{item.profileComplete ? 'ok' : 'miss'}}" data-customer="{{item.customerId}}" bindtap="profile">{{item.profileText}}</text>
+        <text class="small muted" wx:if="{{item.files}}"> · 附件 {{item.files}}</text>
+        <view class="grow"></view>
+        <view class="mini" wx:if="{{!item.retired}}" data-sale="{{item.saleId}}" bindtap="edit">{{item.open ? '开票' : '改'}}</view>
+      </view>
+    </view>
+  </view>
+</view>

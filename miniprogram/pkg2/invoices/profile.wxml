@@ -1,0 +1,31 @@
+<view class="pg">
+  <view class="eyebrow">开票 · 客户资料</view>
+  <view class="h1">开票信息</view>
+  <view class="lead">{{name ? name + ' · ' : ''}}{{complete ? '资料齐' : '缺资料'}}{{open ? ' · 未开 ' + open + ' 笔' : ''}}</view>
+  <view class="loading" wx:if="{{loading}}">正在读取…</view>
+  <view class="card" wx:if="{{!loading}}">
+    <view class="seg">
+      <view class="it {{mode === 'text' ? 'on' : ''}}" data-m="text" bindtap="setMode">粘贴文字</view>
+      <view class="it {{mode === 'fields' ? 'on' : ''}}" data-m="fields" bindtap="setMode">逐项填写</view>
+    </view>
+    <view class="field" wx:if="{{mode === 'text'}}">
+      <textarea class="textarea tall" maxlength="2000" placeholder="把客户发来的开票资料整段粘贴进来" value="{{text}}" bindinput="onText"></textarea>
+    </view>
+    <block wx:if="{{mode === 'fields'}}">
+      <view class="field" wx:for="{{fields}}" wx:key="k">
+        <view class="label">{{item.label}}</view>
+        <input class="input" maxlength="120" value="{{item.v}}" data-i="{{index}}" bindinput="onField" />
+      </view>
+    </block>
+    <view class="field" wx:if="{{filesOn}}">
+      <view class="label">资料文件（PDF、Word、txt、PNG、JPG，≤4MB）</view>
+      <view class="file" wx:for="{{files}}" wx:key="fileID">
+        <view class="grow" data-i="{{index}}" bindtap="openFile"><view class="fname">{{item.name}}</view><view class="sub-line">{{item.sizeText}}{{item.fresh ? ' · 新上传' : ' · 点开预览'}}</view></view>
+        <text class="x" data-i="{{index}}" bindtap="removeFile">移除</text>
+      </view>
+      <view class="pick-row"><view class="mini" bindtap="addFiles">从聊天选文件</view></view>
+    </view>
+  </view>
+  <view class="error" wx:if="{{error}}">{{error}}</view>
+  <view class="btn {{busy ? 'dis' : ''}}" wx:if="{{!loading}}" bindtap="save">{{busy ? '正在保存…' : '保存开票信息'}}</view>
+</view>

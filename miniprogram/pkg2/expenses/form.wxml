@@ -1,0 +1,68 @@
+<view class="pg">
+  <view class="eyebrow">报销记账</view>
+  <view class="h1">记一笔报销</view>
+  <view class="lead">{{admin ? '记下后直接入账（待报销或已报销）。' : '提交后由管理员确认入账，确认前不计入合账。'}}</view>
+  <view class="loading" wx:if="{{loading}}">正在打开…</view>
+  <view class="card" wx:if="{{!loading}}">
+    <view class="field">
+      <view class="label">日期</view>
+      <picker mode="date" value="{{date}}" start="{{minDate}}" end="{{today}}" bindchange="onDate"><view class="input">{{date}}</view></picker>
+    </view>
+    <view class="field">
+      <view class="label">金额（元，整数）</view>
+      <input class="input" type="number" placeholder="例如 199" value="{{amount}}" bindinput="onAmount" />
+    </view>
+    <view class="field">
+      <view class="row"><view class="label">分类</view><text class="small coral" bindtap="toggleAdd">{{adding ? '取消' : '＋ 新分类'}}</text></view>
+      <view class="chips">
+        <view class="chip {{index === categoryIndex ? 'on' : ''}}" wx:for="{{categories}}" wx:key="id" data-i="{{index}}" bindtap="onCategory">{{item.name}}</view>
+      </view>
+      <view class="add-row" wx:if="{{adding}}">
+        <input class="input grow" placeholder="新分类名" maxlength="20" value="{{newCat}}" bindinput="onNewCat" />
+        <view class="mini dark" bindtap="addCategory">添加</view>
+      </view>
+    </view>
+    <view class="field">
+      <view class="label">谁出的钱</view>
+      <view class="seg">
+        <view class="it {{index === payerIndex ? 'on' : ''}}" wx:for="{{payers}}" wx:key="uid" data-i="{{index}}" bindtap="onPayer">{{item.name}}</view>
+      </view>
+    </view>
+    <view class="field" wx:if="{{!receiptsOn}}">
+      <view class="row"><text>有发票</text><switch checked="{{hasInvoice}}" color="#D97757" bindchange="onInvoice" /></view>
+    </view>
+    <view class="field" wx:if="{{receiptsOn}}">
+      <view class="label">凭证（最多 {{9}} 个，单个 ≤4MB）</view>
+      <view class="seg">
+        <view class="it {{index === kindIndex ? 'on' : ''}}" wx:for="{{kinds}}" wx:key="id" data-i="{{index}}" bindtap="onKind">{{item.label}}</view>
+      </view>
+      <view class="pick-row">
+        <view class="mini" bindtap="photo">拍照 / 相册</view>
+        <view class="mini plain" bindtap="chatFile">从聊天选文件</view>
+      </view>
+      <view class="file" wx:for="{{files}}" wx:key="key">
+        <image wx:if="{{item.image}}" class="thumb" src="{{item.path}}" mode="aspectFill"></image>
+        <view wx:else class="thumb doc">PDF</view>
+        <view class="grow">
+          <view class="fname">{{item.name}}</view>
+          <view class="sub-line">{{item.kindLabel}} · {{item.sizeText}}{{item.uploaded ? ' · 已上传' : ''}}</view>
+        </view>
+        <text class="x" data-key="{{item.key}}" bindtap="removeFile">移除</text>
+      </view>
+    </view>
+    <view class="field" wx:if="{{admin}}">
+      <view class="label">状态</view>
+      <view class="seg">
+        <view class="it {{status === 'pending_reimburse' ? 'on' : ''}}" data-s="pending_reimburse" bindtap="onStatus">待报销</view>
+        <view class="it {{status === 'reimbursed' ? 'on' : ''}}" data-s="reimbursed" bindtap="onStatus">已报销</view>
+      </view>
+    </view>
+    <view class="field">
+      <view class="label">备注</view>
+      <textarea class="textarea" maxlength="200" placeholder="可不填" value="{{note}}" bindinput="onNote"></textarea>
+    </view>
+  </view>
+  <view class="error" wx:if="{{error}}">{{error}}</view>
+  <view class="note" wx:if="{{progress}}">{{progress}}</view>
+  <view class="btn {{busy ? 'dis' : ''}}" bindtap="save">{{busy ? '正在保存…' : admin ? '记下这笔报销' : '提交，等待确认'}}</view>
+</view>

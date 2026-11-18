@@ -1,0 +1,7 @@
+@import "../common.wxss";
+.tall { min-height: 320rpx; }
+.file { display: flex; align-items: center; margin-top: 12rpx; background: #FBF3E4; border-radius: 20rpx; padding: 18rpx 20rpx; }
+.grow { flex: 1; min-width: 0; }
+.fname { font-size: 26rpx; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.x { color: #9E2A1E; font-size: 24rpx; margin-left: 16rpx; }
+.pick-row { display: flex; margin-top: 16rpx; }
