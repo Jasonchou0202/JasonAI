@@ -48,12 +48,12 @@ Page({
         return Promise.all([
           call("products.list"),
           call("customers").catch(() => []),
-          call("dashboard").catch(() => null),
+          call("export").catch(() => []),
           this.editId ? call("sales.get", { id: this.editId }) : Promise.resolve(null),
           payerOn ? call("expenses.meta").catch(() => null) : Promise.resolve(null),
         ]);
       })
-      .then(([products, customers, dash, edit, meta]) => {
+      .then(([products, customers, sales, edit, meta]) => {
         this.products = products || [];
         this.customers = customers || [];
         this.edit = edit;
@@ -70,7 +70,7 @@ Page({
           : null;
         this.setData({
           edit: edit ? { id: edit.id } : null,
-          quick: D.quickProducts(this.products, (dash && dash.products) || []).map((p) => ({ id: p.id, name: p.name })),
+          quick: D.quickProducts(sales || [], this.products, day).map((p) => ({ id: p.id, name: p.name })),
           productNames: this.picker.map((p) => (p.category ? p.category + " · " : "") + p.name),
           payer,
           error: "",

@@ -217,9 +217,14 @@ describe("记一笔", () => {
     const d = draftFromSale(sale("s1", "2026-11-01", 18050, 8000, { paidBy: "u2" }));
     expect(d).toMatchObject({ revenue: "180.50", cost: "80", date: "2026-11-01", dateTouched: true, paidBy: "u2" });
   });
-  it("快捷商品：本月利润高的排前面，停用/归档的不出现，最多 5 个", () => {
+  it("快捷商品与网页共用同一函数：近 3 个月利润高的排前面，停用/归档的不出现，最多 5 个", () => {
     const ps = [product("a", "A"), product("b", "B"), product("c", "C", { active: false }), product("d", "D"), product("e", "E"), product("f", "F"), product("g", "G", { archivedAt: "x" } as Partial<Product>)];
-    expect(quickProducts(ps, [{ name: "D" }, { name: "C" }]).map((p) => p.id)).toEqual(["d", "a", "b", "e", "f"]);
+    const sales = [
+      sale("s-d", "2026-10-01", 500, 0, { productId: "d", productName: "D" }),
+      sale("s-c", "2026-11-01", 800, 0, { productId: "c", productName: "C" }),
+      sale("s-a", "2026-09-01", 100, 0, { productId: "a", productName: "A" }),
+    ];
+    expect(quickProducts(sales, ps, "2026-11-18").map((p) => p.id)).toEqual(["d", "a", "b", "e", "f"]);
   });
   it("保存：金额按分；成员付款人只在开关开时带上", () => {
     const d = { ...freshDraft("2026-11-18"), productName: "Plus 会员", customer: "小林", revenue: "180", cost: "1,080", paidBy: "u2" };
