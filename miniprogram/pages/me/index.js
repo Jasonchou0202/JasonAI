@@ -1,4 +1,4 @@
-// 我的：身份、成员申请入口（只给管理员，带红点）、退出这个微信的绑定
+// 我的：身份、更多（报销/开票等）、账本设置、成员申请入口（只给管理员，带红点）、退出这个微信的绑定
 const { call } = require("../../utils/api");
 const session = require("../../utils/session");
 
@@ -22,6 +22,12 @@ Page({
       .catch((e) => {
         if (e.code !== "NOT_BOUND") this.setData({ error: e.message });
       });
+  },
+  hub() {
+    wx.navigateTo({ url: "/pkg2/hub/index" });
+  },
+  settings() {
+    wx.navigateTo({ url: "/pkg-settings/index/index" });
   },
   applications() {
     wx.navigateTo({ url: "/pages/applications/index" });

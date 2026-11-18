@@ -19,3 +19,4 @@
 .pager { font-size: 26rpx; color: #B4532F; }
 .pager.off { color: #D8CDC5; }
 .center { text-align: center; margin-top: 20rpx; }
+.link { color: #B4532F; }

@@ -378,15 +378,15 @@ function shell(isTab: boolean, path: string) {
 
 const chrome = document.createElement("style");
 chrome.textContent = `
-  html, body { margin: 0; background: #FAF7F4; -webkit-font-smoothing: antialiased; }
+  html, body { margin: 0; background: #FBF3E4; -webkit-font-smoothing: antialiased; }
   body { font-family: -apple-system, "PingFang SC", "Noto Sans CJK SC", "Noto Sans SC", "Helvetica Neue", sans-serif; }
   #phone { width: ${VW}px; height: 100vh; display: flex; flex-direction: column; position: relative; overflow: hidden; }
   body.long #phone { height: auto; overflow: visible; }
-  .mp-status { height: 47px; display: flex; align-items: flex-end; justify-content: space-between; padding: 0 28px 4px; font: 600 15px -apple-system, sans-serif; color: #000; background: #FAF7F4; box-sizing: border-box; }
+  .mp-status { height: 47px; display: flex; align-items: flex-end; justify-content: space-between; padding: 0 28px 4px; font: 600 15px -apple-system, sans-serif; color: #000; background: #FBF3E4; box-sizing: border-box; }
   .mp-status-r { display: flex; align-items: center; gap: 6px; padding-bottom: 3px; }
   .mp-status-r .sig { width: 17px; height: 11px; background: linear-gradient(90deg, #000 0 3px, transparent 3px 4.5px, #000 4.5px 7.5px, transparent 7.5px 9px, #000 9px 12px, transparent 12px 13.5px, #000 13.5px); clip-path: polygon(0 75%, 25% 75%, 25% 50%, 50% 50%, 50% 25%, 75% 25%, 75% 0, 100% 0, 100% 100%, 0 100%); }
   .mp-status-r .bat { width: 22px; height: 11px; border: 1px solid rgba(0,0,0,.4); border-radius: 3px; box-sizing: border-box; background: linear-gradient(90deg, #000 0 80%, transparent 80%); background-clip: content-box; padding: 1px; }
-  .mp-nav { height: 44px; display: flex; align-items: center; justify-content: center; position: relative; background: #FAF7F4; font: 600 17px -apple-system, "PingFang SC", sans-serif; color: #000; }
+  .mp-nav { height: 44px; display: flex; align-items: center; justify-content: center; position: relative; background: #FBF3E4; font: 600 17px -apple-system, "PingFang SC", sans-serif; color: #000; }
   .mp-capsule { position: absolute; right: 7px; top: 6px; width: 87px; height: 32px; border-radius: 16px; border: 0.5px solid rgba(0,0,0,.12); background: rgba(255,255,255,.6); display: flex; align-items: center; justify-content: space-around; font-style: normal; font-size: 13px; }
   .mp-capsule i { font-style: normal; } .mp-capsule b { width: 0.5px; height: 18px; background: rgba(0,0,0,.15); }
   #mp-body { flex: 1; overflow-y: auto; position: relative; transform: translateZ(0); color: #2B2522; font-size: ${30 * RPX}px; }

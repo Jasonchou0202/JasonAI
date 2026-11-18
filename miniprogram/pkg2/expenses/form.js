@@ -2,6 +2,7 @@
 // 草稿（不含凭证文件）存在本机缓存，提交成功后清掉；成员提交后是「待确认」，由管理员确认入账。
 const ui = require("../lib/ui");
 const b2 = require("../lib/b2");
+const draft = require("../../utils/draft");
 const DRAFT = "b2-expense-draft";
 Page({
   data: {
@@ -14,13 +15,13 @@ Page({
     const today = b2.today();
     this.requestId = b2.requestId();
     const kinds = b2.RECEIPT_KINDS.map((k) => ({ id: k, label: b2.RECEIPT_KIND_LABEL[k] }));
-    const draft = wx.getStorageSync(DRAFT) || {};
+    const draftData = draft.read(DRAFT) || {};
     this.setData({
       today, minDate: b2.EXPENSE_START_DATE, kinds,
-      date: draft.date && draft.date >= b2.EXPENSE_START_DATE ? draft.date : today < b2.EXPENSE_START_DATE ? b2.EXPENSE_START_DATE : today,
-      amount: draft.amount || "", note: draft.note || "", hasInvoice: !!draft.hasInvoice,
+      date: draftData.date && draftData.date >= b2.EXPENSE_START_DATE ? draftData.date : today < b2.EXPENSE_START_DATE ? b2.EXPENSE_START_DATE : today,
+      amount: draftData.amount || "", note: draftData.note || "", hasInvoice: !!draftData.hasInvoice,
     });
-    this.draftCategory = draft.categoryId || "";
+    this.draftCategory = draftData.categoryId || "";
     Promise.all([ui.me(), ui.call("expenses.meta")])
       .then(([me, meta]) => {
         const categories = b2.selectableCategories(meta.categories);
@@ -45,7 +46,7 @@ Page({
     if (this.saved) return;
     const d = this.data;
     const cat = d.categories[d.categoryIndex];
-    wx.setStorageSync(DRAFT, { date: d.date, amount: d.amount, note: d.note, hasInvoice: d.hasInvoice, categoryId: cat ? cat.id : "" });
+    draft.write(DRAFT, { date: d.date, amount: d.amount, note: d.note, hasInvoice: d.hasInvoice, categoryId: cat ? cat.id : "" });
   },
   onDate(e) { this.setData({ date: e.detail.value }); },
   onAmount(e) { this.setData({ amount: e.detail.value }); },
@@ -139,7 +140,7 @@ Page({
       this.setData({ progress: "" });
       if (!r) return;
       this.saved = true;
-      wx.removeStorageSync(DRAFT);
+      draft.remove(DRAFT);
       setTimeout(() => wx.navigateBack(), 600);
     });
   },

@@ -1,4 +1,5 @@
 // 销售明细：时间段、商品、搜索筛选，分页；成员只能改、删自己录入的（云端同样把关）
+// 客户名打开客户详情，开票入口带 saleId（开票开关开时才显示）
 // 删除后可在「已删除」里恢复；回收站的彻底删除只给管理员（第 2 批）
 const D = require("../../lib/domain");
 const { call } = require("../../utils/api");
@@ -29,6 +30,7 @@ Page({
     loading: true,
     error: "",
     showFilters: false,
+    invoices: false,
   },
   onLoad() {
     this.applyPreset("month", false);
@@ -65,15 +67,23 @@ Page({
       .load(force)
       .then((me) => {
         this.me = me;
-        return Promise.all([this.products ? Promise.resolve(this.products) : call("products.list"), call("sales.list", this.filters())]);
+        return Promise.all([
+          this.products ? Promise.resolve(this.products) : call("products.list"),
+          this.customers ? Promise.resolve(this.customers) : call("customers.list").catch(() => []),
+          call("sales.list", this.filters()),
+        ]);
       })
-      .then(([products, page]) => {
+      .then(([products, customers, page]) => {
         this.products = (products || []).filter((p) => !p.archivedAt);
+        this.customers = customers || [];
         const me = { role: this.me.role, uid: this.me.uid };
         this.setData({
           loading: false,
+          invoices: !!this.me.invoiceEnabled,
           productNames: ["全部商品"].concat(this.products.map((p) => p.name)),
-          rows: page.items.map((s) => D.saleRow(s, me)),
+          rows: page.items.map((s) =>
+            Object.assign(D.saleRow(s, me), { customerId: D.customerRootByName(this.customers, s.customer) || "" }),
+          ),
           totals: D.totalsText(page.totals),
           info: D.pageInfo(page.total, this.data.page),
         });
@@ -163,5 +173,13 @@ Page({
   },
   newSale() {
     wx.navigateTo({ url: "/pages/sale/index" });
+  },
+  openCustomer(e) {
+    const id = e.currentTarget.dataset.id;
+    if (id) wx.navigateTo({ url: "/pkg2/customer/detail?id=" + id });
+  },
+  openInvoice(e) {
+    const id = e.currentTarget.dataset.id;
+    if (id) wx.navigateTo({ url: "/pkg2/invoices/edit?saleId=" + id });
   },
 });

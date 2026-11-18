@@ -174,8 +174,8 @@ for (const s of SHOTS) {
     button { display: block; border: 0; font-family: inherit; line-height: 1.4; cursor: pointer; }
     button[disabled] { opacity: 1; }
     .wx-input { display: block; color: #1F1A17; } .wx-input .ph { color: #B9ABA1; }
-    .status { height: 47px; display: flex; justify-content: space-between; align-items: flex-end; padding: 0 30px 6px; font-size: 15px; font-weight: 600; background: #FAF7F4; }
-    .nav { height: 44px; display: flex; align-items: center; justify-content: center; font-size: 17px; font-weight: 600; background: #FAF7F4; position: relative; }
+    .status { height: 47px; display: flex; justify-content: space-between; align-items: flex-end; padding: 0 30px 6px; font-size: 15px; font-weight: 600; background: #FBF3E4; }
+    .nav { height: 44px; display: flex; align-items: center; justify-content: center; font-size: 17px; font-weight: 600; background: #FBF3E4; position: relative; }
     .nav .back { position: absolute; left: 14px; font-size: 26px; font-weight: 300; color: #1F1A17; }
     .nav .capsule { position: absolute; right: 8px; width: 87px; height: 32px; border-radius: 16px; border: 0.5px solid #E2D9D2; background: rgba(255,255,255,.7); }
     ${style}

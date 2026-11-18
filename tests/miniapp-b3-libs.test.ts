@@ -121,7 +121,8 @@ describe("示例数据分包库 demo-lib", () => {
 describe("小程序第 3 批页面：静态检查", () => {
   const root = "miniprogram";
   const app = JSON.parse(readFileSync(join(root, "app.json"), "utf8"));
-  const pages: string[] = (app.subpackages ?? []).flatMap((p: { root: string; pages: string[] }) => p.pages.map((x) => `${p.root}/${x}`));
+  const allPages: string[] = (app.subpackages ?? []).flatMap((p: { root: string; pages: string[] }) => p.pages.map((x) => `${p.root}/${x}`));
+  const pages = allPages.filter((p) => p.startsWith("pkg-settings/") || p.startsWith("pkg-content/") || p.startsWith("pkg-demo/"));
   it("分包里每个页面四件套齐全，样式都引同一份珊瑚橙样式", () => {
     expect(pages).toEqual(expect.arrayContaining(["pkg-settings/index/index", "pkg-settings/import/index", "pkg-settings/backup/index", "pkg-settings/notify/index", "pkg-settings/avatar/index", "pkg-content/entry/index", "pkg-content/board/index", "pkg-demo/index/index"]));
     for (const p of pages) {

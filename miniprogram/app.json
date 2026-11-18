@@ -27,9 +27,9 @@
   },
   "window": {
     "navigationBarTitleText": "生意手账",
-    "navigationBarBackgroundColor": "#FAF7F4",
+    "navigationBarBackgroundColor": "#FBF3E4",
     "navigationBarTextStyle": "black",
-    "backgroundColor": "#FAF7F4"
+    "backgroundColor": "#FBF3E4"
   },
   "__usePrivacyCheck__": true,
   "usingComponents": {

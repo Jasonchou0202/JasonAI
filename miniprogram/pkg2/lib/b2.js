@@ -115,50 +115,57 @@ __export(index_exports, {
 });
 module.exports = __toCommonJS(index_exports);
 
-// src/miniapp-b2/intl.ts
+// src/miniapp/safe-intl.ts
 var pad = (n) => String(n).padStart(2, "0");
 var FallbackDateTimeFormat = class {
-  constructor(_locale, opts = {}) {
+  constructor(locale, opts = {}) {
+    this.locale = locale;
     this.opts = opts;
   }
   format(date = /* @__PURE__ */ new Date()) {
     const t = typeof date === "number" ? date : date.getTime();
     const d = new Date(t + 8 * 36e5);
-    const day = [this.opts.year ? String(d.getUTCFullYear()) : "", this.opts.month ? pad(d.getUTCMonth() + 1) : "", this.opts.day ? pad(d.getUTCDate()) : ""].filter(Boolean);
+    const parts = [];
+    const day = [
+      this.opts.year ? String(d.getUTCFullYear()) : "",
+      this.opts.month ? pad(d.getUTCMonth() + 1) : "",
+      this.opts.day ? pad(d.getUTCDate()) : ""
+    ].filter(Boolean);
+    if (day.length) parts.push(day.join("-"));
     const time = [this.opts.hour ? pad(d.getUTCHours()) : "", this.opts.minute ? pad(d.getUTCMinutes()) : ""].filter(Boolean);
-    return [day.join("-"), time.join(":")].filter(Boolean).join(" ");
+    if (time.length) parts.push(time.join(":"));
+    return parts.join(" ");
   }
 };
 var FallbackNumberFormat = class {
-  constructor(_locale, _opts = {}) {
+  constructor(locale, opts = {}) {
+    this.locale = locale;
+    this.opts = opts;
   }
   format(value2) {
-    const n = Math.round(Math.abs(value2));
-    const s = String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-    return value2 < 0 && n ? "-" + s : s;
+    var _a;
+    const digits = (_a = this.opts.maximumFractionDigits) != null ? _a : 3;
+    const fixed = Math.abs(value2).toFixed(Math.min(digits, 20));
+    const [int, frac = ""] = fixed.split(".");
+    const trimmed = frac.replace(/0+$/, "");
+    const grouped = int.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+    const sign = value2 < 0 && Number(fixed) !== 0 ? "-" : "";
+    return sign + grouped + (trimmed ? "." + trimmed : "");
   }
 };
-function nativeOk() {
+function nativeIntlWorks(native2) {
   try {
-    const g = globalThis.Intl;
-    if (!g) return false;
-    const d = new g.DateTimeFormat("sv-SE", { timeZone: "Asia/Shanghai", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date(Date.UTC(2026, 0, 1, 20)));
-    const n = new g.NumberFormat("zh-CN", { maximumFractionDigits: 0 }).format(12345);
-    return d === "2026-01-02" && n === "12,345";
+    if (!native2) return false;
+    const probe = Date.UTC(2026, 0, 1, 20, 0, 0);
+    const day = new native2.DateTimeFormat("sv-SE", { timeZone: "Asia/Shanghai", year: "numeric", month: "2-digit", day: "2-digit" }).format(probe);
+    const num = new native2.NumberFormat("zh-CN", { maximumFractionDigits: 0 }).format(1234567);
+    return day === "2026-01-02" && num === "1,234,567";
   } catch (e) {
     return false;
   }
 }
-var OK = nativeOk();
-var native = globalThis.Intl;
-var SafeIntl = {
-  DateTimeFormat: function(locale, opts) {
-    return OK && native ? new native.DateTimeFormat(locale, opts) : new FallbackDateTimeFormat(locale, opts);
-  },
-  NumberFormat: function(locale, opts) {
-    return OK && native ? new native.NumberFormat(locale, opts) : new FallbackNumberFormat(locale, opts);
-  }
-};
+var native = typeof SafeIntl !== "undefined" ? SafeIntl : void 0;
+var SafeIntl = nativeIntlWorks(native) ? native : { DateTimeFormat: FallbackDateTimeFormat, NumberFormat: FallbackNumberFormat };
 
 // src/domain/dates.ts
 function today(now = /* @__PURE__ */ new Date()) {
@@ -546,7 +553,19 @@ var ACTIONS = {
   "members.color.fill": "给已有成员补色",
   "members.avatar.set": "换头像",
   "members.avatar.clear": "清除头像",
-  "audit.list": "查看操作日志"
+  "audit.list": "查看操作日志",
+  "expenses.create": "记一笔报销",
+  "expenses.update": "修改报销",
+  "expenses.delete": "删除报销",
+  "expenses.restore": "恢复报销",
+  "expenses.purge": "彻底删除报销",
+  "expenses.confirm": "确认报销",
+  "expenses.reject": "驳回报销",
+  "expenses.categories.create": "新增报销分类",
+  "expenses.categories.archive": "停用报销分类",
+  "invoices.profile.save": "保存开票资料",
+  "invoices.toggle": "切换要不要开票",
+  "invoices.update": "更新开票状态"
 };
 function actionText(r) {
   var _a, _b;

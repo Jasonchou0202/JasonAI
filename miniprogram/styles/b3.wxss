@@ -25,7 +25,7 @@
 .panel-desc { font-size: 26rpx; color: #7A6A5F; margin-top: 10rpx; line-height: 1.6; }
 .stats { display: flex; flex-wrap: wrap; margin: 20rpx -10rpx 0; }
 .stat { width: 50%; padding: 10rpx; box-sizing: border-box; }
-.stat-in { background: #FAF7F4; border-radius: 20rpx; padding: 22rpx 24rpx; }
+.stat-in { background: #FBF3E4; border-radius: 20rpx; padding: 22rpx 24rpx; }
 .stat-label { font-size: 22rpx; color: #8C7B70; }
 .stat-value { font-size: 40rpx; font-weight: 650; color: #1F1A17; margin-top: 6rpx; letter-spacing: -0.5rpx; }
 .stat-value.coral { color: #C2603E; }
@@ -40,7 +40,7 @@
 .progress { height: 12rpx; background: #F1E9E3; border-radius: 999rpx; margin-top: 24rpx; overflow: hidden; }
 .progress-bar { height: 100%; background: #D97757; border-radius: 999rpx; }
 .list-line { font-size: 24rpx; color: #7A6A5F; line-height: 1.7; }
-.demo-bar { background: #1F1A17; color: #FAF7F4; border-radius: 22rpx; padding: 20rpx 28rpx; font-size: 24rpx; margin-bottom: 8rpx; display: flex; justify-content: space-between; align-items: center; }
+.demo-bar { background: #1F1A17; color: #FBF3E4; border-radius: 22rpx; padding: 20rpx 28rpx; font-size: 24rpx; margin-bottom: 8rpx; display: flex; justify-content: space-between; align-items: center; }
 .demo-bar .exit { color: #F2B79F; }
 .field { margin-top: 26rpx; }
 .field-label { font-size: 24rpx; color: #8C7B70; margin-bottom: 10rpx; }

@@ -56,6 +56,18 @@ const ACTIONS: Record<string, string> = {
   "members.avatar.set": "换头像",
   "members.avatar.clear": "清除头像",
   "audit.list": "查看操作日志",
+  "expenses.create": "记一笔报销",
+  "expenses.update": "修改报销",
+  "expenses.delete": "删除报销",
+  "expenses.restore": "恢复报销",
+  "expenses.purge": "彻底删除报销",
+  "expenses.confirm": "确认报销",
+  "expenses.reject": "驳回报销",
+  "expenses.categories.create": "新增报销分类",
+  "expenses.categories.archive": "停用报销分类",
+  "invoices.profile.save": "保存开票资料",
+  "invoices.toggle": "切换要不要开票",
+  "invoices.update": "更新开票状态",
 };
 export function actionText(r: AuditRowLike) {
   if (r.action === "tasks.delete" && r.after?.othersRecord === true) return "删除日程（别人的）";
