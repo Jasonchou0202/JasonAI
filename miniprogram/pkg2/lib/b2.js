@@ -39,6 +39,10 @@ var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: tru
 var index_exports = {};
 __export(index_exports, {
   AUDIT_RANGES: () => AUDIT_RANGES,
+  CLAUDE_COMPUTERS: () => CLAUDE_COMPUTERS,
+  CLAUDE_NEED: () => CLAUDE_NEED,
+  CLAUDE_TYPES: () => CLAUDE_TYPES,
+  CLAUDE_USAGES: () => CLAUDE_USAGES,
   DECADE_SHARES_DESC: () => DECADE_SHARES_DESC,
   EXPENSE_START_DATE: () => EXPENSE_START_DATE,
   FIELD_KEYS: () => FIELD_KEYS,
@@ -65,6 +69,9 @@ __export(index_exports, {
   auditActionText: () => auditActionText,
   auditView: () => auditView,
   bjTime: () => bjTime,
+  blankClaudeAccount: () => blankClaudeAccount,
+  claudeAccountNo: () => claudeAccountNo,
+  claudeAccountSummary: () => claudeAccountSummary,
   compareBars: () => compareBars,
   customerDetailView: () => customerDetailView,
   decadeShareTitle: () => decadeShareTitle,
@@ -72,6 +79,7 @@ __export(index_exports, {
   defaultSalesView: () => defaultSalesView,
   deriveHasInvoice: () => deriveHasInvoice,
   displayCustomerName: () => displayCustomerName,
+  emptyClaudeAccount: () => emptyClaudeAccount,
   expensesView: () => expensesView,
   formatCnDate: () => formatCnDate,
   inSalesView: () => inSalesView,
@@ -92,6 +100,7 @@ __export(index_exports, {
   parseInvoiceAmount: () => parseInvoiceAmount,
   parseYuan: () => parseYuan,
   pendingRow: () => pendingRow,
+  profileClaudeView: () => profileClaudeView,
   profileOptions: () => profileOptions,
   quadMonthsView: () => quadMonthsView,
   receiptEntry: () => receiptEntry,
@@ -369,7 +378,20 @@ var OCCUPATION_PRESETS = [
   "打工人",
   "英语老师"
 ];
-var NEED_PRESETS = ["Claude 质保需求", "AI 视频生成", "Agent 学习", "Grok Bot"];
+var CLAUDE_NEED = "Claude 质保需求";
+var NEED_PRESETS = [CLAUDE_NEED, "AI 视频生成", "Agent 学习", "Grok Bot"];
+var CLAUDE_TYPES = ["Claude Max", "Claude Ultra"];
+var CLAUDE_USAGES = ["网页端", "终端"];
+var CLAUDE_COMPUTERS = ["Windows 电脑", "苹果电脑"];
+function blankClaudeAccount(a) {
+  var _a, _b;
+  return !a.type && !a.usage && !a.computer && !String((_a = a.email) != null ? _a : "").trim() && !String((_b = a.hubStudioPhone) != null ? _b : "").trim();
+}
+function claudeAccountSummary(a, index) {
+  var _a;
+  const no = (_a = "①②③④⑤⑥⑦⑧⑨⑩⑪⑫⑬⑭⑮⑯⑰⑱⑲⑳"[index]) != null ? _a : `${index + 1}.`;
+  return [`${no} ${a.type.replace(/^Claude /, "")}`, a.usage, a.computer, a.email, ...a.hubStudioPhone ? [`HubStudio ${a.hubStudioPhone}`] : []].join(" · ");
+}
 var label = (v, max = 40) => typeof v === "string" && v.trim() && v.trim().length <= max && !/[\u0000-\u001f]/.test(v);
 function mergeOptions(presets, ...more) {
   return [.../* @__PURE__ */ new Set([...presets, ...more.flat().filter((v) => label(v)).map((v) => v.trim())])];
@@ -923,6 +945,23 @@ function profileOptions(used) {
       return (_a = p.needs) != null ? _a : [];
     })),
     payments: [...PAYMENT_METHODS]
+  };
+}
+function emptyClaudeAccount() {
+  return { type: "", usage: "", computer: "", email: "", hubStudioPhone: "" };
+}
+function claudeAccountNo(index) {
+  var _a;
+  return (_a = "①②③④⑤⑥⑦⑧⑨⑩⑪⑫⑬⑭⑮⑯⑰⑱⑲⑳"[index]) != null ? _a : `${index + 1}.`;
+}
+function profileClaudeView(profile) {
+  var _a, _b;
+  const needs = (_a = profile == null ? void 0 : profile.needs) != null ? _a : [];
+  const accounts = needs.includes(CLAUDE_NEED) ? (_b = profile == null ? void 0 : profile.claudeAccounts) != null ? _b : [] : [];
+  return {
+    needsText: needs.join("、"),
+    showClaude: accounts.length > 0,
+    accountSummaries: accounts.map((a, i) => claudeAccountSummary(a, i))
   };
 }
 function trashSale(s) {

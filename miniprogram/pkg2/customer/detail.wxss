@@ -10,3 +10,18 @@
 .menu-item:last-child { border-bottom: 0; }
 .chev { font-size: 40rpx; color: #C9B8AC; }
 .chips .pill { margin: 0 10rpx 10rpx 0; }
+.need-block { margin-top: 12rpx; }
+.claude-view { margin-top: 16rpx; background: #F8EEE3; border-radius: 20rpx; padding: 16rpx 18rpx; }
+.claude-view-title { font-size: 23rpx; font-weight: 700; color: #4F4038; margin-bottom: 8rpx; }
+.claude-line { font-size: 24rpx; line-height: 1.55; background: #fff; border-radius: 12rpx; padding: 12rpx 14rpx; margin-top: 8rpx; border: 1rpx solid #F0DCC8; }
+.claude-box { margin-top: 20rpx; background: #F8EEE3; border-radius: 24rpx; padding: 20rpx 18rpx 16rpx; }
+.claude-box-title { font-size: 28rpx; font-weight: 700; margin-bottom: 16rpx; }
+.acct { background: #fff; border-radius: 20rpx; padding: 20rpx 18rpx; margin-bottom: 16rpx; border: 1rpx solid #F0DCC8; }
+.acct-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16rpx; }
+.acct-no { font-size: 26rpx; font-weight: 700; }
+.acct-del { font-size: 24rpx; color: #6B5A50; padding: 8rpx; }
+.seg.wrap { flex-wrap: wrap; }
+.seg.wrap .it { flex: 1 1 40%; min-width: 200rpx; box-sizing: border-box; }
+.sp2 { margin-top: 16rpx; }
+.add-acct { margin-top: 4rpx; text-align: center; font-size: 25rpx; font-weight: 600; color: #4F4038; border: 2rpx dashed #D4B89A; border-radius: 16rpx; padding: 16rpx; }
+.claude-hint { font-size: 22rpx; color: #6B5A50; margin-top: 16rpx; line-height: 1.55; }

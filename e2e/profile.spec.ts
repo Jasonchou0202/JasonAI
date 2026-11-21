@@ -25,7 +25,7 @@ for (const [label, size] of [["桌面", { width: 1366, height: 900 }], ["手机3
     await expect(chips.locator(".tier-badge")).toHaveText(/^P[0-4]$/);
     await expect(chips.locator(".quad-blocks i")).toHaveCount(4);
     await expect(chips).not.toContainText("客户产品矩阵");
-    await expect(page.getByRole("heading", { name: "客户信息收集和需求收集" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "客户信息和需求收集" })).toBeVisible();
     await expect(chips).not.toContainText("客户等级");
     await expect(chips.getByText("复购客户")).toHaveAttribute("title", /每个月都有付款/);
     await page.getByRole("button", { name: "编辑客户信息和需求" }).click();
@@ -63,3 +63,31 @@ for (const [label, size] of [["桌面", { width: 1366, height: 900 }], ["手机3
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   });
 }
+
+test("Claude 账号：勾选后展开、终端无手机号、保存后按条显示摘要", async ({ page }) => {
+  await page.setViewportSize({ width: 1366, height: 900 });
+  await open(page, "示例客户 · 小林");
+  await page.getByRole("button", { name: "编辑客户信息和需求" }).click();
+  const form = page.locator(".profile-form");
+  await form.getByLabel("Claude 质保需求").check();
+  await expect(form.getByText("Claude 账号", { exact: true })).toBeVisible();
+  await expect(form.getByRole("button", { name: "删除" })).toHaveCount(0);
+  await form.getByRole("button", { name: "Claude Max" }).click();
+  await form.getByRole("button", { name: "网页端" }).click();
+  await form.getByRole("button", { name: "Windows 电脑" }).click();
+  await form.getByLabel("第 1 个 Claude 注册邮箱").fill("example01@mail.com");
+  await form.getByLabel("第 1 个 HubStudio 注册手机号").fill("138****0001");
+  await form.getByRole("button", { name: "添加账号" }).click();
+  await expect(form.getByRole("button", { name: "删除" })).toHaveCount(2);
+  await form.locator(".acct").nth(1).getByRole("button", { name: "Claude Ultra" }).click();
+  await form.locator(".acct").nth(1).getByRole("button", { name: "终端" }).click();
+  await form.locator(".acct").nth(1).getByRole("button", { name: "苹果电脑" }).click();
+  await form.getByLabel("第 2 个 Claude 注册邮箱").fill("example02@mail.com");
+  await expect(form.getByLabel("第 2 个 HubStudio 注册手机号")).toHaveCount(0);
+  await expect(form.locator("input[type=password]")).toHaveCount(0);
+  await form.getByRole("button", { name: "保存客户信息和需求" }).click();
+  const view = page.locator(".profile-view");
+  await expect(view).toContainText("Claude 质保需求");
+  await expect(view).toContainText("① Max · 网页端 · Windows 电脑 · example01@mail.com · HubStudio 138****0001");
+  await expect(view).toContainText("② Ultra · 终端 · 苹果电脑 · example02@mail.com");
+});

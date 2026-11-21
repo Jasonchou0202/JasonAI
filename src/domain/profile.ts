@@ -5,19 +5,80 @@ export const OCCUPATION_PRESETS = [
   "律师", "大学体育老师", "心理咨询师", "在读博士生", "在读研究生",
   "大学老师", "自媒体创业者", "临床医生", "打工人", "英语老师",
 ];
-export const NEED_PRESETS = ["Claude 质保需求", "AI 视频生成", "Agent 学习", "Grok Bot"];
+export const CLAUDE_NEED = "Claude 质保需求";
+export const NEED_PRESETS = [CLAUDE_NEED, "AI 视频生成", "Agent 学习", "Grok Bot"];
+
+/** 勾选「Claude 质保需求」后记录的 Claude 账号：只记邮箱和手机号，不存任何密码 */
+export const CLAUDE_TYPES = ["Claude Max", "Claude Ultra"] as const;
+export const CLAUDE_USAGES = ["网页端", "终端"] as const;
+export const CLAUDE_COMPUTERS = ["Windows 电脑", "苹果电脑"] as const;
+export const CLAUDE_ACCOUNTS_MAX = 20;
+export interface ClaudeAccount {
+  type: (typeof CLAUDE_TYPES)[number];
+  usage: (typeof CLAUDE_USAGES)[number];
+  computer: (typeof CLAUDE_COMPUTERS)[number];
+  email: string;
+  /** 只有使用方式为「网页端」时才有 */
+  hubStudioPhone?: string;
+}
 
 export interface CustomerProfile {
   occupation?: string;
   needs?: string[];
   needNote?: string;
   payment?: PaymentMethod;
+  /** 只在需求含「Claude 质保需求」时保存；旧档案没有这个字段，无需迁移 */
+  claudeAccounts?: ClaudeAccount[];
+}
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+/** 手机号：允许 +、空格、短横线和打码星号；数字 4–15 位，总长 ≤ 24（国际号也能过） */
+export function validPhone(v: string) {
+  const t = v.trim();
+  const digits = t.replace(/\D/g, "").length;
+  return /^\+?[\d*][\d*\s-]*$/.test(t) && t.length <= 24 && digits >= 4 && digits <= 15 && t.replace(/[^\d*]/g, "").length >= 5;
+}
+export function validEmail(v: string) {
+  const t = v.trim();
+  return t.length <= 120 && EMAIL_RE.test(t);
+}
+/** 账号卡还一项都没填（视为「待补」，保存时跳过） */
+export function blankClaudeAccount(a: Partial<Record<keyof ClaudeAccount, unknown>>) {
+  return !a.type && !a.usage && !a.computer && !String(a.email ?? "").trim() && !String(a.hubStudioPhone ?? "").trim();
+}
+
+/** 校验 Claude 账号列表；只接受已知字段（password 等一律丢弃），选「终端」时不保存 HubStudio 手机号 */
+export function validateClaudeAccounts(raw: unknown): ClaudeAccount[] {
+  if (!Array.isArray(raw) || raw.length > CLAUDE_ACCOUNTS_MAX) throw new Error(`Claude 账号最多 ${CLAUDE_ACCOUNTS_MAX} 条`);
+  return raw.map((r, i) => {
+    const no = `第 ${i + 1} 个 Claude 账号`;
+    if (!r || typeof r !== "object" || Array.isArray(r)) throw new Error(`${no}格式无效`);
+    const a = r as Record<string, unknown>;
+    if (!CLAUDE_TYPES.includes(a.type as ClaudeAccount["type"])) throw new Error(`${no}：请选择账号类型（Claude Max / Claude Ultra）`);
+    if (!CLAUDE_USAGES.includes(a.usage as ClaudeAccount["usage"])) throw new Error(`${no}：请选择使用方式（网页端 / 终端）`);
+    if (!CLAUDE_COMPUTERS.includes(a.computer as ClaudeAccount["computer"])) throw new Error(`${no}：请选择 Claude 配置电脑类型`);
+    if (typeof a.email !== "string" || !a.email.trim()) throw new Error(`${no}：请填写 Claude 注册邮箱`);
+    if (!validEmail(a.email)) throw new Error(`${no}：Claude 注册邮箱格式不对`);
+    const out: ClaudeAccount = { type: a.type as ClaudeAccount["type"], usage: a.usage as ClaudeAccount["usage"], computer: a.computer as ClaudeAccount["computer"], email: a.email.trim() };
+    if (out.usage === "网页端") {
+      if (typeof a.hubStudioPhone !== "string" || !a.hubStudioPhone.trim()) throw new Error(`${no}：网页端需填写 HubStudio 注册手机号`);
+      if (!validPhone(a.hubStudioPhone)) throw new Error(`${no}：HubStudio 注册手机号格式不对`);
+      out.hubStudioPhone = a.hubStudioPhone.trim();
+    }
+    return out;
+  });
+}
+
+/** 查看态的一行摘要：① Max · 网页端 · Windows 电脑 · 邮箱 · HubStudio 手机号 */
+export function claudeAccountSummary(a: ClaudeAccount, index: number) {
+  const no = "①②③④⑤⑥⑦⑧⑨⑩⑪⑫⑬⑭⑮⑯⑰⑱⑲⑳"[index] ?? `${index + 1}.`;
+  return [`${no} ${a.type.replace(/^Claude /, "")}`, a.usage, a.computer, a.email, ...(a.hubStudioPhone ? [`HubStudio ${a.hubStudioPhone}`] : [])].join(" · ");
 }
 
 const label = (v: unknown, max = 40) =>
   typeof v === "string" && v.trim() && v.trim().length <= max && !/[\u0000-\u001f]/.test(v);
 
-/** 校验并规范化画像；只接受这几个字段，其余一律丢弃 */
+/** 校验并规范化画像；只接受这几个字段（含 Claude 账号），其余一律丢弃 */
 export function validateProfile(raw: unknown): CustomerProfile {
   if (!raw || typeof raw !== "object" || Array.isArray(raw)) throw new Error("客户信息格式无效");
   const p = raw as Record<string, unknown>;
@@ -41,6 +102,16 @@ export function validateProfile(raw: unknown): CustomerProfile {
   if (p.payment !== undefined && p.payment !== "") {
     if (!PAYMENT_METHODS.includes(p.payment as PaymentMethod)) throw new Error("付款方式无效");
     out.payment = p.payment as PaymentMethod;
+  }
+  // 没勾「Claude 质保需求」时不写入账号；空卡跳过；password 等未知字段在校验时丢弃
+  if (p.claudeAccounts !== undefined && out.needs?.includes(CLAUDE_NEED)) {
+    if (!Array.isArray(p.claudeAccounts) || p.claudeAccounts.length > CLAUDE_ACCOUNTS_MAX)
+      throw new Error(`Claude 账号最多 ${CLAUDE_ACCOUNTS_MAX} 条`);
+    for (const a of p.claudeAccounts)
+      if (!a || typeof a !== "object" || Array.isArray(a)) throw new Error("Claude 账号格式无效");
+    const filled = p.claudeAccounts.filter((a) => !blankClaudeAccount(a as Partial<Record<keyof ClaudeAccount, unknown>>));
+    const accounts = validateClaudeAccounts(filled);
+    if (accounts.length) out.claudeAccounts = accounts;
   }
   return out;
 }
@@ -100,7 +171,7 @@ export function needShares(profiles: readonly (CustomerProfile | undefined)[]) {
 
 /**
  * 客户合并时把来源客户的信息并入目标：需求取并集（最多 30 项）；目标已有的职业、付款方式保留，
- * 没有才用来源的；需求记录按「目标 —— 来源」顺序拼接（最多 2000 字）。
+ * 没有才用来源的（Claude 账号同理：目标已有就保留目标的）；需求记录按「目标 —— 来源」顺序拼接（最多 2000 字）。
  */
 export function mergeProfiles(target?: CustomerProfile, source?: CustomerProfile): CustomerProfile | undefined {
   if (!source) return target;
@@ -114,6 +185,14 @@ export function mergeProfiles(target?: CustomerProfile, source?: CustomerProfile
   if (notes.length) out.needNote = notes.join("\n——\n").slice(0, 2000);
   const payment = target.payment || source.payment;
   if (payment) out.payment = payment;
+  const accounts = target.claudeAccounts?.length ? target.claudeAccounts : source.claudeAccounts;
+  if (accounts?.length) {
+    out.claudeAccounts = accounts.map((a) => {
+      const x: ClaudeAccount = { type: a.type, usage: a.usage, computer: a.computer, email: a.email };
+      if (a.usage === "网页端" && a.hubStudioPhone) x.hubStudioPhone = a.hubStudioPhone;
+      return x;
+    });
+  }
   return out;
 }
 

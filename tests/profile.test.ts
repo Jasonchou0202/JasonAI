@@ -133,3 +133,50 @@ it("需求占比按根客户统计、并入已合并客户", () => {
   expect(r.total).toBe(2);
   expect(r.rows).toEqual([{ need: "B", count: 2, pct: 100 }, { need: "A", count: 1, pct: 50 }]);
 });
+
+import { claudeAccountSummary, CLAUDE_NEED } from "../src/domain/profile";
+describe("Claude 账号", () => {
+  const web = { type: "Claude Max" as const, usage: "网页端" as const, computer: "Windows 电脑" as const, email: "example01@mail.com", hubStudioPhone: "138****0001", password: "secret" };
+  const cli = { type: "Claude Ultra" as const, usage: "终端" as const, computer: "苹果电脑" as const, email: "example02@mail.com", hubStudioPhone: "13900001111", password: "secret" };
+  it("兼容没有账号的旧档案；丢弃密码；终端不存手机号；空卡跳过", () => {
+    expect(validateProfile({ needs: ["Agent 学习"], password: "x" })).toEqual({ needs: ["Agent 学习"] });
+    expect(validateProfile({ needs: [CLAUDE_NEED], claudeAccounts: [{ email: "", password: "x" }] })).toEqual({ needs: [CLAUDE_NEED] });
+    expect(validateProfile({ needs: [CLAUDE_NEED], claudeAccounts: [web] })).toEqual({
+      needs: [CLAUDE_NEED],
+      claudeAccounts: [{ type: "Claude Max", usage: "网页端", computer: "Windows 电脑", email: "example01@mail.com", hubStudioPhone: "138****0001" }],
+    });
+    expect(validateProfile({ needs: [CLAUDE_NEED], claudeAccounts: [cli] })).toEqual({
+      needs: [CLAUDE_NEED],
+      claudeAccounts: [{ type: "Claude Ultra", usage: "终端", computer: "苹果电脑", email: "example02@mail.com" }],
+    });
+    expect(() => validateProfile({ needs: [CLAUDE_NEED], claudeAccounts: [{ ...web, email: "bad" }] })).toThrow("邮箱");
+    expect(() => validateProfile({ needs: [CLAUDE_NEED], claudeAccounts: [{ ...web, hubStudioPhone: "abc" }] })).toThrow("手机号");
+  });
+  it("查看摘要去掉 Claude 前缀", () => {
+    expect(claudeAccountSummary({ type: "Claude Max", usage: "网页端", computer: "Windows 电脑", email: "example01@mail.com", hubStudioPhone: "138****0001" }, 0))
+      .toBe("① Max · 网页端 · Windows 电脑 · example01@mail.com · HubStudio 138****0001");
+    expect(claudeAccountSummary({ type: "Claude Ultra", usage: "终端", computer: "苹果电脑", email: "example02@mail.com" }, 1))
+      .toBe("② Ultra · 终端 · 苹果电脑 · example02@mail.com");
+  });
+  it("合并时目标已有账号则保留，没有才用来源的，且不带入密码", () => {
+    const a = { type: "Claude Max" as const, usage: "终端" as const, computer: "苹果电脑" as const, email: "a@mail.com" };
+    const b = { type: "Claude Ultra" as const, usage: "网页端" as const, computer: "Windows 电脑" as const, email: "b@mail.com", hubStudioPhone: "139****0002", password: "x" };
+    expect(mergeProfiles({ needs: [CLAUDE_NEED], claudeAccounts: [a] }, { claudeAccounts: [b] as any })?.claudeAccounts).toEqual([a]);
+    expect(mergeProfiles({ needs: ["A"] }, { claudeAccounts: [b] as any })?.claudeAccounts).toEqual([
+      { type: "Claude Ultra", usage: "网页端", computer: "Windows 电脑", email: "b@mail.com", hubStudioPhone: "139****0002" },
+    ]);
+  });
+  it("保存时取消勾选质保需求不把账号写回，也不清空已有账号", async () => {
+    const hash = async (s: string) => createHash("sha256").update(s).digest("hex");
+    const ctx: Context = { uid: "owner", ownerUid: "owner", hash, now: () => "2026-11-21T04:00:00.000Z" };
+    const store = new MemoryStore();
+    await execute(store, ctx, "sales.create", { requestId: "r-ca", sale: { productId: "", productName: "Plus 会员", customer: "示例客户", date: "2026-11-01", revenue: 1000, cost: 100, note: "" } });
+    const c = ((await execute(store, ctx, "customers.list", {})) as Customer[])[0];
+    const kept = { type: "Claude Max", usage: "网页端", computer: "Windows 电脑", email: "example01@mail.com", hubStudioPhone: "138****0001" };
+    const saved = await execute(store, ctx, "customers.profile.save", { id: c.id, revision: c.revision, requestId: "ca1", profile: { needs: [CLAUDE_NEED], claudeAccounts: [kept] } }) as Customer;
+    expect(saved.profile?.claudeAccounts).toEqual([kept]);
+    const clearedNeed = await execute(store, ctx, "customers.profile.save", { id: c.id, revision: saved.revision, requestId: "ca2", profile: { needs: ["Agent 学习"] } }) as Customer;
+    expect(clearedNeed.profile?.needs).toEqual(["Agent 学习"]);
+    expect(clearedNeed.profile?.claudeAccounts).toEqual([kept]);
+  });
+});

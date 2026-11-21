@@ -504,9 +504,13 @@ export async function execute(
           const old = await tx.get<Customer>("customers", id);
           if (!old || old.archivedAt) throw new Error("客户不存在");
           if (old.revision !== p.revision) throw new Error("客户已在另一处修改，请刷新后重试");
+          // 保存时若未带回账号（例如取消勾选质保需求），保留云端已有账号，不主动清空
+          const nextProfile = !profile.claudeAccounts?.length && old.profile?.claudeAccounts?.length
+            ? { ...profile, claudeAccounts: old.profile.claudeAccounts }
+            : profile;
           const row: Customer = {
             ...old,
-            profile,
+            profile: nextProfile,
             updatedAt: now(),
             revision: old.revision + 1,
             lastMutation: recordId(p.requestId),
