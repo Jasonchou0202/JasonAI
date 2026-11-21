@@ -165,8 +165,8 @@ describe("附加调用的身份门", () => {
   });
 });
 
-describe("miniapp.insights：看板剩余 4 张图", () => {
-  it("新增客户走势、每月四色块、矩阵三档、需求占比；只回汇总，不回明细", async () => {
+describe("miniapp.insights：经营图表统计", () => {
+  it("新增客户走势、每月四色块、矩阵三档；只回汇总，不回明细", async () => {
     const t = setup();
     await seedSales(t);
     const r = await t.call(JASON_WX, "miniapp.insights");
@@ -180,7 +180,7 @@ describe("miniapp.insights：看板剩余 4 张图", () => {
     expect(sum("month")).toBe(2);
     expect(sum("quarter")).toBe(3);
     expect(sum("year")).toBe(3);
-    expect(d.needs).toMatchObject({ total: 0, rows: [] });
+    expect(d.needs).toBeUndefined();
     // 汇总里没有客户名
     expect(JSON.stringify(d)).not.toMatch(/示例客户/);
   });

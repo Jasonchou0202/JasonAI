@@ -46,7 +46,25 @@ function seedTasks() {
 async function cloudCall(action: string, payload: unknown) {
   await seedTasks();
   try {
-    if (action === "miniapp.me") return { ok: true, data: { status: ROLE === "admin" ? "owner" : "member", name: ROLE === "admin" ? "章鱼哥" : "演示成员" } };
+    if (action === "miniapp.me")
+      return {
+        ok: true,
+        data: {
+          status: ROLE === "admin" ? "owner" : "member",
+          name: ROLE === "admin" ? "章鱼哥" : "演示成员",
+          avatarUrl: params.get("avatar") === "1" ? (window as any).__previewAvatar : undefined,
+        },
+      };
+    if (action === "miniapp.subscribe.config" || action === "miniapp.subscribe.record")
+      return {
+        ok: true,
+        data: {
+          enabled: false,
+          templates: { task: "wsMYvp0ssfye_srTUreOx8zJy1SQqFlF20ZIGOVKC7o" },
+          quota: { task: 3 },
+          recorded: action.endsWith("record") ? 1 : 0,
+        },
+      };
     if (action === "miniapp.apply.list")
       return {
         ok: true,
@@ -260,6 +278,7 @@ function renderElement(el: Element, scope: Scope, parent: Node) {
     else if (name === "class") out.className = "wx-" + tag + " " + String(value ?? "");
     else if (name === "style") out.setAttribute("style", rpx(String(value ?? "")));
     else if (name === "value" && (tag === "input" || tag === "textarea")) (out as HTMLInputElement).value = String(value ?? "");
+    else if (name === "src") out.setAttribute("src", String(value ?? ""));
     else if (name === "placeholder") out.setAttribute("placeholder", String(value ?? ""));
     else if (name === "hidden" && value) out.style.display = "none";
   }
@@ -297,7 +316,7 @@ function wxss(path: string, seen = new Set<string>()): string {
   const src = files[path] || "";
   return rpx(
     src
-      .replace(/@import\s+"([^"]+)";/g, (_m, p) => wxss(resolve(path, p).replace(/\.js$/, ""), seen))
+      .replace(/@import\s+"([^"]+)";/g, (_m, p) => wxss(p.startsWith("/") ? "/miniprogram" + p : resolve(path, p).replace(/\.js$/, ""), seen))
       .replace(/(^|[\s,}])page(\s*[{,])/g, "$1.mp-page$2")
       .replace(/(^|[\s,}])(view|text|input|textarea|button|picker|canvas|switch)(?=[\s.,:{#[>])/g, "$1.wx-$2"),
   );

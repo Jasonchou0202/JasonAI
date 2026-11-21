@@ -14,3 +14,14 @@
 .st-rejected { background: #F8DAD4; color: #9E2A1E; }
 .renew-done { line-height: 56rpx; margin-left: 12rpx; }
 .link-row { text-align: center; color: #B4532F; margin-top: 40rpx; font-size: 26rpx; }
+.detail-item { padding: 32rpx 0; border-bottom: 1rpx solid #F6E9DA; }
+.detail-item:first-child { padding-top: 8rpx; }
+.detail-item:last-child { border-bottom: 0; padding-bottom: 8rpx; }
+.detail-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 24rpx; }
+.detail-name { flex: 1; min-width: 0; font-size: 30rpx; font-weight: 600; line-height: 1.45; word-break: break-word; }
+.detail-amt { flex-shrink: 0; max-width: 240rpx; text-align: right; font-variant-numeric: tabular-nums; font-weight: 650; font-size: 30rpx; line-height: 1.45; color: #2B211C; }
+.detail-meta { margin-top: 12rpx; font-size: 24rpx; color: #6B5A50; line-height: 1.55; word-break: break-word; }
+.detail-note { margin-top: 12rpx; font-size: 24rpx; color: #6B5A50; line-height: 1.6; word-break: break-word; background: #FBF3E4; border-radius: 16rpx; padding: 16rpx 20rpx; }
+.detail-actions { margin-top: 20rpx; display: flex; flex-wrap: wrap; align-items: center; gap: 12rpx; }
+.detail-actions .mini + .mini { margin-left: 0; }
+.renew-done { line-height: 56rpx; margin-left: 0; }

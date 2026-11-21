@@ -21,6 +21,24 @@ const OWNER = "demo";
 // ───────── 示例账本（全是虚构数据；每次打开重新生成，不存本机） ─────────
 const store = new MemoryStore();
 seedExpenseDemo(store);
+const PREVIEW_NAME: Record<string, string> = {
+  周诗懿: "示例伙伴 · 小懿",
+  林小雅: "示例成员 · 小林",
+  陈一一: "示例成员 · 小陈",
+  宋阿木: "示例成员 · 小宋",
+};
+(function aliasPreviewNames(v: unknown) {
+  if (!v || typeof v !== "object") return;
+  if (Array.isArray(v)) {
+    v.forEach(aliasPreviewNames);
+    return;
+  }
+  const o = v as Record<string, unknown>;
+  for (const [k, val] of Object.entries(o)) {
+    if (typeof val === "string" && PREVIEW_NAME[val]) o[k] = PREVIEW_NAME[val];
+    else aliasPreviewNames(val);
+  }
+})(store.data);
 const team = { ...expenseDemoTeam(), scheduleOwnerEnabled: true };
 const NOW = () => new Date().toISOString();
 const ctx = (uid: string) => ({ uid, ownerUid: OWNER, hash: sha256, now: NOW });
@@ -41,11 +59,11 @@ function seedMore() {
       const at = (d: string) => `${d}T02:00:00.000Z`;
       const m = (uid: string, name: string, status: string, color: string | undefined, d: string, inviteId = "demo") =>
         (store.data.members[uid] = { uid, name, status, inviteId, ...(color ? { color } : {}), createdAt: at(d), updatedAt: at(d), revision: 1 });
-      m(EXPENSE_DEMO_PARTNER, "周诗懿", "active", "c1", "2026-11-01");
-      m("demo-lin", "林小雅", "active", "c2", "2026-11-03");
+      m(EXPENSE_DEMO_PARTNER, "示例伙伴 · 小懿", "active", "c1", "2026-11-01");
+      m("demo-lin", "示例成员 · 小林", "active", "c2", "2026-11-03");
       m("wx_0123456789abcdef0123456789abcdef", "示例成员 · 阿远", "active", "c3", "2026-11-06", "miniapp");
-      m("demo-chen", "陈一一", "disabled", "c4", "2026-11-08");
-      m("demo-song", "宋阿木", "pending", undefined, "2026-11-17");
+      m("demo-chen", "示例成员 · 小陈", "disabled", "c4", "2026-11-08");
+      m("demo-song", "示例成员 · 小宋", "pending", undefined, "2026-11-17");
       const run = async (action: string, payload: unknown, uid = OWNER, expectDenied = false) => {
         const r = (await biz(uid, { action, payload })) as { ok: boolean; data?: any; error?: string };
         if (!r.ok && !expectDenied) console.warn("示例数据未写入", action, r.error);
@@ -81,7 +99,26 @@ const ME_UID = ROLE === "admin" ? OWNER : EXPENSE_DEMO_PARTNER;
 async function cloudCall(action: string, payload: unknown) {
   await seedMore();
   try {
-    if (action === "miniapp.me") return { ok: true, data: { status: ROLE === "admin" ? "owner" : "member", name: ROLE === "admin" ? "章鱼哥" : "周诗懿" } };
+    if (action === "miniapp.me")
+      return {
+        ok: true,
+        data: {
+          status: ROLE === "admin" ? "owner" : "member",
+          name: ROLE === "admin" ? "章鱼哥" : "示例伙伴 · 小懿",
+          expensesEnabled: true,
+          invoiceEnabled: true,
+        },
+      };
+    if (action === "miniapp.subscribe.config" || action === "miniapp.subscribe.record")
+      return {
+        ok: true,
+        data: {
+          enabled: false,
+          templates: { task: "wsMYvp0ssfye_srTUreOx8zJy1SQqFlF20ZIGOVKC7o" },
+          quota: { task: 3 },
+          recorded: action.endsWith("record") ? 1 : 0,
+        },
+      };
     if (["miniapp.insights", "miniapp.export.csv", "miniapp.files.relay", "miniapp.files.chunk"].includes(action))
       return { ok: true, data: await handleExtra({ business: biz, files: cdn, now: NOW }, { role: ROLE === "admin" ? "owner" : "member", uid: ME_UID }, action, (payload || {}) as Record<string, unknown>) };
     if (action.startsWith("miniapp.")) return { ok: true, data: {} };
@@ -321,6 +358,7 @@ function renderElement(el: Element, scope: Scope, parent: Node) {
     else if (name === "class") out.className = "wx-" + tag + " " + String(value ?? "");
     else if (name === "style") out.setAttribute("style", rpx(String(value ?? "")));
     else if (name === "value" && (tag === "input" || tag === "textarea")) (out as HTMLInputElement).value = String(value ?? "");
+    else if (name === "src") out.setAttribute("src", String(value ?? ""));
     else if (name === "placeholder") out.setAttribute("placeholder", String(value ?? ""));
     else if (name === "hidden" && value) out.style.display = "none";
   }
@@ -358,7 +396,7 @@ function wxss(path: string, seen = new Set<string>()): string {
   const src = files[path] || "";
   return rpx(
     src
-      .replace(/@import\s+"([^"]+)";/g, (_m, p) => wxss(resolve(path, p).replace(/\.js$/, ""), seen))
+      .replace(/@import\s+"([^"]+)";/g, (_m, p) => wxss(p.startsWith("/") ? "/miniprogram" + p : resolve(path, p).replace(/\.js$/, ""), seen))
       .replace(/(^|[\s,}])page(\s*[{,])/g, "$1.mp-page$2")
       .replace(/(^|[\s,}])(view|text|input|textarea|button|picker|canvas|switch)(?=[\s.,:{#[>])/g, "$1.wx-$2"),
   );

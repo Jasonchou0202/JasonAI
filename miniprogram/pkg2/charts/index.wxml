@@ -5,6 +5,18 @@
   <view class="loading" wx:if="{{loading}}">正在计算…</view>
   <view class="error" wx:if="{{error}}">{{error}}</view>
   <block wx:if="{{!loading && !error}}">
+    <view class="sec" wx:if="{{shares.length}}">
+      <view class="row"><view class="h2">近十天利润</view><text class="small coral-t" bindtap="openExpenses">查看报销记账 ›</text></view>
+      <view class="lead">{{sharesDesc}}</view>
+      <view class="card {{item.phase === 'current' ? 'hl' : ''}}" wx:for="{{shares}}" wx:key="key">
+        <view class="row"><text class="title-line">{{item.title}}</text><text class="pill {{item.phase}}">{{item.phaseText}}</text></view>
+        <view class="row"><text>{{item.ownerLine}}</text><text class="num">{{item.owner}}</text></view>
+        <view class="row"><text>{{item.partnerLine}}</text><text class="num">{{item.partner}}</text></view>
+        <view class="row" wx:if="{{item.advance}}"><text>{{item.advance.line}}</text><text class="num">{{item.advance.v}}</text></view>
+        <view class="sub-line" wx:if="{{item.wait}}">{{item.wait}}</view>
+      </view>
+    </view>
+
     <view class="sec" wx:if="{{hasLine}}">
       <view class="row"><view class="h2">每月新增客户走势</view><view class="readout"><text class="small muted">{{readout.month}}</text> <text class="num">{{readout.count}} 位</text></view></view>
       <view class="lead">按首次购买月份；合并后的客户只算一次。点图看各月。</view>
@@ -33,17 +45,6 @@
       </view>
     </view>
 
-    <view class="sec">
-      <view class="h2">客户需求占比</view>
-      <view class="lead">占比 = 有该需求的客户数 ÷ 已记录需求的客户数（{{needs.total}} 位）；一位客户可有多项需求，相加可能超过 100%。</view>
-      <view class="card">
-        <view class="empty" wx:if="{{!needs.rows.length}}">还没有客户记录需求。在客户详情的「客户信息和需求」里勾选后，这里会显示占比。</view>
-        <view class="need" wx:for="{{needs.rows}}" wx:key="need">
-          <view class="row"><text>{{item.need}}</text><text class="small num">{{item.count}} 位 · {{item.pct}}%</text></view>
-          <view class="bar"><view class="bar-in" style="width:{{item.pct}}%"></view></view>
-        </view>
-      </view>
-    </view>
 
     <view class="sec">
       <view class="h2">客户 × 产品矩阵</view>
@@ -64,16 +65,5 @@
       <view class="sub-line mx-hint">上排新客户、下排老客户；左列老产品、右列新产品。笔数 = 该格销售笔数。</view>
     </view>
 
-    <view class="sec" wx:if="{{shares.length}}">
-      <view class="row"><view class="h2">十天应得利润</view><text class="small coral-t" bindtap="openExpenses">查看报销记账 ›</text></view>
-      <view class="lead">{{sharesDesc}}</view>
-      <view class="card {{item.phase === 'current' ? 'hl' : ''}}" wx:for="{{shares}}" wx:key="key">
-        <view class="row"><text class="title-line">{{item.title}}</text><text class="pill {{item.phase}}">{{item.phaseText}}</text></view>
-        <view class="row"><text>{{item.ownerLine}}</text><text class="num">{{item.owner}}</text></view>
-        <view class="row"><text>{{item.partnerLine}}</text><text class="num">{{item.partner}}</text></view>
-        <view class="row" wx:if="{{item.advance}}"><text>{{item.advance.line}}</text><text class="num">{{item.advance.v}}</text></view>
-        <view class="sub-line" wx:if="{{item.wait}}">{{item.wait}}</view>
-      </view>
-    </view>
   </block>
 </view>

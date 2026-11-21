@@ -1,6 +1,7 @@
 // 客户日程：月历（每天有几条待办/已完成）+ 选中那天的列表 + 今日/明日/逾期；新建、完成、重开、删除、恢复都和网页一样
 const D = require("../../lib/domain");
 const { call } = require("../../utils/api");
+const { offerTask } = require("../../utils/subscribe");
 const session = require("../../utils/session");
 
 Page({
@@ -116,6 +117,7 @@ Page({
               this.load();
             })
             .catch((err) => this.setData({ error: err.message }));
+        if (pick === "标记完成") offerTask();
         if (pick !== "删除") return go();
         wx.showModal({ title: "删除这条日程", content: t.title + "。删除后可在「已删除」里恢复。", confirmText: "删除", confirmColor: "#9E2A1E", success: (m) => m.confirm && go() });
       },

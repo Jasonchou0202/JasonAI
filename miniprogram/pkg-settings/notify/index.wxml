@@ -2,26 +2,18 @@
 <view class="page">
   <view class="hero">
     <view class="hero-title">微信服务通知</view>
-    <view class="hero-sub">网页用浏览器推送，小程序改用微信「服务通知」。个人小程序只能用一次性订阅：在弹窗里点一次「允许」，就能收到一条。</view>
-    <view class="pill {{enabled ? 'green' : 'gray'}}">{{enabled ? '已开放' : '暂未开放'}}</view>
+    <view class="hero-sub">日程到点前，用微信「服务通知」提醒你。只提醒你自己创建的日程，别人创建的不会发到你这里。</view>
+    <view class="pill {{sending ? 'green' : 'gray'}}">{{sending ? '到点会发送' : '已可订阅'}}</view>
   </view>
 
-  <view class="panel" wx:if="{{!enabled}}">
-    <view class="panel-title">管理员还没打开服务通知</view>
-    <view class="panel-desc">打开以后，这里可以订阅日程提醒{{admin ? '和新申请提醒' : ''}}。日程照常会同步到 iPhone 提醒事项，不会漏。</view>
+  <view class="panel">
+    <view class="panel-title">待办事项提醒</view>
+    <view class="panel-desc">只提醒你自己创建的日程。点一次「允许」收一条；勾选「总是保持以上选择」，以后可免再问。</view>
+    <view class="note" wx:if="{{kinds.length}}">当前可用 {{left}} 次</view>
   </view>
 
-  <block wx:else>
-    <view class="section-title">可用次数</view>
-    <view class="group">
-      <view class="row plain" wx:for="{{kinds}}" wx:key="key">
-        <view class="row-main"><view class="row-title">{{item.title}}</view><view class="row-desc">{{item.desc}}</view></view>
-        <view class="row-value">剩 {{item.left}} 次</view>
-      </view>
-    </view>
-    <button class="primary" disabled="{{busy || !kinds.length}}" bindtap="subscribe">{{busy ? '正在记录…' : '再订阅一次'}}</button>
-    <view class="note">每点一次、在弹窗里选「允许」，每种提醒各多 1 次。次数用完了，回这里再点一下就行。弹窗里勾「总是保持以上选择」，以后点按钮就直接加次数，不再弹窗。</view>
-    <view class="ok" wx:if="{{ok}}">{{ok}}</view>
-  </block>
+  <button class="primary" disabled="{{busy || !kinds.length}}" bindtap="subscribe">{{busy ? '正在记录…' : '开启提醒'}}</button>
+  <view class="note">{{sending ? '次数用完后，再点一次「开启提醒」即可补充。' : '现在可以先订阅攒次数。到点发送需管理员打开云端开关后才会发出。'}}</view>
+  <view class="ok" wx:if="{{ok}}">{{ok}}</view>
   <view class="err" wx:if="{{error}}">{{error}}</view>
 </view>

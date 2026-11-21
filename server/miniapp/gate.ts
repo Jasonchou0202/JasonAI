@@ -8,6 +8,7 @@ import { colorKeyAt, isColorKey, type ColorKey } from "../../src/domain/members"
 import type { Member, TeamConfig } from "../team";
 import { resolveSource, SourceError, type PlatformIdentity } from "./source";
 import { EXTRA_ACTIONS, handleExtra, type FileFetcher } from "./extras";
+import { avatarUrlOf, setOwnAvatar } from "./avatar";
 import { handleBatch3, type Batch3Deps } from "./batch3";
 import {
   CODE_ALPHABET,
@@ -205,6 +206,13 @@ export async function handleMiniapp(deps: MiniappDeps, platform: PlatformIdentit
       if (b3) return { ok: true, data: b3.data };
     }
     if (action === "miniapp.bind.leave") return { ok: true, data: await leave(deps, store, who) };
+    if (action === "miniapp.avatar.set") {
+      if (who.role !== "owner" && who.role !== "member") throw NO_ACCESS();
+      const storage = deps.team.avatarStorage;
+      if (!storage) throw deny("AVATAR_STORAGE_OFF", "头像存储暂不可用");
+      await touch(deps, store, who);
+      return { ok: true, data: await setOwnAvatar(store, { uid: who.uid, ownerUid: deps.ownerUid, role: who.role, storage, hash: deps.hash, now: deps.now, image: payload.image }) };
+    }
     // 第 2 批附加调用：先交给原来的 handle() 判权限，再做小程序需要的搬运（见 ./extras.ts）
     if (EXTRA_ACTIONS.has(action) && (who.role === "owner" || who.role === "member")) {
       await touch(deps, store, who);
@@ -270,11 +278,19 @@ async function note(deps: MiniappDeps, who: Who, action: string, targetType: str
 
 async function me(deps: MiniappDeps, store: MiniStore, who: Who) {
   const base = { enabled: deps.config.enabled, membersEnabled: deps.team.membersEnabled };
-  if (who.role === "owner") return { ...base, status: "owner", role: "admin", name: "管理员" };
+  if (who.role === "owner") {
+    const avatarUrl = await avatarUrlOf(store, deps.team.avatarStorage, "owner", who.uid, deps.ownerUid);
+    return { ...base, status: "owner", role: "admin", name: "管理员", ...(avatarUrl ? { avatarUrl } : {}) };
+  }
   if (who.role === "member") {
     const m = await store.get<Member>("members", who.uid);
     const status = !m ? "none" : m.status === "active" ? "member" : m.status === "disabled" ? "disabled" : "pending";
-    return { ...base, status, role: status === "member" ? "member" : "none", name: m?.name ?? "" };
+    const out: Record<string, unknown> = { ...base, status, role: status === "member" ? "member" : "none", name: m?.name ?? "" };
+    if (status === "member") {
+      const avatarUrl = await avatarUrlOf(store, deps.team.avatarStorage, "member", who.uid, deps.ownerUid);
+      if (avatarUrl) out.avatarUrl = avatarUrl;
+    }
+    return out;
   }
   const app = await store.get<Application>("miniapp_applications", who.key!.appId);
   if (!app || (app.status === "approved" && who.binding?.status !== "active")) return { ...base, status: "none" };

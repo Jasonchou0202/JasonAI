@@ -43,9 +43,14 @@ export interface Batch3Config {
   /** 订阅消息模板 ID（不是密钥）：MINIAPP_TPL_TASK / MINIAPP_TPL_APPLY */
   templates: Partial<Record<SubKind, string>>;
 }
+/** 公众平台已选用的「待办事项提醒」模板（不是密钥）；环境变量可覆盖 */
+export const DEFAULT_TASK_TEMPLATE = "wsMYvp0ssfye_srTUreOx8zJy1SQqFlF20ZIGOVKC7o";
+/** 与模板字段一致：提醒内容、到期日期、备注 */
+export const DEFAULT_TASK_KEYS = ["thing2", "time3", "thing4"];
+
 export function batch3ConfigFromEnv(env: Record<string, string | undefined>): Batch3Config {
   const tpl = (v?: string) => (v && /^[\w-]{10,128}$/.test(v) ? v : undefined);
-  const task = tpl(env.MINIAPP_TPL_TASK);
+  const task = tpl(env.MINIAPP_TPL_TASK) ?? DEFAULT_TASK_TEMPLATE;
   const apply = tpl(env.MINIAPP_TPL_APPLY);
   return {
     notifyEnabled: env.MINIAPP_NOTIFY_ENABLED === "1",
@@ -192,8 +197,7 @@ async function subscribe(d: Batch3Deps, store: MiniStore, who: B3Who, action: st
     quota: Object.fromEntries(kinds.map((k) => [k, quota(k)])),
   });
   if (action === "miniapp.subscribe.config") return view();
-  // record：只认小程序来源、只认已配置的模板；关着时不写库
-  if (!d.config.notifyEnabled) return { ...view(), recorded: 0 };
+  // record：只认小程序来源、只认已配置的模板。发送开关关着时仍记下额度，到点发不发另由 MINIAPP_NOTIFY_ENABLED 控制。
   if (!id || !who.openid) throw deny("NO_ACCESS", "无权限");
   const results = p.results && typeof p.results === "object" && !Array.isArray(p.results) ? (p.results as Record<string, unknown>) : {};
   const accepted = kinds.filter((k) => results[d.config.templates[k]!] === "accept");
@@ -217,7 +221,7 @@ async function subscribe(d: Batch3Deps, store: MiniStore, who: B3Who, action: st
     return row;
   });
   return {
-    enabled: true,
+    enabled: d.config.notifyEnabled,
     templates: Object.fromEntries(kinds.map((k) => [k, d.config.templates[k]!])),
     quota: Object.fromEntries(kinds.map((k) => [k, next.quota[k] ?? 0])),
     recorded: accepted.length,

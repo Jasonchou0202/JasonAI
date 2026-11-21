@@ -29,16 +29,19 @@
   <view class="error" wx:if="{{error}}">{{error}}</view>
   <view class="card" wx:if="{{!loading}}">
     <view class="empty" wx:if="{{!rows.length}}">这个范围里没有开票记录。</view>
-    <view class="list-item" wx:for="{{rows}}" wx:key="id">
-      <view class="row">
-        <text class="title-line">{{item.customer}}</text>
+    <view class="inv-item" wx:for="{{rows}}" wx:key="id">
+      <view class="inv-top">
+        <text class="inv-name">{{item.customer}}</text>
         <text class="schip" style="background:{{colors[item.status].bg}};color:{{colors[item.status].fg}}">{{item.statusText}}</text>
       </view>
-      <view class="sub-line">{{item.product}} · {{item.saleDate}} · 开票 <text class="num ink">{{item.amount}}</text></view>
-      <view class="sub-line" wx:if="{{item.invoiceNo}}">发票号 {{item.invoiceNo}} · {{item.issuedOn}}{{item.sentTo ? ' · 寄至 ' + item.sentTo : ''}}</view>
-      <view class="actions">
+      <view class="inv-mid">
+        <text class="inv-meta">{{item.product}} · {{item.saleDate}}</text>
+        <text class="inv-amt">{{item.amount}}</text>
+      </view>
+      <view class="inv-extra" wx:if="{{item.invoiceNo}}">发票号 {{item.invoiceNo}} · {{item.issuedOn}}{{item.sentTo ? ' · 寄至 ' + item.sentTo : ''}}</view>
+      <view class="inv-actions">
         <text class="prof {{item.profileComplete ? 'ok' : 'miss'}}" data-customer="{{item.customerId}}" bindtap="profile">{{item.profileText}}</text>
-        <text class="small muted" wx:if="{{item.files}}"> · 附件 {{item.files}}</text>
+        <text class="small muted" wx:if="{{item.files}}">附件 {{item.files}}</text>
         <view class="grow"></view>
         <view class="mini" wx:if="{{!item.retired}}" data-sale="{{item.saleId}}" bindtap="edit">{{item.open ? '开票' : '改'}}</view>
       </view>

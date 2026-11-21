@@ -2,7 +2,7 @@
  * 小程序「微信服务通知」（订阅消息）发送逻辑 · 第 3 批（方案第 5 节第 5 条、第 6 节第 5 条）。
  * 由 reminders 的小程序版入口（server/reminder-cloud-miniapp.ts）在原有提醒跑完之后调用；
  * MINIAPP_NOTIFY_ENABLED 缺省关，关着时一行都不执行。
- * - 日程提醒：和网页推送同一套到点规则（提前 15 分钟 / 到点，10 分钟窗口），发给日程归属人（没有归属按建的人 → 管理员）。
+ * - 日程提醒：和网页推送同一套到点规则（提前 15 分钟 / 到点，10 分钟窗口），只发给创建该日程的人（按 createdBy 对上的 openid）；管理员不收他人的。没有创建者字段的旧日程不发；已完成或已删除的不发。
  * - 新申请：有新的待批申请时，给管理员发一条。
  * - 一次性订阅：同意一次只能发一条，先扣额度、记去重键，再发；对方拒收（43101）就把额度清零。
  * - openid 只在这里读出来交给微信，不写日志、不回任何调用方。
@@ -12,7 +12,7 @@ import type { CustomerTask } from "../../src/domain/model";
 import type { Member } from "../team";
 import { REMINDER_ADVANCE_MS, REMINDER_WINDOW_MS } from "../reminders";
 import type { Application, Binding, MiniStore } from "./types";
-import type { Batch3Config, MiniSub, SubKind } from "./batch3";
+import { DEFAULT_TASK_KEYS, type Batch3Config, type MiniSub, type SubKind } from "./batch3";
 
 export interface NotifyConfig extends Batch3Config {
   ownerUid: string;
@@ -27,7 +27,7 @@ export function notifyConfigFromEnv(env: Record<string, string | undefined>, bas
     const list = (v || "").split(",").map((x) => x.trim()).filter(Boolean);
     return list.length >= 2 && list.length <= 5 && list.every((k) => /^[a-z_]+\d{1,2}$/.test(k)) ? list : undefined;
   };
-  const task = keys(env.MINIAPP_TPL_TASK_KEYS);
+  const task = keys(env.MINIAPP_TPL_TASK_KEYS) ?? (base.templates.task ? DEFAULT_TASK_KEYS : undefined);
   const apply = keys(env.MINIAPP_TPL_APPLY_KEYS);
   const state = env.MINIAPP_STATE === "formal" || env.MINIAPP_STATE === "developer" ? env.MINIAPP_STATE : "trial";
   return {
@@ -117,7 +117,8 @@ export async function runMiniappNotify(store: MiniStore, cfg: NotifyConfig, send
       const at = Date.parse(task.at),
         start = Date.parse(task.reminderStartAt);
       if (!Number.isFinite(at) || !Number.isFinite(start)) continue;
-      const to = task.ownerUid || task.createdBy || cfg.ownerUid;
+      const to = task.createdBy;
+      if (!to) continue;
       for (const offset of task.reminder === "both" ? [-REMINDER_ADVANCE_MS, 0] : [0]) {
         const scheduled = at + offset;
         if (scheduled <= start || scheduled > nowMs || nowMs >= scheduled + REMINDER_WINDOW_MS || nowMs >= at + REMINDER_WINDOW_MS) continue;

@@ -50,10 +50,10 @@ describe("小程序服务通知（reminders 第 3 批）", () => {
     expect(r).toEqual({ enabled: false, sent: 0, failed: 0, refused: 0, skipped: 0 });
     expect(t.sent).toHaveLength(0);
   });
-  it("到点发给日程归属人：扣 1 次额度、记去重，同一时刻再跑不重复", async () => {
+  it("到点只发给创建者：扣 1 次额度、记去重，同一时刻再跑不重复", async () => {
     const t = setup();
     t.sub("b1", OWNER, "owner", { task: 3 });
-    t.task("t1");
+    t.task("t1", { createdBy: OWNER });
     const r = await runMiniappNotify(t.store, cfg(), t.send, AT + 60_000);
     expect(r.sent).toBe(1);
     expect(t.sent[0]).toMatchObject({ touser: "o-b1", template_id: "tpl_task_0000000001", miniprogram_state: "trial", page: "pages/gate/index" });
@@ -66,46 +66,48 @@ describe("小程序服务通知（reminders 第 3 批）", () => {
   it("提前 15 分钟和到点各一条（reminder=both），过了 10 分钟窗口不补发", async () => {
     const t = setup();
     t.sub("b1", OWNER, "owner", { task: 5 });
-    t.task("t1");
+    t.task("t1", { createdBy: OWNER });
     await runMiniappNotify(t.store, cfg(), t.send, AT - 15 * 60_000 + 1000);
     await runMiniappNotify(t.store, cfg(), t.send, AT + 1000);
     expect(t.sent.map((m) => m.data.thing3.value)).toEqual(["15 分钟后开始", "现在开始"]);
     const late = setup();
     late.sub("b1", OWNER, "owner", { task: 5 });
-    late.task("t1");
+    late.task("t1", { createdBy: OWNER });
     await runMiniappNotify(late.store, cfg(), late.send, AT + 11 * 60_000);
     expect(late.sent).toHaveLength(0);
   });
-  it("成员只收自己名下的；停用、撤销绑定、额度 0 都不发；完成或删掉的日程不发", async () => {
+  it("只发给创建者：管理员不收他人的；没有创建者、已完成、已删除、停用、撤销、额度 0 都不发", async () => {
     const t = setup();
     t.d.members.wx_a = { uid: "wx_a", name: "甲", status: "active" };
     t.d.members.wx_b = { uid: "wx_b", name: "乙", status: "disabled" };
     t.sub("b1", OWNER, "owner", { task: 5 });
     t.sub("ba", "wx_a", "member", { task: 5 });
     t.sub("bb", "wx_b", "member", { task: 5 });
-    t.task("mine", { ownerUid: "wx_a" });
-    t.task("hers", { ownerUid: "wx_b" });
-    t.task("done", { completedAt: "x" });
-    t.task("gone", { deletedAt: "x" });
+    t.task("mine", { createdBy: "wx_a" });
+    t.task("admin-own", { createdBy: OWNER });
+    t.task("hers", { createdBy: "wx_b" }); // 停用成员，不发
+    t.task("assigned-only", { ownerUid: "wx_a" }); // 只有归属、没有创建者，不发
+    t.task("done", { createdBy: OWNER, completedAt: "x" });
+    t.task("gone", { createdBy: OWNER, deletedAt: "x" });
     t.task("owner-default", { createdBy: undefined });
     await runMiniappNotify(t.store, cfg(), t.send, AT + 1000);
     expect(t.sent.map((m) => m.touser).sort()).toEqual(["o-b1", "o-ba"]);
     t.d.miniapp_bindings.ba.status = "revoked";
-    t.task("again", { ownerUid: "wx_a", reminderGeneration: "g2" });
+    t.task("again", { createdBy: "wx_a", reminderGeneration: "g2" });
     await runMiniappNotify(t.store, cfg(), t.send, AT + 2000);
     expect(t.sent.filter((m) => m.touser === "o-ba")).toHaveLength(1);
   });
   it("微信说没有订阅次数（43101）：额度清零；其他失败记失败、不重发", async () => {
     const t = setup();
     t.sub("b1", OWNER, "owner", { task: 5 });
-    t.task("t1");
+    t.task("t1", { createdBy: OWNER });
     t.fail(43101);
     const r = await runMiniappNotify(t.store, cfg(), t.send, AT + 1000);
     expect(r.refused).toBe(1);
     expect(t.d.miniapp_subs.b1.quota.task).toBe(0);
     const u = setup();
     u.sub("b1", OWNER, "owner", { task: 5 });
-    u.task("t1");
+    u.task("t1", { createdBy: OWNER });
     u.fail(-1);
     expect((await runMiniappNotify(u.store, cfg(), u.send, AT + 1000)).failed).toBe(1);
     u.fail(null);
@@ -128,16 +130,18 @@ describe("小程序服务通知（reminders 第 3 批）", () => {
     expect(t.sent).toHaveLength(2);
     expect(t.sent[1].data.thing3.value).toBe("待批 2 人");
   });
-  it("正在恢复备份时暂停；没配字段名就不发；单次最多 20 条", async () => {
+  it("正在恢复备份时暂停；不配字段名用默认 thing2/time3/thing4；单次最多 20 条", async () => {
     const t = setup();
     t.sub("b1", OWNER, "owner", { task: 50 });
-    t.task("t1");
+    t.task("t1", { createdBy: OWNER });
     t.d.batches._ledger = { restoreId: "restore_x" };
     expect((await runMiniappNotify(t.store, cfg(), t.send, AT + 1000)).sent).toBe(0);
     delete t.d.batches._ledger;
+    // 不配字段名时用默认 thing2/time3/thing4，仍能发
     const { MINIAPP_TPL_TASK_KEYS: _k, ...noKeys } = ENV;
-    expect((await runMiniappNotify(t.store, cfg(noKeys), t.send, AT + 1000)).sent).toBe(0);
-    for (let i = 0; i < 25; i++) t.task("many" + i);
+    expect((await runMiniappNotify(t.store, cfg(noKeys), t.send, AT + 1000)).sent).toBe(1);
+    expect(t.sent[0].data.thing2).toBeTruthy();
+    for (let i = 0; i < 25; i++) t.task("many" + i, { createdBy: OWNER });
     const r = await runMiniappNotify(t.store, cfg(), t.send, AT + 1000);
     expect(r.sent).toBe(NOTIFY_MAX_SENDS);
     expect(r.skipped).toBeGreaterThan(0);

@@ -58,9 +58,9 @@ function drawCompare(c, bars) {
     const cx = slot * i + slot / 2;
     const hs = ((base - top) * b.sales) / 100;
     const ha = ((base - top) * b.actual) / 100;
-    ctx.fillStyle = "#E8C4B6";
-    roundTop(ctx, cx - bw - 2, base - hs, bw, hs, 4);
     ctx.fillStyle = "#D97757";
+    roundTop(ctx, cx - bw - 2, base - hs, bw, hs, 4);
+    ctx.fillStyle = "#3D5A80";
     roundTop(ctx, cx + 2, base - ha, bw, ha, 4);
     ctx.fillStyle = "#7A6A5F";
     ctx.fillText(b.label, cx, height - 6);

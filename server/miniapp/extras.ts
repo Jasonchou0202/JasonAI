@@ -1,7 +1,7 @@
 /**
  * miniapp 函数第 2 批的附加调用（只给小程序用，网页来源一律不开放）。
  * 都是「先交给原来的 handle() 做权限和读写，再在这里做小程序平台需要的搬运」：
- * - miniapp.insights：看板剩余 4 张图的统计（读 export + customers.list，权限同网页；只回汇总数，不回明细）
+ * - miniapp.insights：经营图表统计（新增客户、每月四色块、矩阵；读 export + customers.list，权限同网页；只回汇总数，不回明细）
  * - miniapp.export.csv：销售明细 CSV，分块回传（只给管理员，和网页一样）
  * - miniapp.files.relay：小程序用 wx.cloud.CDN 交来的文件 → 原样交给 expenses.receipts.upload / invoices.files.upload
  * - miniapp.files.chunk：凭证、开票附件分块下载（先用原来的 *.urls 调用确认这个人能看这条记录）
@@ -15,7 +15,6 @@ import {
   quadrantTotals,
   QUADRANTS,
 } from "../../src/domain/insights";
-import { needSharesByRoot } from "../../src/domain/profile";
 import { today as bjToday } from "../../src/domain/dates";
 import type { Customer, Sale } from "../../src/domain/model";
 
@@ -164,6 +163,5 @@ async function insights(deps: ExtraDeps, who: ExtraWho) {
     newCustomers: monthlyNewCustomers(live, customers),
     quadMonths: months,
     matrix,
-    needs: needSharesByRoot(customers),
   };
 }

@@ -7,7 +7,7 @@ import type { TeamConfig } from "../server/team";
 import { handleMiniapp, type MiniappDeps } from "../server/miniapp/gate";
 import type { PlatformIdentity } from "../server/miniapp/source";
 import type { MiniStore, MiniTx } from "../server/miniapp/types";
-import { B3_LIMITS, batch3ConfigFromEnv, type Batch3Deps, type MiniSub } from "../server/miniapp/batch3";
+import { B3_LIMITS, DEFAULT_TASK_TEMPLATE, batch3ConfigFromEnv, type Batch3Deps, type MiniSub } from "../server/miniapp/batch3";
 import { boardSummary } from "../server/miniapp/board";
 import { ContentMemoryStore } from "../server/content/memory-store";
 import { contentOnly } from "../server/content/guard";
@@ -244,12 +244,12 @@ describe("内容生产（13 / 13a）", () => {
 });
 
 describe("订阅消息额度（miniapp.subscribe.*、miniapp_subs）", () => {
-  it("开关关：只回状态，不写库", async () => {
+  it("发送开关关：仍可记下额度，enabled 为 false", async () => {
     const t = setup();
     await bindJason(t);
     const r = await t.call(JASON_WX, "miniapp.subscribe.record", { results: { tpl_task_0000000001: "accept" } });
-    expect(r).toMatchObject({ ok: true, data: { enabled: false, recorded: 0 } });
-    expect(Object.keys(t.store.data.miniapp_subs ?? {})).toHaveLength(0);
+    expect(r).toMatchObject({ ok: true, data: { enabled: false, recorded: 1, quota: { task: 1 } } });
+    expect(Object.keys(t.store.data.miniapp_subs ?? {})).toHaveLength(1);
   });
   it("开关开：同意一次加 1 次，上限 50；openid 存库但永不返回；成员记不了「新申请」", async () => {
     const t = setup({ notify: true });
@@ -271,8 +271,13 @@ describe("订阅消息额度（miniapp.subscribe.*、miniapp_subs）", () => {
     expect((await t.call(ALICE_WX, "miniapp.subscribe.record", { results: { other: "accept" } })).data.recorded).toBe(0);
     expect((await t.call(ALICE_WX, "miniapp.subscribe.record", { results: "accept" })).data.recorded).toBe(0);
   });
-  it("模板 ID 格式不对就当没配", () => {
-    expect(batch3ConfigFromEnv({ MINIAPP_TPL_TASK: "bad id!", MINIAPP_NOTIFY_ENABLED: "true" })).toEqual({ notifyEnabled: false, templates: {} });
+  it("模板 ID 格式不对则回退到默认待办模板；发送开关只认 =1", () => {
+    expect(batch3ConfigFromEnv({ MINIAPP_TPL_TASK: "bad id!", MINIAPP_NOTIFY_ENABLED: "true" })).toEqual({
+      notifyEnabled: false,
+      templates: { task: DEFAULT_TASK_TEMPLATE },
+    });
+    expect(batch3ConfigFromEnv({}).templates.task).toBe(DEFAULT_TASK_TEMPLATE);
+    expect(batch3ConfigFromEnv({ MINIAPP_NOTIFY_ENABLED: "1" }).notifyEnabled).toBe(true);
   });
 });
 
