@@ -2,6 +2,7 @@
 const D = require("../../lib/domain");
 const { call } = require("../../utils/api");
 const session = require("../../utils/session");
+const { offerTask } = require("../../utils/subscribe");
 
 Page({
   data: { form: null, edit: false, search: "", matches: [], reminderLabels: D.REMINDERS.map((r) => r.label), reminderIndex: 0, busy: false, error: "" },
@@ -78,6 +79,8 @@ Page({
     const req = this.task
       ? call("tasks.update", { id: this.task.id, revision: this.task.revision, requestId: f.requestId, task })
       : call("tasks.create", { requestId: f.requestId, task });
+    // 先弹出订阅（仍在点击路径里），再等保存结果
+    offerTask();
     req
       .then(() => {
         wx.showToast({ title: "已保存", icon: "success" });

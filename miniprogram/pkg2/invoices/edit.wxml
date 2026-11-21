@@ -1,3 +1,4 @@
+<privacy-popup />
 <view class="pg">
   <view class="eyebrow">开票 · 增值税普通发票</view>
   <view class="h1">{{rec ? rec.customer : '需要开票'}}</view>

@@ -20,7 +20,7 @@
   <block wx:if="{{view}}">
     <view class="hero">
       <view class="hero-label">{{view.monthTitle}}</view>
-      <view class="hero-value {{view.monthLoss ? 'loss' : ''}}">{{view.monthProfit}}</view>
+      <view class="hero-value {{view.monthLoss ? 'loss' : ''}}" style="font-size: {{profitSize}}rpx">{{view.monthProfit}}</view>
       <view class="hero-quick">
         <view class="hero-q" wx:for="{{view.quick}}" wx:key="label">
           <view class="muted small">{{item.label}}</view>

@@ -1,16 +1,19 @@
+<privacy-popup />
 <view class="screen">
   <view class="large-title">我的</view>
-  <view class="sheet row">
-    <view class="avatar">{{name ? name[0] : '我'}}</view>
+  <button class="sheet row profile-btn" open-type="chooseAvatar" bindchooseavatar="onChooseAvatar" aria-label="设置头像">
+    <image wx:if="{{avatarUrl}}" class="avatar-img" src="{{avatarUrl}}" mode="aspectFill" />
+    <view wx:else class="avatar">{{initial}}</view>
     <view class="grow">
       <view class="sheet-title">{{name || '已登录'}}</view>
       <view class="muted small">{{role}} · 个人私密账本</view>
+      <view class="muted small hint">{{avatarUrl ? '点击头像可更换' : '点击使用微信头像'}}</view>
     </view>
-  </view>
+  </button>
   <view class="sheet menu">
     <view class="list-item" bindtap="hub">
       <view class="grow">更多</view>
-      <view class="muted small">报销、开票、成员、日志</view>
+      <view class="muted small">成员、日志、回收站</view>
       <view class="muted arrow">›</view>
     </view>
     <view class="list-item" bindtap="settings">
@@ -26,4 +29,5 @@
   </view>
   <view class="err" wx:if="{{error}}">{{error}}</view>
   <view class="ghost leave" bindtap="leave">退出这个微信的绑定</view>
+  <canvas type="2d" id="avatarCanvas" class="avatar-canvas"></canvas>
 </view>

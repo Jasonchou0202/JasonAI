@@ -1,3 +1,4 @@
+<privacy-popup />
 <view class="pg">
   <view class="eyebrow">报销记账</view>
   <view class="h1">记一笔报销</view>

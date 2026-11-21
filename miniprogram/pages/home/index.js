@@ -18,6 +18,7 @@ Page({
     bell: "",
     isAdmin: false,
     productHeight: 60,
+    profitSize: 128,
   },
   onShow() {
     session.protect(true);
@@ -45,11 +46,13 @@ Page({
           this.dash = dash;
           this.start = undefined;
           const b = D.bell(tasks, day);
+          const view = D.homeView(dash, ranking, day);
           this.setData({
             loading: false,
             error: "",
             isAdmin: me.role === "admin",
-            view: D.homeView(dash, ranking, day),
+            view,
+            profitSize: profitFontSize(view.monthProfit),
             bell: b.badge,
             selected: "",
           }, () => this.drawAll());
@@ -145,3 +148,13 @@ Page({
     wx.navigateTo({ url: "/pages/sale/index" });
   },
 });
+
+/** 首屏利润数字：默认尽量大，位数多时缩小，避免 iPhone 宽度溢出 */
+function profitFontSize(text) {
+  const n = String(text || "").length;
+  if (n >= 14) return 72;
+  if (n >= 12) return 84;
+  if (n >= 10) return 100;
+  if (n >= 8) return 116;
+  return 128;
+}

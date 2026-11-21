@@ -18,7 +18,7 @@ function load(force) {
     return call("members.me")
       .catch(() => (bind.status === "owner" ? LEGACY_ADMIN : Promise.reject(new Error("无权限"))))
       .then((me) => {
-        cached = Object.assign({}, me, { owner: bind.status === "owner", bindName: bind.name || "" });
+        cached = Object.assign({}, me, { owner: bind.status === "owner", bindName: bind.name || "", avatarUrl: bind.avatarUrl || "" });
         at = Date.now();
         return cached;
       });

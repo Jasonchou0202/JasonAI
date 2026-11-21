@@ -20,3 +20,15 @@
 .prof.miss { background: #F8DAD4; color: #9E2A1E; }
 .grow { flex: 1; }
 .actions { align-items: center; }
+.inv-item { padding: 32rpx 0; border-bottom: 1rpx solid #F6E9DA; }
+.inv-item:first-child { padding-top: 8rpx; }
+.inv-item:last-child { border-bottom: 0; padding-bottom: 8rpx; }
+.inv-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 20rpx; }
+.inv-name { flex: 1; min-width: 0; font-size: 30rpx; font-weight: 600; line-height: 1.45; word-break: break-word; }
+.schip { flex-shrink: 0; margin-top: 4rpx; }
+.inv-mid { display: flex; align-items: flex-start; justify-content: space-between; gap: 20rpx; margin-top: 12rpx; }
+.inv-meta { flex: 1; min-width: 0; font-size: 24rpx; color: #6B5A50; line-height: 1.55; word-break: break-word; }
+.inv-amt { flex-shrink: 0; max-width: 240rpx; text-align: right; font-variant-numeric: tabular-nums; font-weight: 650; font-size: 30rpx; line-height: 1.45; color: #2B211C; }
+.inv-extra { margin-top: 10rpx; font-size: 23rpx; color: #6B5A50; line-height: 1.55; word-break: break-word; }
+.inv-actions { margin-top: 20rpx; display: flex; flex-wrap: wrap; align-items: center; gap: 12rpx; }
+.inv-actions .grow { min-width: 16rpx; }

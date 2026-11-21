@@ -167,12 +167,17 @@ await writeFile(
   ) + "\n",
 );
 await writeFile(
+  "cloudfunctions/miniapp/config.json",
+  JSON.stringify({ permissions: { openapi: ["subscribeMessage.send"] } }, null, 2) + "\n",
+);
+await writeFile(
   "artifacts/customer-miniapp-function.zip",
   zipSync({
     "index.js": new Uint8Array(await readFile("cloudfunctions/miniapp/index.js")),
     "package.json": new Uint8Array(
       await readFile("cloudfunctions/miniapp/package.json"),
     ),
+    "config.json": new Uint8Array(await readFile("cloudfunctions/miniapp/config.json")),
   }),
 );
 // 小程序第 3 批：reminders 小程序版入口 + 小程序分包库（独立脚本，原有各包不受影响）
