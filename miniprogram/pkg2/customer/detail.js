@@ -2,8 +2,19 @@
 // 开票信息入口（开票开关开时）、名称合并/拆分入口（只给管理员）。打开方式：/pkg2/customer/detail?id=客户编号[&month=yyyy-MM|all]
 const ui = require("../lib/ui");
 const b2 = require("../lib/b2");
+function accountRows(list) {
+  return (list && list.length ? list : [b2.emptyClaudeAccount()]).map((a, i) => ({
+    type: a.type || "",
+    usage: a.usage || "",
+    computer: a.computer || "",
+    email: a.email || "",
+    hubStudioPhone: a.hubStudioPhone || "",
+    no: b2.claudeAccountNo(i),
+    web: a.usage === "网页端",
+  }));
+}
 Page({
-  data: { loading: true, error: "", busy: false, id: "", name: "", aliases: [], view: "", month: "", hint: "", v: null, limit: 20, admin: false, invoices: false, profile: null, editing: false, form: null, options: null, monthText: "" },
+  data: { loading: true, error: "", busy: false, id: "", name: "", aliases: [], view: "", month: "", hint: "", v: null, limit: 20, admin: false, invoices: false, profile: null, editing: false, form: null, options: null, monthText: "", accountSummaries: [], showClaude: false, types: b2.CLAUDE_TYPES, usages: b2.CLAUDE_USAGES, computers: b2.CLAUDE_COMPUTERS },
   onLoad(q) {
     const thisMonth = b2.today().slice(0, 7);
     const m = q && q.month;
@@ -30,13 +41,16 @@ Page({
           hint = b2.salesViewHint(view);
         }
         const p = d.customer.profile || {};
+        const cv = b2.profileClaudeView(p);
         this.setData({
           loading: false, error: "", admin: me.admin, invoices: me.invoices, view, hint,
           name: b2.displayCustomerName(d.customer.name),
           aliases: d.aliases.filter((a) => a !== d.customer.name).map(b2.displayCustomerName),
           aliasText: d.aliases.filter((a) => a !== d.customer.name).map(b2.displayCustomerName).join("、"),
-          needsText: (p.needs || []).join("、"),
-          profile: { occupation: p.occupation || "", needs: p.needs || [], needNote: p.needNote || "", payment: p.payment || "" },
+          needsText: cv.needsText,
+          accountSummaries: cv.accountSummaries,
+          showClaude: cv.showClaude,
+          profile: { occupation: p.occupation || "", needs: p.needs || [], needNote: p.needNote || "", payment: p.payment || "", claudeAccounts: p.claudeAccounts || [] },
           options: b2.profileOptions(list.map((c) => c.profile).filter(Boolean)),
         });
         this.render();
@@ -66,38 +80,76 @@ Page({
     const p = this.data.profile;
     const needs = this.data.options.needs.map((n) => ({ n, on: p.needs.indexOf(n) >= 0 }));
     p.needs.forEach((n) => needs.some((x) => x.n === n) || needs.push({ n, on: true }));
-    this.setData({ editing: true, form: { occupation: p.occupation, needNote: p.needNote, payment: p.payment, needs, newNeed: "" } });
+    this.setData({ editing: true, form: { occupation: p.occupation, needNote: p.needNote, payment: p.payment, needs, newNeed: "", showClaude: p.needs.indexOf(b2.CLAUDE_NEED) >= 0, accounts: accountRows(p.claudeAccounts) } });
   },
   cancel() {
     this.setData({ editing: false });
   },
+  formPatch(patch) {
+    this.setData({ form: Object.assign({}, this.data.form, patch) });
+  },
   fset(e) {
-    this.setData({ [`form.${e.currentTarget.dataset.k}`]: e.detail.value });
+    this.formPatch({ [e.currentTarget.dataset.k]: e.detail.value });
   },
   pickOcc(e) {
-    this.setData({ "form.occupation": e.currentTarget.dataset.v === this.data.form.occupation ? "" : e.currentTarget.dataset.v });
+    const v = e.currentTarget.dataset.v;
+    this.formPatch({ occupation: v === this.data.form.occupation ? "" : v });
   },
   pickPay(e) {
-    this.setData({ "form.payment": e.currentTarget.dataset.v === this.data.form.payment ? "" : e.currentTarget.dataset.v });
+    const v = e.currentTarget.dataset.v;
+    this.formPatch({ payment: v === this.data.form.payment ? "" : v });
   },
   toggleNeed(e) {
     const i = Number(e.currentTarget.dataset.i);
-    this.setData({ [`form.needs[${i}].on`]: !this.data.form.needs[i].on });
+    const needs = this.data.form.needs.map((x, j) => (j === i ? { n: x.n, on: !x.on } : x));
+    const showClaude = needs.some((x) => x.n === b2.CLAUDE_NEED && x.on);
+    const accounts = this.data.form.accounts && this.data.form.accounts.length ? this.data.form.accounts : accountRows([]);
+    this.formPatch({ needs, showClaude, accounts });
   },
   addNeed() {
     const n = (this.data.form.newNeed || "").trim();
     if (!n || n.length > 40) return;
-    this.setData({ "form.needs": [...this.data.form.needs.filter((x) => x.n !== n), { n, on: true }], "form.newNeed": "" });
+    this.formPatch({ needs: [...this.data.form.needs.filter((x) => x.n !== n), { n, on: true }], newNeed: "" });
+  },
+  acctSet(e) {
+    const i = Number(e.currentTarget.dataset.i);
+    const k = e.currentTarget.dataset.k;
+    const accounts = this.data.form.accounts.map((a, j) => (j === i ? Object.assign({}, a, { [k]: e.detail.value }) : a));
+    this.formPatch({ accounts });
+  },
+  pickAcct(e) {
+    const i = Number(e.currentTarget.dataset.i);
+    const k = e.currentTarget.dataset.k;
+    const v = e.currentTarget.dataset.v;
+    const accounts = this.data.form.accounts.map((a, j) => {
+      if (j !== i) return a;
+      const next = Object.assign({}, a, { [k]: v });
+      if (k === "usage") next.web = v === "网页端";
+      return next;
+    });
+    this.formPatch({ accounts });
+  },
+  addAcct() {
+    this.formPatch({ accounts: accountRows([...(this.data.form.accounts || []), b2.emptyClaudeAccount()]) });
+  },
+  delAcct(e) {
+    const list = this.data.form.accounts;
+    if (list.length <= 1) return;
+    this.formPatch({ accounts: accountRows(list.filter((_, j) => j !== Number(e.currentTarget.dataset.i))) });
   },
   saveProfile() {
     const f = this.data.form;
     const c = this.detail.customer;
+    const needs = f.needs.filter((x) => x.on).map((x) => x.n);
     const profile = {
       ...(f.occupation.trim() ? { occupation: f.occupation.trim() } : {}),
-      needs: f.needs.filter((x) => x.on).map((x) => x.n),
+      needs,
       ...(f.needNote.trim() ? { needNote: f.needNote } : {}),
       ...(f.payment ? { payment: f.payment } : {}),
     };
+    if (needs.indexOf(b2.CLAUDE_NEED) >= 0) {
+      profile.claudeAccounts = (f.accounts || []).filter((a) => !b2.blankClaudeAccount(a));
+    }
     ui.run(this, () => ui.call("customers.profile.save", { id: c.id, revision: c.revision, profile, requestId: b2.requestId() }), "已保存").then((ok) => ok && (this.setData({ editing: false }), this.load()));
   },
   invoiceProfile() {

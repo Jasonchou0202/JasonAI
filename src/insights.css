@@ -147,3 +147,37 @@
 .action-chip.on{background:color-mix(in srgb,var(--q) 14%,#fff);border-color:color-mix(in srgb,var(--q) 55%,transparent);color:color-mix(in srgb,var(--q) 85%,#000);font-weight:600}
 .action-chip:active{transform:scale(.97)}
 @media (max-width:600px){.quad-tm-cell > small{display:none}.quad-treemap-month figcaption{flex-direction:column;align-items:flex-start;gap:0}}
+
+/* Claude 账号（客户信息和需求收集） */
+.profile-demo-mark{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:8px 20px 0;font-size:12px;color:var(--text-3)}
+.profile-demo-tag{display:inline-flex;align-items:center;height:22px;padding:0 8px;border-radius:4px;background:#F6E58D;color:#6B4F10;font-weight:700;letter-spacing:.02em}
+.profile-view .need-name{font-weight:600}
+.claude-view{margin:8px 0 0;background:#F8EEE3;border:1px solid #F0DCC8;border-radius:12px;padding:10px 12px}
+.claude-view-title{font-size:12px;font-weight:700;color:var(--text-2);margin:0 0 6px}
+.claude-view ol{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+.claude-view li{font-size:13px;color:var(--text-1);line-height:1.55;padding:7px 10px;background:#fff;border-radius:8px;border:1px solid #F0DCC8;width:fit-content;max-width:100%;overflow-wrap:anywhere}
+.claude-box{margin:12px 0 10px;background:#F8EEE3;border:1px solid #E8D4BE;border-radius:14px;padding:14px 16px 12px}
+.claude-box-head{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:10px}
+.claude-box-title{font-size:14px;font-weight:700;color:var(--text-1);letter-spacing:-.01em}
+.acct{position:relative;background:#fff;border:1px solid #F0DCC8;border-radius:12px;padding:14px 16px;margin-bottom:10px}
+.acct-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.acct-no{font-size:13px;font-weight:700;color:var(--text-1)}
+.acct-del{font:inherit;font-size:12px;font-weight:600;color:var(--text-3);padding:2px 4px;background:none;border:0;cursor:pointer}
+.acct-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px 20px}
+.acct-field{min-width:0}
+.acct-field.os{grid-column:1/-1}
+.profile-form .acct-field.os .segmented{max-width:380px}
+.acct-field>span{display:block;font-size:12px;color:var(--text-3);margin:0 0 6px;font-weight:500}
+.acct-field input{width:100%;box-sizing:border-box;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-m);padding:10px 12px;color:var(--ink);min-height:40px;font-size:14px}
+.profile-form .acct .segmented{display:flex;flex-wrap:wrap;border:1px solid var(--line);background:var(--bg);border-radius:var(--radius-m);padding:3px;width:100%}
+.profile-form .acct .segmented button{flex:1 1 40%;color:var(--text-3);background:transparent;padding:7px 10px;border:0;border-radius:6px;font:inherit;font-size:13px;min-height:32px;font-weight:500;white-space:nowrap;cursor:pointer}
+.profile-form .acct .segmented button.active{background:var(--surface);color:#B4532F;box-shadow:0 1px 5px #5a35200f;font-weight:700}
+.btn-add-row{display:flex;align-items:center;gap:12px;margin-top:2px;flex-wrap:wrap}
+.btn-add-acct{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:40px;padding:0 16px;border:1px dashed #D4B89A;background:transparent;color:var(--text-2);border-radius:var(--radius-m);font:inherit;font-size:13px;font-weight:600;cursor:pointer}
+.btn-add-hint,.claude-hint{font-size:12px;color:var(--text-3);line-height:1.5}
+.claude-hint{margin:10px 0 0}
+@media (max-width:520px){
+  .profile-demo-mark{padding:8px 14px 0}
+  .acct-grid{grid-template-columns:1fr}
+  .profile-form .acct-field.os .segmented{max-width:none}
+}

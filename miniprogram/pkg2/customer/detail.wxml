@@ -48,11 +48,17 @@
       </view>
     </view>
     <view class="sec">
-      <view class="row"><view class="h2">客户信息和需求</view><view class="mini" wx:if="{{!editing}}" bindtap="edit">编辑</view></view>
+      <view class="row"><view class="h2">客户信息和需求收集</view><view class="mini" wx:if="{{!editing}}" bindtap="edit">编辑</view></view>
       <view class="card" wx:if="{{!editing}}">
         <view class="row"><text class="muted">职业</text><text>{{profile.occupation || '未填'}}</text></view>
         <view class="row"><text class="muted">付款方式</text><text>{{profile.payment || '未填'}}</text></view>
-        <view class="row"><text class="muted">需求</text><text>{{needsText || '未填'}}</text></view>
+        <view class="need-block">
+          <view class="row"><text class="muted">客户需求</text><text>{{needsText || '未填'}}</text></view>
+          <view class="claude-view" wx:if="{{showClaude}}">
+            <view class="claude-view-title">Claude 账号</view>
+            <view class="claude-line" wx:for="{{accountSummaries}}" wx:key="*this">{{item}}</view>
+          </view>
+        </view>
         <view class="note" wx:if="{{profile.needNote}}">{{profile.needNote}}</view>
       </view>
       <view class="card" wx:if="{{editing}}">
@@ -61,12 +67,41 @@
         <input class="input" placeholder="或自己填" maxlength="40" value="{{form.occupation}}" data-k="occupation" bindinput="fset" />
         <view class="label sp">需求（可多选）</view>
         <view class="chips"><view class="chip {{item.on ? 'on' : ''}}" wx:for="{{form.needs}}" wx:key="n" data-i="{{index}}" bindtap="toggleNeed">{{item.n}}</view></view>
+        <view class="claude-box" wx:if="{{form.showClaude}}">
+          <view class="claude-box-title">Claude 账号</view>
+          <view class="acct" wx:for="{{form.accounts}}" wx:key="index" wx:for-index="i">
+            <view class="acct-top">
+              <text class="acct-no">{{item.no}} 账号</text>
+              <view class="acct-del" wx:if="{{form.accounts.length > 1}}" data-i="{{i}}" bindtap="delAcct">删除</view>
+            </view>
+            <view class="label">账号类型</view>
+            <view class="seg wrap">
+              <view class="it {{item.type === t ? 'on' : ''}}" wx:for="{{types}}" wx:for-item="t" wx:key="*this" data-i="{{i}}" data-k="type" data-v="{{t}}" bindtap="pickAcct">{{t}}</view>
+            </view>
+            <view class="label sp2">使用方式</view>
+            <view class="seg wrap">
+              <view class="it {{item.usage === t ? 'on' : ''}}" wx:for="{{usages}}" wx:for-item="t" wx:key="*this" data-i="{{i}}" data-k="usage" data-v="{{t}}" bindtap="pickAcct">{{t}}</view>
+            </view>
+            <view class="label sp2">Claude 配置电脑类型</view>
+            <view class="seg wrap">
+              <view class="it {{item.computer === t ? 'on' : ''}}" wx:for="{{computers}}" wx:for-item="t" wx:key="*this" data-i="{{i}}" data-k="computer" data-v="{{t}}" bindtap="pickAcct">{{t}}</view>
+            </view>
+            <view class="label sp2">Claude 注册邮箱</view>
+            <input class="input" placeholder="example01@mail.com" maxlength="120" value="{{item.email}}" data-i="{{i}}" data-k="email" bindinput="acctSet" />
+            <block wx:if="{{item.web}}">
+              <view class="label sp2">HubStudio 注册手机号</view>
+              <input class="input" placeholder="仅网页端需填写" maxlength="24" value="{{item.hubStudioPhone}}" data-i="{{i}}" data-k="hubStudioPhone" bindinput="acctSet" />
+            </block>
+          </view>
+          <view class="add-acct" bindtap="addAcct">＋ 添加账号</view>
+          <view class="claude-hint">仅记手机号与邮箱，不存密码；选网页端才需填 HubStudio 手机号</view>
+        </view>
         <view class="add-row"><input class="input grow" placeholder="新增需求" maxlength="40" value="{{form.newNeed}}" data-k="newNeed" bindinput="fset" /><view class="mini dark" bindtap="addNeed">添加</view></view>
         <view class="label sp">需求记录</view>
         <textarea class="textarea" maxlength="2000" value="{{form.needNote}}" data-k="needNote" bindinput="fset"></textarea>
         <view class="label sp">偏好付款方式</view>
         <view class="chips"><view class="chip {{form.payment === item ? 'on' : ''}}" wx:for="{{options.payments}}" wx:key="*this" data-v="{{item}}" bindtap="pickPay">{{item}}</view></view>
-        <view class="actions"><view class="mini dark" bindtap="saveProfile">保存</view><view class="mini plain" bindtap="cancel">取消</view></view>
+        <view class="actions"><view class="mini dark" bindtap="saveProfile">保存客户信息和需求</view><view class="mini plain" bindtap="cancel">取消</view></view>
       </view>
     </view>
     <view class="card menu">

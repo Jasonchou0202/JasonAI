@@ -40,7 +40,7 @@ import {
   type InvoiceStatus,
 } from "../domain/invoices";
 import { customerProducts, displayCustomerName } from "../domain/customers";
-import { NEED_PRESETS, OCCUPATION_PRESETS, PAYMENT_METHODS, mergeOptions } from "../domain/profile";
+import { CLAUDE_COMPUTERS, CLAUDE_NEED, CLAUDE_TYPES, CLAUDE_USAGES, NEED_PRESETS, OCCUPATION_PRESETS, PAYMENT_METHODS, blankClaudeAccount, claudeAccountSummary, mergeOptions } from "../domain/profile";
 import { NEW_RULE_TEXT, QUADRANTS, QUADRANT_INFO, pct, type Quadrant } from "../domain/insights";
 import { OWNER_COLOR, memberColor } from "../domain/members";
 import { renewLabel, renewName, renewRemindDate } from "../domain/renew";
@@ -306,6 +306,23 @@ export function profileOptions(used: { occupation?: string; needs?: string[] }[]
     occupations: mergeOptions(OCCUPATION_PRESETS, used.map((p) => p.occupation ?? "")),
     needs: mergeOptions(NEED_PRESETS, used.flatMap((p) => p.needs ?? [])),
     payments: [...PAYMENT_METHODS],
+  };
+}
+
+export { CLAUDE_COMPUTERS, CLAUDE_NEED, CLAUDE_TYPES, CLAUDE_USAGES, blankClaudeAccount, claudeAccountSummary };
+export function emptyClaudeAccount() {
+  return { type: "", usage: "", computer: "", email: "", hubStudioPhone: "" };
+}
+export function claudeAccountNo(index: number) {
+  return "①②③④⑤⑥⑦⑧⑨⑩⑪⑫⑬⑭⑮⑯⑰⑱⑲⑳"[index] ?? `${index + 1}.`;
+}
+export function profileClaudeView(profile: { needs?: string[]; claudeAccounts?: Parameters<typeof claudeAccountSummary>[0][] } | null | undefined) {
+  const needs = profile?.needs ?? [];
+  const accounts = needs.includes(CLAUDE_NEED) ? profile?.claudeAccounts ?? [] : [];
+  return {
+    needsText: needs.join("、"),
+    showClaude: accounts.length > 0,
+    accountSummaries: accounts.map((a, i) => claudeAccountSummary(a, i)),
   };
 }
 
